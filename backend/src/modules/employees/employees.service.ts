@@ -234,39 +234,14 @@ export class EmployeesService {
       updateData.designationId = updateEmployeeDto.designationId || null;
     }
 
-    // Recalculate Profile Completion Percentage
-    let filledFields = 0;
-    const coreFields = [
-      employee.phone,
-      employee.dob,
-      employee.gender,
-      employee.bloodGroup,
-      employee.address,
-      employee.emergencyContact,
-    ];
-    coreFields.forEach((val) => {
-      if (val) filledFields++;
-    });
-    // Add newly provided fields to the score
-    if (updateEmployeeDto.phone) filledFields++;
-    if (updateEmployeeDto.dob) filledFields++;
-    if (updateEmployeeDto.gender) filledFields++;
-    if (updateEmployeeDto.bloodGroup) filledFields++;
-    if (updateEmployeeDto.address) filledFields++;
-    if (updateEmployeeDto.emergencyContact) filledFields++;
-
-    const finalPercent = Math.min(100, Math.round((filledFields / 6) * 100));
-
     return this.prisma.$transaction(async (tx) => {
       const updatedEmp = await tx.employee.update({
         where: { id },
         data: updateData,
       });
 
-      await tx.employeeProfile.update({
-        where: { employeeId: id },
-        data: { profileCompletion: finalPercent },
-      });
+      // Recalculate Completion after update
+      await this.internalRecalculateCompletion(id, tx);
 
       await tx.auditLog.create({
         data: {
@@ -320,11 +295,162 @@ export class EmployeesService {
   async remove(id: string) {
     const employee = await this.findOne(id);
 
-    // Cascades deletion of User which cascades Employee, profile, education, docs, logs etc.
     await this.prisma.user.delete({
       where: { id: employee.userId },
     });
 
     return { message: `Employee ${employee.employeeId} permanently removed` };
+  }
+
+  // Employee-facing Profile Operations
+  async getProfile(userId: string) {
+    const emp = await this.prisma.employee.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { email: true, isFirstLogin: true, isActive: true } },
+        department: true,
+        designation: true,
+        profile: true,
+      },
+    });
+    if (!emp) throw new NotFoundException('Employee profile not found');
+    return emp;
+  }
+
+  async updateProfile(userId: string, dto: any) {
+    const emp = await this.getProfile(userId);
+
+    const updateData: any = {};
+    const allowedFields = [
+      'firstName', 'lastName', 'fatherName', 'motherName', 'gender', 'bloodGroup',
+      'maritalStatus', 'nationality', 'phone', 'alternatePhone', 'personalEmail',
+      'permanentAddress', 'currentAddress', 'emergencyContactName', 'emergencyContactPhone',
+      'emergencyContactRelation', 'reportingManager', 'employmentType', 'bankAccountHolder',
+      'bankName', 'bankBranch', 'bankAccountNumber', 'bankIfsc', 'upiId',
+      'aadhaarNumber', 'panNumber', 'passportNumber', 'drivingLicenseNumber'
+    ];
+
+    allowedFields.forEach(f => {
+      if (dto[f] !== undefined) updateData[f] = dto[f];
+    });
+
+    if (dto.dob) updateData.dob = new Date(dto.dob);
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.employee.update({
+        where: { id: emp.id },
+        data: updateData,
+      });
+
+      // Recalculate
+      await this.internalRecalculateCompletion(emp.id, tx);
+
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'PROFILE_UPDATED',
+          details: `Employee completed/updated their profile details`,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  async getProfileCompletion(userId: string) {
+    const emp = await this.prisma.employee.findUnique({
+      where: { userId },
+      include: { profile: true },
+    });
+    if (!emp) throw new NotFoundException('Employee not found');
+
+    const sections = this.calculateSections(emp);
+    return {
+      percentage: emp.profile?.profileCompletion || 0,
+      sections,
+    };
+  }
+
+  async uploadPhoto(userId: string, photoUrl: string) {
+    const emp = await this.getProfile(userId);
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.employee.update({
+        where: { id: emp.id },
+        data: { photoUrl },
+      });
+      await this.internalRecalculateCompletion(emp.id, tx);
+      return updated;
+    });
+  }
+
+  async deletePhoto(userId: string) {
+    const emp = await this.getProfile(userId);
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.employee.update({
+        where: { id: emp.id },
+        data: { photoUrl: null },
+      });
+      await this.internalRecalculateCompletion(emp.id, tx);
+      return updated;
+    });
+  }
+
+  // Internal helper to calculate percentage and checklist
+  private calculateSections(emp: any) {
+    const personal = [emp.firstName, emp.lastName, emp.fatherName, emp.motherName, emp.dob, emp.gender, emp.bloodGroup, emp.maritalStatus, emp.nationality];
+    const personalFilled = personal.filter(Boolean).length;
+    const personalPct = Math.round((personalFilled / personal.length) * 100);
+
+    const contact = [emp.phone, emp.alternatePhone, emp.personalEmail, emp.permanentAddress, emp.currentAddress, emp.emergencyContactName, emp.emergencyContactPhone, emp.emergencyContactRelation];
+    const contactFilled = contact.filter(Boolean).length;
+    const contactPct = Math.round((contactFilled / contact.length) * 100);
+
+    const professional = [emp.employeeId, emp.departmentId, emp.designationId, emp.reportingManager, emp.employmentType, emp.joiningDate];
+    const professionalFilled = professional.filter(Boolean).length;
+    const professionalPct = Math.round((professionalFilled / professional.length) * 100);
+
+    const bank = [emp.bankAccountHolder, emp.bankName, emp.bankBranch, emp.bankAccountNumber, emp.bankIfsc, emp.upiId];
+    const bankFilled = bank.filter(Boolean).length;
+    const bankPct = Math.round((bankFilled / bank.length) * 100);
+
+    const govt = [emp.aadhaarNumber, emp.panNumber, emp.passportNumber, emp.drivingLicenseNumber];
+    const govtFilled = govt.filter(Boolean).length;
+    const govtPct = Math.round((govtFilled / govt.length) * 100);
+
+    return {
+      personal: { percentage: personalPct, filled: personalFilled, total: personal.length, label: 'Personal Information' },
+      contact: { percentage: contactPct, filled: contactFilled, total: contact.length, label: 'Contact Details' },
+      professional: { percentage: professionalPct, filled: professionalFilled, total: professional.length, label: 'Professional Info' },
+      bank: { percentage: bankPct, filled: bankFilled, total: bank.length, label: 'Bank Details' },
+      government: { percentage: govtPct, filled: govtFilled, total: govt.length, label: 'Government ID Cards' },
+    };
+  }
+
+  private async internalRecalculateCompletion(employeeId: string, tx: any) {
+    const emp = await tx.employee.findUnique({
+      where: { id: employeeId },
+    });
+    const sects = this.calculateSections(emp);
+    
+    // Average of 5 sections (each counts for 20%)
+    const finalPct = Math.round(
+      (sects.personal.percentage +
+        sects.contact.percentage +
+        sects.professional.percentage +
+        sects.bank.percentage +
+        sects.government.percentage) / 5
+    );
+
+    await tx.employeeProfile.update({
+      where: { employeeId },
+      data: { profileCompletion: finalPct },
+    });
+
+    if (finalPct === 100 && emp.onboardingStatus === OnboardingStatus.PENDING) {
+      await tx.employee.update({
+        where: { id: employeeId },
+        data: { onboardingStatus: OnboardingStatus.PROFILE_COMPLETED },
+      });
+    }
   }
 }

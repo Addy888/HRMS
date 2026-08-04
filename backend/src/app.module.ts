@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from './database/database.module';
-import { HealthController } from './health.controller';
-import { DepartmentsModule } from './modules/departments/departments.module';
-import { DesignationsModule } from './modules/designations/designations.module';
-import { EmployeesModule } from './modules/employees/employees.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DatabaseModule } from './database/database.module.js';
+import { HealthController } from './health.controller.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { DepartmentsModule } from './modules/departments/departments.module.js';
+import { DesignationsModule } from './modules/designations/designations.module.js';
+import { EmployeesModule } from './modules/employees/employees.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
       isGlobal: true,
     }),
     DatabaseModule,
+    AuthModule,
     DepartmentsModule,
     DesignationsModule,
     EmployeesModule,
@@ -21,3 +23,4 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
   controllers: [HealthController],
 })
 export class AppModule {}
+

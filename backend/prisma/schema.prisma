@@ -66,8 +66,42 @@ model Employee {
   dob           DateTime?
   gender        String?
   bloodGroup    String?
-  address       String?
-  emergencyContact String?
+  address       String? // Deprecated in favor of currentAddress/permanentAddress
+  
+  // Personal Info
+  fatherName    String?
+  motherName    String?
+  maritalStatus String?
+  nationality   String?
+
+  // Contact Info
+  alternatePhone String?
+  personalEmail  String?
+  permanentAddress String?
+  currentAddress   String?
+  emergencyContactName String?
+  emergencyContactPhone String?
+  emergencyContactRelation String?
+  emergencyContact String? // Deprecated in favor of emergencyContactName/Phone/Relation
+
+  // Professional Info
+  reportingManager String?
+  employmentType   String? // e.g. FULL_TIME, PART_TIME, CONTRACT, INTERN
+
+  // Bank Details
+  bankAccountHolder String?
+  bankName          String?
+  bankBranch        String?
+  bankAccountNumber String?
+  bankIfsc          String?
+  upiId             String?
+
+  // Government Details
+  aadhaarNumber       String?
+  panNumber           String?
+  passportNumber      String?
+  drivingLicenseNumber String?
+
   joiningDate   DateTime           @default(now())
   departmentId  String?
   department    Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)

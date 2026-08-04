@@ -28,6 +28,19 @@ async function bootstrap() {
   // Global prefixes
   app.setGlobalPrefix('api/v1');
 
+  // Serve uploads statically
+  const express = await import('express');
+  const { join } = await import('path');
+  const fs = await import('fs');
+  
+  // Ensure directories exist
+  const uploadPath = join(process.cwd(), 'uploads/avatars');
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+
   // Global validation pipes
   app.useGlobalPipes(
     new ValidationPipe({

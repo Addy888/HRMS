@@ -13,7 +13,7 @@ import {
   X,
   Sparkles
 } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+import useAuthStore from '@/store/authStore';
 
 interface SidebarLinkProps {
   href: string;

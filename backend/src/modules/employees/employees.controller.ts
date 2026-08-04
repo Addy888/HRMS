@@ -1,15 +1,85 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import {
+  Controller, Get, Post, Body, Param, Put, Delete, Query,
+  UseGuards, UseInterceptors, UploadedFile, BadRequestException
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { EmployeesService } from './employees.service';
-import { CreateEmployeeDto, UpdateEmployeeDto, QueryEmployeeDto } from './dto/employee.dto';
-import { Roles } from '../../common/guards/roles.guard';
-import { UserRole } from '../../common/constants';
+import { EmployeesService } from './employees.service.js';
+import { CreateEmployeeDto, UpdateEmployeeDto, QueryEmployeeDto } from './dto/employee.dto.js';
+import { UpdateProfileDto } from './dto/profile.dto.js';
+import { Roles } from '../../common/guards/roles.guard.js';
+import { UserRole } from '../../common/constants/index.js';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { GetUser } from '../../common/decorators/get-user.decorator.js';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import * as fs from 'fs';
 
 @ApiTags('Employees')
 @ApiBearerAuth()
 @Controller('employees')
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get profile details of logged-in employee' })
+  getProfile(@GetUser('id') userId: string) {
+    return this.employeesService.getProfile(userId);
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update profile details of logged-in employee' })
+  updateProfile(@GetUser('id') userId: string, @Body() dto: UpdateProfileDto) {
+    return this.employeesService.updateProfile(userId, dto);
+  }
+
+  @Get('profile/completion')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get profile onboarding completion status & percentage checklist' })
+  getProfileCompletion(@GetUser('id') userId: string) {
+    return this.employeesService.getProfileCompletion(userId);
+  }
+
+  @Post('profile/photo')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `avatar-${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
+          return cb(new BadRequestException('Only JPG, JPEG, and PNG images are supported!'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB Limit
+    })
+  )
+  @ApiOperation({ summary: 'Upload/Replace profile avatar photo (Max 2MB)' })
+  uploadPhoto(
+    @GetUser('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No photo file provided');
+    }
+    const photoUrl = `/uploads/avatars/${file.filename}`;
+    return this.employeesService.uploadPhoto(userId, photoUrl);
+  }
+
+  @Delete('profile/photo')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Delete profile avatar photo' })
+  deletePhoto(@GetUser('id') userId: string) {
+    return this.employeesService.deletePhoto(userId);
+  }
 
   @Post()
   @Roles(UserRole.HR)

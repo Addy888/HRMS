@@ -1,44 +1,64 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface User {
+export interface AuthUser {
   id: string;
   email: string;
   role: 'HR' | 'EMPLOYEE';
-  isFirstLogin: boolean;
-  isActive: boolean;
-  token?: string;
+  mustChangePassword: boolean;
+  employee?: {
+    id: string;
+    employeeId: string;
+    firstName: string;
+    lastName: string;
+    onboardingStatus: string;
+    department: string | null;
+    designation: string | null;
+  } | null;
 }
 
 interface AuthState {
-  user: User | null;
+  token: string | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (user: User) => void;
+  setAuth: (token: string, user: AuthUser) => void;
   logout: () => void;
-  updateUser: (updatedFields: Partial<User>) => void;
+  updateUser: (fields: Partial<AuthUser>) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
+const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: {
-        id: 'hr-admin-uuid',
-        email: 'hr@fcs.com',
-        role: 'HR',
-        isFirstLogin: false,
-        isActive: true,
-        token: 'mock-jwt-token-fcs-hrms',
+      token: null,
+      user: null,
+      isAuthenticated: false,
+
+      setAuth: (token, user) =>
+        set({ token, user, isAuthenticated: true }),
+
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('fcs_token');
+          localStorage.removeItem('fcs_user');
+        }
+        set({ token: null, user: null, isAuthenticated: false });
       },
-      isAuthenticated: true,
-      login: (user) => set({ user, isAuthenticated: true }),
-      logout: () => set({ user: null, isAuthenticated: false }),
-      updateUser: (updatedFields) =>
+
+      updateUser: (fields) =>
         set((state) => ({
-          user: state.user ? { ...state.user, ...updatedFields } : null,
+          user: state.user ? { ...state.user, ...fields } : null,
         })),
     }),
     {
       name: 'fcs-auth-storage',
+      // Only persist non-sensitive fields in localStorage via Zustand
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
+
+export default useAuthStore;

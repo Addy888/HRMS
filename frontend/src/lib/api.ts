@@ -5,42 +5,53 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
-// Request Interceptor to dynamically attach headers
+// Attach token from Zustand-persisted localStorage on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const storage = localStorage.getItem('fcs-auth-storage');
-    if (storage) {
-      try {
+    try {
+      // Zustand persist stores under 'fcs-auth-storage'
+      const storage = localStorage.getItem('fcs-auth-storage');
+      if (storage) {
         const parsed = JSON.parse(storage);
-        const token = parsed?.state?.user?.token;
+        const token = parsed?.state?.token;
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-      } catch (e) {
-        console.error('Error parsing auth storage', e);
       }
+    } catch {
+      // ignore parse errors
     }
   }
   return config;
 });
 
-// Response Interceptor to wrap results and strip metadata wrapping
+// Response interceptor — unwrap transform envelope + normalize errors
 api.interceptors.response.use(
   (response) => {
-    // If our API wraps in { success, statusCode, data, message }
-    if (response.data && response.data.success !== undefined) {
-      return response.data;
+    // If backend returns { success, statusCode, data, message } envelope
+    if (response.data && typeof response.data.success === 'boolean') {
+      return response; // return full response; callers use .data
     }
     return response;
   },
   (error) => {
-    const message = error.response?.data?.message || 'An unexpected error occurred';
+    const message =
+      error.response?.data?.message || error.message || 'An unexpected error occurred';
+
+    // Auto-redirect to login on 401
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const isLoginPage = window.location.pathname === '/login';
+      if (!isLoginPage) {
+        localStorage.removeItem('fcs-auth-storage');
+        window.location.href = '/login';
+      }
+    }
+
     return Promise.reject({
       ...error,
-      message,
+      message: Array.isArray(message) ? message[0] : message,
       statusCode: error.response?.status || 500,
     });
   }
