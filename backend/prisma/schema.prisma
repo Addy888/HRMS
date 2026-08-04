@@ -115,6 +115,7 @@ model Employee {
   experience    Experience[]
   documents     Document[]
   acknowledgement Acknowledgement?
+  acceptances   PolicyAcceptance[]
 
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
@@ -213,24 +214,58 @@ model DocumentVerification {
 }
 
 model Policy {
-  id          String             @id @default(uuid())
-  title       String             @unique
-  content     String             @db.Text
-  type        String             // ATTENDANCE, LEAVE, CODE_OF_CONDUCT, DATA_PRIVACY, INFO_SEC, NDA, POSH, IT, HANDBOOK, LAPTOP, INTERNET
-  version     Int                @default(1)
-  acceptances PolicyAcceptance[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id           String             @id @default(uuid())
+  title        String             @unique
+  policyNumber String             @unique
+  category     String             // ATTENDANCE, LEAVE, CODE_OF_CONDUCT, POSH, DATA_PRIVACY, INFO_SEC, IT_USAGE, NDA, HANDBOOK, etc.
+  description  String?            @db.Text
+  content      String             @db.Text // Rich Text editor content
+  version      Int                @default(1)
+  status       String             @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  effectiveDate DateTime?
+  expiryDate   DateTime?
+  createdBy    String?            // HR User ID or Name
+  updatedBy    String?            // HR User ID or Name
+  
+  assignments  PolicyAssignment[]
+  acceptances  PolicyAcceptance[]
+  versions     PolicyVersion[]
+  auditLogs    PolicyAuditLog[]
+
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 }
 
-model PolicyAcceptance {
+model PolicyVersion {
+  id            String    @id @default(uuid())
+  policyId      String
+  policy        Policy    @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  title         String
+  content       String    @db.Text
+  versionNumber Int
+  effectiveDate DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model PolicyAssignment {
   id         String   @id @default(uuid())
   policyId   String
   policy     Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
-  employeeId String
-  acceptedAt DateTime @default(now())
+  targetType String   // ALL, DEPARTMENT, DESIGNATION, EMPLOYEE
+  targetId   String?  // Dept ID, Desg ID, or Employee ID (null if ALL)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+}
+
+model PolicyAcceptance {
+  id              String   @id @default(uuid())
+  policyId        String
+  policy          Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  versionAccepted Int      @default(1)
+  acceptedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([policyId, employeeId])
 }
@@ -239,13 +274,22 @@ model Acknowledgement {
   id         String   @id @default(uuid())
   employeeId String   @unique
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  isAccepted Boolean  @default(false)
-  signature  String   // Digital signature name typed
+  fullName   String
   ipAddress  String
-  userAgent  String   // Browser information
+  userAgent  String
   signedAt   DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model PolicyAuditLog {
+  id         String   @id @default(uuid())
+  policyId   String
+  policy     Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  userId     String
+  action     String   // CREATE, UPDATE, DELETE, PUBLISH, ARCHIVE, ASSIGN, ACCEPT
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
 }
 
 model Complaint {

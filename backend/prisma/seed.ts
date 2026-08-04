@@ -104,7 +104,8 @@ async function main() {
   const policiesList = [
     {
       title: 'Attendance Policy',
-      type: 'ATTENDANCE',
+      policyNumber: 'POL-001',
+      category: 'ATTENDANCE',
       content: `Standard working hours at FCS are 9:00 AM to 6:00 PM, Monday through Friday. 
 A grace period of 15 minutes is allowed. 
 Any arrival after 9:15 AM will be marked as late. 
@@ -112,27 +113,31 @@ Three late arrivals in a month will result in a half-day salary deduction.`,
     },
     {
       title: 'Leave Policy',
-      type: 'LEAVE',
+      policyNumber: 'POL-002',
+      category: 'LEAVE',
       content: `FCS provides 18 Paid Leaves (PL), 12 Casual/Sick Leaves (CL/SL) annually. 
 Leaves must be requested at least 48 hours in advance through the HR portal. 
 In case of emergency medical leave, notification should be sent before 10:00 AM on the day of absence.`,
     },
     {
       title: 'Code of Conduct',
-      type: 'CODE_OF_CONDUCT',
+      policyNumber: 'POL-003',
+      category: 'CODE_OF_CONDUCT',
       content: `FCS holds all employees to the highest ethical and professional standards. 
 Discrimination, harassment, and workplace violence are strictly prohibited. 
 All professional communications should be clear, polite, and inclusive.`,
     },
     {
       title: 'Data Privacy Policy',
-      type: 'DATA_PRIVACY',
+      policyNumber: 'POL-004',
+      category: 'DATA_PRIVACY',
       content: `Employees must respect the privacy of customer, partner, and colleague personal data. 
 All handling of personal identifiable info (PII) must comply with corporate guidelines and local privacy regulations.`,
     },
     {
       title: 'POSH Policy',
-      type: 'POSH',
+      policyNumber: 'POL-005',
+      category: 'POSH',
       content: `FCS is committed to providing a safe, secure, and respectful working environment for all employees. 
 Strict compliance with the Prevention of Sexual Harassment (POSH) act is mandatory. 
 Any misconduct will be addressed immediately by the Internal Complaints Committee (ICC).`,
@@ -145,9 +150,11 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
       update: {},
       create: {
         title: pol.title,
-        type: pol.type,
+        policyNumber: pol.policyNumber,
+        category: pol.category,
         content: pol.content,
         version: 1,
+        status: 'PUBLISHED',
       },
     });
   }

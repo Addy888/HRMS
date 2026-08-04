@@ -8,6 +8,7 @@ import { DesignationsModule } from './modules/designations/designations.module.j
 import { EmployeesModule } from './modules/employees/employees.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
+import { PoliciesModule } from './modules/policies/policies.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DocumentsModule } from './modules/documents/documents.module.js';
     EmployeesModule,
     DashboardModule,
     DocumentsModule,
+    PoliciesModule,
   ],
   controllers: [HealthController],
 })

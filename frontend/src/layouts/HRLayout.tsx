@@ -11,7 +11,10 @@ import {
   LogOut, 
   Menu, 
   X,
-  Sparkles
+  Sparkles,
+  FileText,
+  BookOpen,
+  FolderOpen
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 
@@ -49,6 +52,8 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
     { href: '/hr/employees', label: 'Employees', icon: <Users className="w-5 h-5" /> },
     { href: '/hr/departments', label: 'Departments', icon: <Layers className="w-5 h-5" /> },
     { href: '/hr/designations', label: 'Designations', icon: <Award className="w-5 h-5" /> },
+    { href: '/hr/documents', label: 'Documents', icon: <FolderOpen className="w-5 h-5" /> },
+    { href: '/hr/policies', label: 'Policies', icon: <BookOpen className="w-5 h-5" /> },
   ];
 
   return (

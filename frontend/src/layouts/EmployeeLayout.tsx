@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, User, FileText, CheckSquare, ShieldCheck,
-  AlertOctagon, Bell, Settings, LogOut, Menu, X, ShieldAlert
+  Settings, LogOut, Menu, X, ShieldAlert
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 
@@ -65,11 +65,9 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   const links = [
     { href: '/employee', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/employee/profile', label: 'My Profile', icon: <User className="w-5 h-5" /> },
-    { href: '#', label: 'Documents', icon: <FileText className="w-5 h-5" />, disabled: true },
-    { href: '#', label: 'Policies', icon: <ShieldCheck className="w-5 h-5" />, disabled: true },
-    { href: '#', label: 'Acknowledgement', icon: <CheckSquare className="w-5 h-5" />, disabled: true },
-    { href: '#', label: 'Complaints', icon: <AlertOctagon className="w-5 h-5" />, disabled: true },
-    { href: '#', label: 'Notifications', icon: <Bell className="w-5 h-5" />, disabled: true },
+    { href: '/employee/documents', label: 'Documents', icon: <FileText className="w-5 h-5" /> },
+    { href: '/employee/policies', label: 'Policies', icon: <ShieldCheck className="w-5 h-5" /> },
+    { href: '/employee/acknowledge', label: 'Acknowledgement', icon: <CheckSquare className="w-5 h-5" /> },
     { href: '/employee/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
@@ -85,18 +83,16 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
           <span className="font-heading text-lg font-bold tracking-tight bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">FCS Employee</span>
         </div>
 
-        {/* Navigation Links */}
         <nav className="flex-1 space-y-1">
           {links.map((link) => (
-            <div key={link.label} className={link.disabled ? 'opacity-40 cursor-not-allowed' : ''}>
-              <SidebarLink
-                href={link.disabled ? '#' : link.href}
-                icon={link.icon}
-                active={pathname === link.href}
-              >
-                {link.label}
-              </SidebarLink>
-            </div>
+            <SidebarLink
+              key={link.label}
+              href={link.href}
+              icon={link.icon}
+              active={pathname === link.href || (link.href !== '/employee' && pathname.startsWith(link.href))}
+            >
+              {link.label}
+            </SidebarLink>
           ))}
         </nav>
 
@@ -154,11 +150,11 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
               </div>
               <nav className="flex-1 space-y-1">
                 {links.map((link) => (
-                  <div key={link.label} className={link.disabled ? 'opacity-40' : ''} onClick={() => !link.disabled && setMobileOpen(false)}>
+                  <div key={link.label} onClick={() => setMobileOpen(false)}>
                     <SidebarLink
-                      href={link.disabled ? '#' : link.href}
+                      href={link.href}
                       icon={link.icon}
-                      active={pathname === link.href}
+                      active={pathname === link.href || (link.href !== '/employee' && pathname.startsWith(link.href))}
                     >
                       {link.label}
                     </SidebarLink>
