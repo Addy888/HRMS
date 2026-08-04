@@ -38,4 +38,18 @@ export class AuthController {
   getMe(@GetUser('id') userId: string) {
     return this.authService.getMe(userId);
   }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset token link' })
+  forgotPassword(@Body() dto: any) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using token' })
+  resetPassword(@Body() dto: any) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
 }

@@ -143,4 +143,72 @@ export class AuthService {
       employee: user.employee ?? null,
     };
   }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    // For security reasons, don't disclose if user exists or not,
+    // but internally generate token and log it.
+    if (user) {
+      const crypto = await import('crypto');
+      const token = crypto.randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiration
+
+      await this.prisma.passwordReset.create({
+        data: {
+          userId: user.id,
+          token,
+          expiresAt,
+        },
+      });
+
+      console.log(`[EMAIL DISPATCH] Password reset requested for: ${email}. Reset Token: ${token}`);
+    }
+
+    return { message: 'If the email matches a registered account, a password reset link has been generated.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const resetRequest = await this.prisma.passwordReset.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+
+    if (!resetRequest || resetRequest.used || resetRequest.expiresAt < new Date()) {
+      throw new BadRequestException('Reset token is invalid, expired, or already used');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Update user password
+      await tx.user.update({
+        where: { id: resetRequest.userId },
+        data: {
+          password: hashedPassword,
+          isFirstLogin: false, // reset resets forced change flag
+        },
+      });
+
+      // 2. Mark token as used
+      await tx.passwordReset.update({
+        where: { id: resetRequest.id },
+        data: { used: true },
+      });
+
+      // 3. Log audit
+      await tx.auditLog.create({
+        data: {
+          userId: resetRequest.userId,
+          action: 'PASSWORD_RESET_COMPLETED',
+          details: `Password reset successfully via reset token`,
+        },
+      });
+    });
+
+    return { message: 'Password reset successfully' };
+  }
 }
