@@ -154,17 +154,51 @@ model Experience {
   updatedAt    DateTime  @updatedAt
 }
 
+model DocumentCategory {
+  id        String     @id @default(uuid())
+  name      String     @unique // PERSONAL, EDUCATIONAL, PROFESSIONAL, GOVERNMENT, OTHER
+  documents Document[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
 model Document {
   id           String                 @id @default(uuid())
   employeeId   String
   employee     Employee               @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  type         String                 // RESUME, PHOTO, AADHAAR, PAN, PASSPORT, driving_license, 10th_marksheet, 12th_marksheet, graduation_degree, pg_degree, certificates, experience_letter, offer_letter, relieving_letter, salary_slip, internship_certificate, other
+  type         String                 // RESUME, PHOTO, AADHAAR, PAN, PASSPORT, marksheet_10th, marksheet_12th, graduation_degree, etc.
   fileUrl      String
   fileName     String
-  status       String                 @default("PENDING") // PENDING, APPROVED, REJECTED
+  status       String                 @default("PENDING") // PENDING, APPROVED, REJECTED, RE_UPLOAD_REQUIRED
+  categoryId   String?
+  category     DocumentCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   verification DocumentVerification?
+  versions     DocumentVersion[]
+  auditLogs    DocumentAuditLog[]
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
+}
+
+model DocumentVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  fileUrl    String
+  fileName   String
+  version    Int      @default(1)
+  uploadedAt DateTime @default(now())
+}
+
+model DocumentAuditLog {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  action     String   // UPLOAD, DELETE, REPLACE, APPROVE, REJECT, DOWNLOAD, PREVIEW
+  details    String?  @db.Text
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
 }
 
 model DocumentVerification {
