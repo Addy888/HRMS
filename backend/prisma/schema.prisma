@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // HR, EMPLOYEE
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String
+  roleId             String
+  role               Role             @relation(fields: [roleId], references: [id])
+  isFirstLogin       Boolean          @default(true)
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  employee           Employee?
+  passwordResets     PasswordReset[]
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  complaintsRaised   Complaint[]      @relation("ComplaintsRaised")
+  complaintReplies   ComplaintReply[]
+}
+
+model Department {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  employees   Employee[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Designation {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  employees   Employee[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Employee {
+  id            String             @id @default(uuid())
+  employeeId    String             @unique // Custom format e.g. FCS-YYYY-XXXX
+  userId        String             @unique
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  phone         String?
+  dob           DateTime?
+  gender        String?
+  bloodGroup    String?
+  address       String?
+  emergencyContact String?
+  joiningDate   DateTime           @default(now())
+  departmentId  String?
+  department    Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designationId String?
+  designation   Designation?       @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  photoUrl      String?
+  onboardingStatus String          @default("PENDING") // PENDING, PROFILE_COMPLETED, DOCUMENTS_UPLOADED, POLICIES_ACCEPTED, COMPLETED, VERIFIED
+  
+  profile       EmployeeProfile?
+  education     Education[]
+  experience    Experience[]
+  documents     Document[]
+  acknowledgement Acknowledgement?
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model EmployeeProfile {
+  id                String   @id @default(uuid())
+  employeeId        String   @unique
+  employee          Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  profileCompletion Int      @default(0) // Percentage completion
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Education {
+  id           String   @id @default(uuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  degree       String   // 10th, 12th, Graduation, PG, etc.
+  institution  String
+  passingYear  Int
+  percentage   Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Experience {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  companyName  String
+  designation  String
+  startDate    DateTime
+  endDate      DateTime?
+  description  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Document {
+  id           String                 @id @default(uuid())
+  employeeId   String
+  employee     Employee               @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type         String                 // RESUME, PHOTO, AADHAAR, PAN, PASSPORT, driving_license, 10th_marksheet, 12th_marksheet, graduation_degree, pg_degree, certificates, experience_letter, offer_letter, relieving_letter, salary_slip, internship_certificate, other
+  fileUrl      String
+  fileName     String
+  status       String                 @default("PENDING") // PENDING, APPROVED, REJECTED
+  verification DocumentVerification?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+}
+
+model DocumentVerification {
+  id         String   @id @default(uuid())
+  documentId String   @unique
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  verifiedBy String?  // HR User Id or Name
+  comment    String?
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Policy {
+  id          String             @id @default(uuid())
+  title       String             @unique
+  content     String             @db.Text
+  type        String             // ATTENDANCE, LEAVE, CODE_OF_CONDUCT, DATA_PRIVACY, INFO_SEC, NDA, POSH, IT, HANDBOOK, LAPTOP, INTERNET
+  version     Int                @default(1)
+  acceptances PolicyAcceptance[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model PolicyAcceptance {
+  id         String   @id @default(uuid())
+  policyId   String
+  policy     Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  employeeId String
+  acceptedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([policyId, employeeId])
+}
+
+model Acknowledgement {
+  id         String   @id @default(uuid())
+  employeeId String   @unique
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  isAccepted Boolean  @default(false)
+  signature  String   // Digital signature name typed
+  ipAddress  String
+  userAgent  String   // Browser information
+  signedAt   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Complaint {
+  id          String           @id @default(uuid())
+  title       String
+  description String           @db.Text
+  category    String           // HARASSMENT, FACILITY, IT, PAYROLL, GENERAL, etc.
+  priority    String           // LOW, MEDIUM, HIGH, URGENT
+  attachmentUrl String?
+  status      String           @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  raisedById  String
+  raisedBy    User             @relation("ComplaintsRaised", fields: [raisedById], references: [id], onDelete: Cascade)
+  assignedTo  String?          // HR User ID
+  replies     ComplaintReply[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ComplaintReply {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        String   // DOCUMENT_APPROVED, DOCUMENT_REJECTED, COMPLAINT_UPDATED, POLICY_UPDATED, PASSWORD_CHANGED, PROFILE_APPROVED, GENERAL
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // e.g. LOGIN, UPDATE_PROFILE, APPROVE_DOCUMENT, RAISE_COMPLAINT, etc.
+  details    String   @db.Text
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
