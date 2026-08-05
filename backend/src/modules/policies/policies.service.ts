@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { CreatePolicyDto, UpdatePolicyDto, AssignPolicyDto, AcceptPolicyDto, SubmitAcknowledgementDto } from './dto/policy.dto.js';
+import { NotificationService } from '../notifications/notification.service.js';
 
 @Injectable()
 export class PoliciesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async listPolicies(query: any) {
     const page = Number(query.page) || 1;
@@ -222,15 +226,16 @@ export class PoliciesService {
 
       // Send notifications to affected employees in the background
       const targets = await this.resolveTargetUserIds(dto.targetType, dto.targetId, tx);
-      for (const targetUserId of targets) {
-        await tx.notification.create({
-          data: {
-            userId: targetUserId,
-            title: 'New Policy Assigned',
-            message: `A new policy "${policy.title}" has been assigned. Please review and accept it.`,
-            type: 'POLICY_UPDATED',
-          },
-        });
+      if (targets.length > 0) {
+        this.notificationService.createNotification(targets, {
+          title: 'New Policy Assigned',
+          description: `A new policy "${policy.title}" has been assigned. Please review and accept it.`,
+          type: 'policy.assigned',
+          module: 'POLICY',
+          priority: 'MEDIUM',
+          icon: 'shield-check',
+          actionUrl: '/employee/policies',
+        }).catch(() => {});
       }
 
       return assignment;
@@ -381,19 +386,22 @@ export class PoliciesService {
         },
       });
 
-      // Notify HR
+      // Notify HR (fire-and-forget)
       const hrUsers = await tx.user.findMany({
         where: { role: { name: 'HR' } },
+        select: { id: true },
       });
-      for (const hr of hrUsers) {
-        await tx.notification.create({
-          data: {
-            userId: hr.id,
-            title: 'Onboarding Complete',
-            message: `${emp.firstName} ${emp.lastName} has completed all policies and signed final acknowledgement.`,
-            type: 'PROFILE_APPROVED',
-          },
-        });
+      const hrIds = hrUsers.map((h: any) => h.id);
+      if (hrIds.length > 0) {
+        this.notificationService.createNotification(hrIds, {
+          title: 'Onboarding Complete',
+          description: `${emp.firstName} ${emp.lastName} has completed all policies and signed final acknowledgement.`,
+          type: 'employee.onboarding_completed',
+          module: 'EMPLOYEE',
+          priority: 'HIGH',
+          icon: 'sparkles',
+          actionUrl: '/hr/employees',
+        }).catch(() => {});
       }
 
       return ack;

@@ -32,9 +32,14 @@ model User {
   employee           Employee?
   passwordResets     PasswordReset[]
   auditLogs          AuditLog[]
-  notifications      Notification[]
-  complaintsRaised   Complaint[]      @relation("ComplaintsRaised")
+  notifications           Notification[]          @relation("UserNotifications")
+  notificationRecipients  NotificationRecipient[] @relation("UserNotificationRecipients")
+  announcementsCreated    Announcement[]          @relation("UserAnnouncementsCreated")
+  announcementRecipients  AnnouncementRecipient[] @relation("UserAnnouncementRecipients")
+  notificationPreference  NotificationPreference?
   complaintReplies   ComplaintReply[]
+  complaintTimelineEvents ComplaintTimeline[]
+  complaintAuditLogs ComplaintAuditLog[]
 }
 
 model Department {
@@ -116,6 +121,10 @@ model Employee {
   documents     Document[]
   acknowledgement Acknowledgement?
   acceptances   PolicyAcceptance[]
+  complaintsRaised Complaint[] @relation("EmployeeComplaintsRaised")
+  complaintsAssigned Complaint[] @relation("HRComplaintsAssigned")
+  complaintAssignmentsHistory ComplaintAssignment[] @relation("HRComplaintsAssignmentHistory")
+  complaintAssignmentsBy ComplaintAssignment[] @relation("HRComplaintsAssignedBy")
 
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
@@ -293,42 +302,175 @@ model PolicyAuditLog {
 }
 
 model Complaint {
-  id          String           @id @default(uuid())
-  title       String
-  description String           @db.Text
-  category    String           // HARASSMENT, FACILITY, IT, PAYROLL, GENERAL, etc.
-  priority    String           // LOW, MEDIUM, HIGH, URGENT
-  attachmentUrl String?
-  status      String           @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
-  raisedById  String
-  raisedBy    User             @relation("ComplaintsRaised", fields: [raisedById], references: [id], onDelete: Cascade)
-  assignedTo  String?          // HR User ID
-  replies     ComplaintReply[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id              String                @id @default(uuid())
+  complaintNumber String                @unique // E.g. COM-2026-0001
+  title           String
+  description     String                @db.Text
+  category        String                // HR_ISSUE, SALARY_ISSUE, ATTENDANCE, LEAVE, MANAGER, IT_SUPPORT, PAYROLL, DOCUMENT_VERIFICATION, WORK_ENVIRONMENT, HARASSMENT, POSH, ASSET_ISSUE, SYSTEM_BUG, OTHER
+  priority        String                // LOW, MEDIUM, HIGH, CRITICAL
+  status          String                @default("OPEN") // OPEN, ASSIGNED, IN_PROGRESS, WAITING_FOR_EMPLOYEE, RESOLVED, CLOSED, REJECTED
+  anonymous       Boolean               @default(false)
+  
+  raisedById      String
+  raisedBy        Employee              @relation("EmployeeComplaintsRaised", fields: [raisedById], references: [id], onDelete: Cascade)
+  
+  assignedToId    String?               // Employee ID of Assigned HR
+  assignedTo      Employee?             @relation("HRComplaintsAssigned", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  replies         ComplaintReply[]
+  attachments     ComplaintAttachment[]
+  timeline        ComplaintTimeline[]
+  auditLogs       ComplaintAuditLog[]
+  assignments     ComplaintAssignment[]
+
+  resolvedAt      DateTime?
+  resolutionTime  Int?                  // in minutes
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
 }
 
 model ComplaintReply {
+  id          String   @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  userId      String   // User ID
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message     String   @db.Text
+  isInternal  Boolean  @default(false) // visible only to HR
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ComplaintAttachment {
+  id          String   @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  fileUrl     String
+  fileName    String
+  fileType    String
+  fileSize    Int
+  createdAt   DateTime @default(now())
+}
+
+model ComplaintAssignment {
+  id           String    @id @default(uuid())
+  complaintId  String
+  complaint    Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  assignedToId String
+  assignedTo   Employee  @relation("HRComplaintsAssignmentHistory", fields: [assignedToId], references: [id], onDelete: Cascade)
+  assignedById String
+  assignedBy   Employee  @relation("HRComplaintsAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+}
+
+model ComplaintTimeline {
   id          String    @id @default(uuid())
   complaintId String
   complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  message     String    @db.Text
+  action      String    // COMPLAINT_CREATED, ASSIGNED, STATUS_CHANGED, PRIORITY_CHANGED, HR_REPLIED, EMPLOYEE_REPLIED, RESOLVED, CLOSED, REOPENED
+  details     String    @db.Text
+  actorId     String    // User ID
+  actor       User      @relation(fields: [actorId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 }
+
+model ComplaintAuditLog {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  userId      String    // User ID
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String    // E.g., VIEWED, CREATED, STATUS_UPDATE, FILE_DOWNLOAD
+  details     String    @db.Text
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+}
+
 
 model Notification {
   id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
-  message     String
-  type        String   // DOCUMENT_APPROVED, DOCUMENT_REJECTED, COMPLAINT_UPDATED, POLICY_UPDATED, PASSWORD_CHANGED, PROFILE_APPROVED, GENERAL
+  description String   @db.Text
+  type        String   // Trigger event name (e.g. AUTH_LOGIN, POLICY_ASSIGNED)
+  module      String   // AUTH, EMPLOYEE, DOCUMENT, POLICY, COMPLAINT, SYSTEM
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  icon        String?
+  actionUrl   String?  // Link to open related page (Action Button)
+  userId      String?  // Optional direct target user ID
+  user        User?    @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  recipients  NotificationRecipient[]
+  auditLogs   NotificationAuditLog[]
+}
+
+model NotificationRecipient {
+  id             String       @id @default(uuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation("UserNotificationRecipients", fields: [userId], references: [id], onDelete: Cascade)
+  read           Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([notificationId, userId])
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  category    String   // COMPANY_NEWS, HOLIDAY_NOTICE, MEETING_NOTICE, TRAINING_NOTICE, GENERAL_ANNOUNCEMENT
+  createdById String
+  createdBy   User     @relation("UserAnnouncementsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recipients  AnnouncementRecipient[]
+}
+
+model AnnouncementRecipient {
+  id             String       @id @default(uuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation("UserAnnouncementRecipients", fields: [userId], references: [id], onDelete: Cascade)
+  read           Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([announcementId, userId])
+}
+
+model NotificationPreference {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email         Boolean  @default(true)
+  inApp         Boolean  @default(true)
+  push          Boolean  @default(true)
+  sound         Boolean  @default(true)
+  doNotDisturb  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model NotificationAuditLog {
+  id             String        @id @default(uuid())
+  notificationId String?
+  notification   Notification? @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+  userId         String
+  action         String
+  details        String?       @db.Text
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
 }
 
 model PasswordReset {

@@ -20,40 +20,14 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 export default function HRDashboard() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['hr-dashboard-stats'],
     queryFn: async () => {
-      // Mock fallback if API connection yields local error
-      try {
-        const response = await api.get('/dashboard/hr');
-        return response.data;
-      } catch (err) {
-        console.warn('API connection failed, loading dashboard stub mock data.');
-        return {
-          cards: {
-            totalEmployees: 48,
-            activeEmployees: 42,
-            inactiveEmployees: 6,
-            pendingOnboarding: 8,
-            completedOnboarding: 40,
-            pendingDocuments: 12,
-            pendingComplaints: 3,
-            totalDepartments: 5,
-            totalDesignations: 8,
-          },
-          recentlyJoined: [
-            { id: '1', firstName: 'Rahul', lastName: 'Sharma', employeeId: 'FCS-2026-0048', department: { name: 'Engineering' }, designation: { name: 'Software Engineer' }, joiningDate: '2026-08-01T00:00:00.000Z' },
-            { id: '2', firstName: 'Priya', lastName: 'Patel', employeeId: 'FCS-2026-0047', department: { name: 'Human Resources' }, designation: { name: 'HR Executive' }, joiningDate: '2026-07-28T00:00:00.000Z' },
-            { id: '3', firstName: 'Amit', lastName: 'Varma', employeeId: 'FCS-2026-0046', department: { name: 'Sales' }, designation: { name: 'Sales Head' }, joiningDate: '2026-07-15T00:00:00.000Z' },
-          ],
-          recentActivities: [
-            { id: '101', action: 'EMPLOYEE_CREATED', details: 'HR registered employee Priya Patel (FCS-2026-0047)', createdAt: '2026-08-04T08:30:00.000Z' },
-            { id: '102', action: 'EMPLOYEE_PASSWORD_RESET', details: 'HR reset password for employee Rahul Sharma (FCS-2026-0048)', createdAt: '2026-08-04T07:15:00.000Z' },
-            { id: '103', action: 'DEPARTMENT_CREATED', details: 'HR created new department "Sales & Growth"', createdAt: '2026-08-03T11:00:00.000Z' },
-          ]
-        };
-      }
-    }
+      const response = await api.get('/dashboard/hr');
+      // TransformInterceptor wraps: { success, statusCode, data: <actual payload> }
+      return response.data?.data ?? response.data;
+    },
+    retry: 1,
   });
 
   const cardsData = [
@@ -67,6 +41,27 @@ export default function HRDashboard() {
     { title: 'Departments', value: stats?.cards?.totalDepartments || 0, icon: <Layers className="w-5 h-5 text-sky-400" />, desc: 'Registered organizational departments' },
     { title: 'Designations', value: stats?.cards?.totalDesignations || 0, icon: <Award className="w-5 h-5 text-teal-400" />, desc: 'Registered company-wide job titles' },
   ];
+
+  if (isError) {
+    const errMsg = (error as any)?.message || 'Failed to load HR dashboard data from API.';
+    return (
+      <HRLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <div className="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-red-400" />
+          </div>
+          <h2 className="font-heading text-xl font-bold text-white">Dashboard API Error</h2>
+          <p className="text-sm text-neutral-400 max-w-md text-center">{errMsg}</p>
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all"
+          >
+            Retry
+          </button>
+        </div>
+      </HRLayout>
+    );
+  }
 
   return (
     <HRLayout>

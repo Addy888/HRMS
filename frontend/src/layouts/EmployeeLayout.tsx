@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, User, FileText, CheckSquare, ShieldCheck,
-  Settings, LogOut, Menu, X, ShieldAlert
+  Settings, LogOut, Menu, X, ShieldAlert, LifeBuoy
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
+import NotificationBell from '@/components/NotificationBell';
+import NotificationToastProvider from '@/components/NotificationToastProvider';
 
 interface SidebarLinkProps {
   href: string;
@@ -68,11 +70,13 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
     { href: '/employee/documents', label: 'Documents', icon: <FileText className="w-5 h-5" /> },
     { href: '/employee/policies', label: 'Policies', icon: <ShieldCheck className="w-5 h-5" /> },
     { href: '/employee/acknowledge', label: 'Acknowledgement', icon: <CheckSquare className="w-5 h-5" /> },
+    { href: '/employee/complaints', label: 'Helpdesk', icon: <LifeBuoy className="w-5 h-5" /> },
     { href: '/employee/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
   return (
-    <div className="flex min-h-screen bg-black text-white antialiased">
+    <NotificationToastProvider>
+      <div className="flex min-h-screen bg-black text-white antialiased">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-neutral-800 bg-neutral-950 p-6 space-y-6">
         {/* Logo */}
@@ -123,18 +127,26 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <header className="flex md:hidden items-center justify-between border-b border-neutral-800 bg-neutral-950 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-blue-500" />
-            <span className="font-heading font-bold text-white">FCS Portal</span>
+        {/* Sticky Unified Top Header */}
+        <header className="flex items-center justify-between border-b border-neutral-800 bg-neutral-950 px-6 py-4 sticky top-0 z-30 backdrop-blur-md bg-neutral-950/80">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="md:hidden p-1 rounded-lg text-neutral-450 hover:text-white"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-blue-500 md:hidden" />
+              <span className="font-heading font-bold text-white md:hidden">FCS Portal</span>
+              <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-neutral-500 font-bold uppercase tracking-wider">
+                Employee Dashboard
+              </span>
+            </div>
           </div>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-1 rounded-lg text-neutral-400 hover:text-white"
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+          </div>
         </header>
 
         {/* Mobile Sidebar overlay */}
@@ -179,5 +191,6 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
         </main>
       </div>
     </div>
+    </NotificationToastProvider>
   );
 }

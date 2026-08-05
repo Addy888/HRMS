@@ -2,6 +2,7 @@
 export enum UserRole {
   HR = 'HR',
   EMPLOYEE = 'EMPLOYEE',
+  SUPER_ADMIN = 'Super Admin',
 }
 
 // Employee Onboarding Status

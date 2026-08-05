@@ -3,12 +3,14 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { LocalStorageService } from './storage/local-storage.service.js';
 import { VerifyDocumentDto, QueryDocumentDto, DocumentVerificationAction } from './dto/document.dto.js';
 import { OnboardingStatus } from '../../common/constants/index.js';
+import { NotificationService } from '../notifications/notification.service.js';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     private prisma: PrismaService,
     private storageService: LocalStorageService,
+    private notificationService: NotificationService,
   ) {}
 
   // Helper to map document types to category names
@@ -110,15 +112,16 @@ export class DocumentsService {
         },
       });
 
-      // Create Notification
-      await tx.notification.create({
-        data: {
-          userId,
-          title: 'Document Uploaded',
-          message: `Your ${type.replace(/_/g, ' ')} has been uploaded successfully and is pending verification.`,
-          type: 'DOCUMENT_APPROVED', // standard code fallback
-        },
-      });
+      // Create Notification (fire-and-forget)
+      this.notificationService.createNotification([userId], {
+        title: 'Document Uploaded',
+        description: `Your ${type.replace(/_/g, ' ')} has been uploaded and is pending HR verification.`,
+        type: 'document.uploaded',
+        module: 'DOCUMENT',
+        priority: 'LOW',
+        icon: 'upload',
+        actionUrl: '/employee/documents',
+      }).catch(() => {});
 
       return doc;
     });
@@ -387,15 +390,26 @@ export class DocumentsService {
         },
       });
 
-      // 4. Send alert notification to the employee
-      await tx.notification.create({
-        data: {
-          userId: doc.employee.userId,
-          title: `Document ${mappedStatus.replace(/_/g, ' ')}`,
-          message: `Your uploaded ${doc.type.replace(/_/g, ' ')} has been ${mappedStatus.toLowerCase().replace(/_/g, ' ')}. ${dto.comment ? `Reason: "${dto.comment}"` : ''}`,
-          type: mappedStatus === 'APPROVED' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED',
-        },
-      });
+      // 4. Send alert notification to the employee (fire-and-forget via NotificationService)
+      const notifType = mappedStatus === 'APPROVED'
+        ? 'document.approved'
+        : mappedStatus === 'REJECTED'
+        ? 'document.rejected'
+        : 'document.re_upload_requested';
+
+      const notifPriority = mappedStatus === 'APPROVED' ? 'MEDIUM' : 'HIGH';
+
+      const docLabel = doc.type.replace(/_/g, ' ');
+
+      this.notificationService.createNotification([doc.employee.userId], {
+        title: `Document ${mappedStatus.replace(/_/g, ' ')}`,
+        description: `Your ${docLabel} document has been ${mappedStatus.toLowerCase().replace(/_/g, ' ')}.${dto.comment ? ` Reason: "${dto.comment}"` : ''}`,
+        type: notifType,
+        module: 'DOCUMENT',
+        priority: notifPriority as any,
+        icon: mappedStatus === 'APPROVED' ? 'check-circle' : 'x-circle',
+        actionUrl: '/employee/documents',
+      }).catch(() => {});
 
       // 5. If all mandatory docs (Resume, Photo, Aadhaar, PAN) are approved, update onboardingStatus to DOCUMENTS_UPLOADED
       const mandatoryTypes = ['PHOTO', 'RESUME', 'AADHAAR', 'PAN'];

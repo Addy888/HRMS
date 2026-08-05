@@ -12,14 +12,19 @@ async function bootstrap() {
     logger: winstonLoggerConfig,
   });
 
-  // Security headers via Helmet
-  app.use(helmet());
+  // Security headers via Helmet (only in non-development to avoid localhost issues)
+  if (process.env.NODE_ENV !== 'development') {
+    app.use(helmet());
+  } else {
+    app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+  }
 
   // CORS config
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : 'http://localhost:3000',
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Accept,Authorization',
   });
 
   // Parsing cookies

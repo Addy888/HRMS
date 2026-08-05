@@ -25,7 +25,7 @@ export default function EmployeeLoginPage() {
     },
     onSuccess: (data) => {
       if (data.user?.role !== 'EMPLOYEE') {
-        setError('Only registered Employees are permitted to access this portal.');
+        setError('Invalid email or password');
         return;
       }
 

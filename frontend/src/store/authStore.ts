@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export interface AuthUser {
   id: string;
   email: string;
-  role: 'HR' | 'EMPLOYEE';
+  role: 'HR' | 'EMPLOYEE' | 'Super Admin';
   mustChangePassword: boolean;
   employee?: {
     id: string;

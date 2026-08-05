@@ -9,6 +9,8 @@ import { EmployeesModule } from './modules/employees/employees.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { PoliciesModule } from './modules/policies/policies.module.js';
+import { ComplaintsModule } from './modules/complaints/complaints.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { PoliciesModule } from './modules/policies/policies.module.js';
     DashboardModule,
     DocumentsModule,
     PoliciesModule,
+    ComplaintsModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })
