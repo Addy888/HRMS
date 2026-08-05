@@ -125,6 +125,10 @@ model Employee {
   complaintsAssigned Complaint[] @relation("HRComplaintsAssigned")
   complaintAssignmentsHistory ComplaintAssignment[] @relation("HRComplaintsAssignmentHistory")
   complaintAssignmentsBy ComplaintAssignment[] @relation("HRComplaintsAssignedBy")
+  
+  // Attendance Relations
+  attendances      Attendance[]
+  shiftAssignments ShiftAssignment[]
 
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
@@ -501,4 +505,299 @@ model Setting {
   value     String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// ATTENDANCE MANAGEMENT MODULE
+// ==========================================
+
+model Shift {
+  id                    String              @id @default(uuid())
+  name                  String              @unique // General Shift, Morning Shift, Evening Shift, Night Shift
+  code                  String              @unique // GEN, MOR, EVE, NIGHT
+  startTime             String              // HH:mm format e.g. "09:00"
+  endTime               String              // HH:mm format e.g. "18:00"
+  graceTime             Int                 @default(15) // in minutes
+  lateMarkAfter         Int                 @default(15) // in minutes
+  halfDayIfLateBy       Int                 @default(240) // in minutes (4 hours)
+  minimumWorkingHours   Float               @default(8.0) // in hours
+  maximumWorkingHours   Float               @default(12.0) // in hours
+  breakTime             Int                 @default(60) // in minutes
+  overtimeApplicable    Boolean             @default(false)
+  flexibleShift         Boolean             @default(false)
+  weekends              String              @default("SATURDAY,SUNDAY") // Comma-separated
+  status                String              @default("ACTIVE") // ACTIVE, INACTIVE
+  description           String?             @db.Text
+  
+  assignments           ShiftAssignment[]
+  attendances           Attendance[]
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+}
+
+model ShiftAssignment {
+  id                    String              @id @default(uuid())
+  employeeId            String
+  employee              Employee            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shiftId               String
+  shift                 Shift               @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  effectiveFrom         DateTime
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  assignedBy            String?             // HR User ID
+  remarks               String?             @db.Text
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([employeeId, effectiveFrom])
+}
+
+model Attendance {
+  id                    String              @id @default(uuid())
+  employeeId            String
+  employee              Employee            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date                  DateTime            @db.Date
+  shiftId               String?
+  shift                 Shift?              @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  
+  checkInTime           DateTime?
+  checkOutTime          DateTime?
+  workingHours          Float?              @default(0) // in hours
+  breakTime             Int?                @default(0) // in minutes
+  overtime              Float?              @default(0) // in hours
+  
+  status                String              // PRESENT, ABSENT, LATE, HALF_DAY, HOLIDAY, WEEK_OFF, LEAVE, WFH, ON_DUTY, MISSED_PUNCH
+  lateBy                Int?                @default(0) // in minutes
+  earlyExitBy           Int?                @default(0) // in minutes
+  
+  source                String              // MANUAL, WEB, MOBILE, BIOMETRIC, RFID, FACE_RECOGNITION, QR_CODE, GPS, API, WEBHOOK
+  deviceType            String?             // Device identifier
+  location              String?             @db.Text // JSON: {latitude, longitude, address}
+  ipAddress             String?
+  
+  isManualEntry         Boolean             @default(false)
+  approvedBy            String?             // HR User ID
+  approvedAt            DateTime?
+  remarks               String?             @db.Text
+  
+  logs                  AttendanceLog[]
+  corrections           AttendanceCorrection[]
+  history               AttendanceHistory[]
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
+  @@index([date])
+  @@index([status])
+}
+
+model AttendanceLog {
+  id                    String              @id @default(uuid())
+  attendanceId          String?
+  attendance            Attendance?         @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  employeeId            String
+  date                  DateTime            @db.Date
+  eventType             String              // CHECK_IN, CHECK_OUT, BREAK_START, BREAK_END
+  timestamp             DateTime
+  
+  source                String              // MANUAL, WEB, MOBILE, BIOMETRIC, RFID, FACE_RECOGNITION, QR_CODE, GPS, API, WEBHOOK
+  deviceId              String?
+  deviceName            String?
+  location              String?             @db.Text // JSON
+  ipAddress             String?
+  userAgent             String?
+  
+  rawData               String?             @db.Text // JSON of raw device data
+  syncStatus            String              @default("SYNCED") // SYNCED, PENDING, FAILED
+  
+  createdAt             DateTime            @default(now())
+
+  @@index([employeeId, date])
+  @@index([timestamp])
+}
+
+model AttendanceCorrection {
+  id                    String              @id @default(uuid())
+  attendanceId          String
+  attendance            Attendance          @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  employeeId            String
+  
+  field                 String              // CHECK_IN_TIME, CHECK_OUT_TIME, STATUS, WORKING_HOURS
+  oldValue              String?
+  newValue              String?
+  reason                String              @db.Text
+  
+  status                String              @default("PENDING") // PENDING, APPROVED, REJECTED
+  requestedBy           String              // Employee User ID
+  requestedAt           DateTime            @default(now())
+  
+  approvedBy            String?             // HR User ID
+  approvedAt            DateTime?
+  rejectionReason       String?             @db.Text
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([attendanceId])
+  @@index([status])
+}
+
+model AttendanceHistory {
+  id                    String              @id @default(uuid())
+  attendanceId          String
+  attendance            Attendance          @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  
+  field                 String
+  oldValue              String?
+  newValue              String?
+  changedBy             String              // User ID
+  changeReason          String?
+  
+  createdAt             DateTime            @default(now())
+
+  @@index([attendanceId])
+}
+
+model AttendanceProvider {
+  id                    String              @id @default(uuid())
+  name                  String              @unique // MANUAL, BIOMETRIC, RFID, FACE_RECOGNITION, QR_CODE, GPS, API, WEBHOOK
+  displayName           String
+  type                  String              // MANUAL, DEVICE, SOFTWARE, API
+  isActive              Boolean             @default(false)
+  isPrimary             Boolean             @default(false)
+  
+  configuration         String?             @db.Text // JSON configuration
+  description           String?             @db.Text
+  
+  devices               AttendanceDevice[]
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+}
+
+model AttendanceDevice {
+  id                    String              @id @default(uuid())
+  providerId            String
+  provider              AttendanceProvider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  name                  String
+  deviceType            String              // BIOMETRIC, RFID_READER, FACE_SCANNER, QR_SCANNER, GPS_TRACKER
+  model                 String?
+  serialNumber          String?             @unique
+  
+  location              String?             // Office location
+  departmentId          String?
+  
+  connectionType        String?             // TCP, HTTP, MQTT, WEBHOOK
+  ipAddress             String?
+  apiEndpoint           String?
+  webhookUrl            String?
+  
+  status                String              @default("OFFLINE") // ONLINE, OFFLINE, MAINTENANCE, ERROR
+  lastSyncAt            DateTime?
+  lastHeartbeatAt       DateTime?
+  
+  configuration         String?             @db.Text // JSON device-specific config
+  
+  syncLogs              AttendanceSyncLog[]
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([providerId])
+  @@index([status])
+}
+
+model AttendanceSyncLog {
+  id                    String              @id @default(uuid())
+  deviceId              String?
+  device                AttendanceDevice?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  
+  syncType              String              // AUTO, MANUAL, SCHEDULED, WEBHOOK
+  syncStatus            String              // SUCCESS, FAILED, PARTIAL
+  
+  recordsProcessed      Int                 @default(0)
+  recordsSuccess        Int                 @default(0)
+  recordsFailed         Int                 @default(0)
+  recordsDuplicate      Int                 @default(0)
+  
+  startTime             DateTime
+  endTime               DateTime?
+  duration              Int?                // in seconds
+  
+  errorDetails          String?             @db.Text
+  syncData              String?             @db.Text // JSON summary
+  
+  createdAt             DateTime            @default(now())
+
+  @@index([deviceId])
+  @@index([syncStatus])
+  @@index([startTime])
+}
+
+model Holiday {
+  id                    String              @id @default(uuid())
+  name                  String
+  date                  DateTime            @db.Date
+  type                  String              // NATIONAL, COMPANY, FESTIVAL, DEPARTMENT
+  departmentId          String?
+  description           String?             @db.Text
+  isOptional            Boolean             @default(false)
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@unique([name, date])
+  @@index([date])
+  @@index([type])
+}
+
+model WeekOff {
+  id                    String              @id @default(uuid())
+  employeeId            String?             // null means company-wide
+  dayOfWeek             String              // SUNDAY, MONDAY, TUESDAY, etc.
+  effectiveFrom         DateTime            @db.Date
+  effectiveTo           DateTime?           @db.Date
+  isActive              Boolean             @default(true)
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([employeeId])
+  @@index([effectiveFrom])
+}
+
+model AttendanceSummary {
+  id                    String              @id @default(uuid())
+  employeeId            String
+  month                 Int                 // 1-12
+  year                  Int                 // 2026
+  
+  totalWorkingDays      Int                 @default(0)
+  totalPresent          Int                 @default(0)
+  totalAbsent           Int                 @default(0)
+  totalLate             Int                 @default(0)
+  totalHalfDay          Float               @default(0)
+  totalLeaves           Float               @default(0)
+  totalHolidays         Int                 @default(0)
+  totalWeekOffs         Int                 @default(0)
+  totalWFH              Int                 @default(0)
+  totalOnDuty           Int                 @default(0)
+  
+  totalWorkingHours     Float               @default(0)
+  totalOvertime         Float               @default(0)
+  averageWorkingHours   Float               @default(0)
+  
+  attendancePercentage  Float               @default(0)
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@unique([employeeId, month, year])
+  @@index([employeeId])
+  @@index([month, year])
 }

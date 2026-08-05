@@ -14,9 +14,11 @@ import { PrismaService } from '../../database/prisma.service.js';
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true,
   },
   namespace: '/notifications',
+  transports: ['websocket', 'polling'],
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

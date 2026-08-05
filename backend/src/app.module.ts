@@ -11,6 +11,7 @@ import { DocumentsModule } from './modules/documents/documents.module.js';
 import { PoliciesModule } from './modules/policies/policies.module.js';
 import { ComplaintsModule } from './modules/complaints/complaints.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { AttendanceModule } from './modules/attendance/attendance.module.js';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     PoliciesModule,
     ComplaintsModule,
     NotificationsModule,
+    AttendanceModule,
   ],
   controllers: [HealthController],
 })

@@ -242,6 +242,13 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
   }
 
   console.log('✔ Policies seeded');
+
+  // ─────────────────────────────────────────────────────
+  // 7. SEED ATTENDANCE MODULE
+  // ─────────────────────────────────────────────────────
+  const { seedAttendance } = await import('./seeds/attendance.seed.js');
+  await seedAttendance();
+
   console.log('\n✅ FCS HRMS seeding complete.\n');
   console.log('─────────────────────────────────────────────────────');
   console.log('  DEV HR LOGIN     → adityashastri76@gmail.com / 12345678');
