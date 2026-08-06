@@ -1,8 +1,8 @@
 /**
  * PERFORMANCE ENGINE SERVICE
- * 
+ *
  * Main orchestration engine for performance management
- * 
+ *
  * FEATURES:
  * - Performance calculation orchestration
  * - Review workflow management
@@ -10,7 +10,7 @@
  * - Performance trends analysis
  * - Comparative analysis
  * - Rating distribution
- * 
+ *
  * RESPONSIBILITIES:
  * - Coordinate between Goal, KPI, KRA engines
  * - Apply business rules and policies
@@ -19,7 +19,10 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { ScoringEngineService, PerformanceScore } from './scoring-engine.service';
+import {
+  ScoringEngineService,
+  PerformanceScore,
+} from './scoring-engine.service';
 
 export interface PerformanceData {
   goals?: Array<{
@@ -69,56 +72,60 @@ export class PerformanceEngineService {
    */
   calculatePerformanceScore(data: PerformanceData): PerformanceScore {
     // Calculate Goal Score
-    const goalScore = data.goals && data.goals.length > 0
-      ? this.scoringEngine.calculateGoalScore(
-          data.goals.map(g => ({
-            goalId: g.id,
-            weightage: g.weightage,
-            completion: g.completionPercentage,
-            score: g.completionPercentage,
-          }))
-        )
-      : 0;
+    const goalScore =
+      data.goals && data.goals.length > 0
+        ? this.scoringEngine.calculateGoalScore(
+            data.goals.map((g) => ({
+              goalId: g.id,
+              weightage: g.weightage,
+              completion: g.completionPercentage,
+              score: g.completionPercentage,
+            })),
+          )
+        : 0;
 
     // Calculate KPI Score
-    const kpiScore = data.kpis && data.kpis.length > 0
-      ? this.scoringEngine.calculateKPIScore(
-          data.kpis.map(kpi => {
-            const rating = this.scoringEngine.calculateKPIRating(
-              kpi.actualValue,
-              kpi.targetValue,
-              {
-                excellent: kpi.excellentThreshold,
-                good: kpi.goodThreshold,
-                satisfactory: kpi.satisfactoryThreshold,
-              }
-            );
-            const achievementPercentage = (kpi.actualValue / kpi.targetValue) * 100;
-            
-            return {
-              kpiId: kpi.id,
-              weightage: kpi.weightage,
-              targetValue: kpi.targetValue,
-              actualValue: kpi.actualValue,
-              achievementPercentage,
-              rating,
-              score: ((rating - 1) / 4) * 100,
-            };
-          })
-        )
-      : 0;
+    const kpiScore =
+      data.kpis && data.kpis.length > 0
+        ? this.scoringEngine.calculateKPIScore(
+            data.kpis.map((kpi) => {
+              const rating = this.scoringEngine.calculateKPIRating(
+                kpi.actualValue,
+                kpi.targetValue,
+                {
+                  excellent: kpi.excellentThreshold,
+                  good: kpi.goodThreshold,
+                  satisfactory: kpi.satisfactoryThreshold,
+                },
+              );
+              const achievementPercentage =
+                (kpi.actualValue / kpi.targetValue) * 100;
+
+              return {
+                kpiId: kpi.id,
+                weightage: kpi.weightage,
+                targetValue: kpi.targetValue,
+                actualValue: kpi.actualValue,
+                achievementPercentage,
+                rating,
+                score: ((rating - 1) / 4) * 100,
+              };
+            }),
+          )
+        : 0;
 
     // Calculate KRA Score
-    const kraScore = data.kras && data.kras.length > 0
-      ? this.scoringEngine.calculateKRAScore(
-          data.kras.map(kra => ({
-            kraId: kra.id,
-            weightage: kra.weightage,
-            managerRating: kra.managerRating,
-            score: ((kra.managerRating - 1) / 4) * 100,
-          }))
-        )
-      : 0;
+    const kraScore =
+      data.kras && data.kras.length > 0
+        ? this.scoringEngine.calculateKRAScore(
+            data.kras.map((kra) => ({
+              kraId: kra.id,
+              weightage: kra.weightage,
+              managerRating: kra.managerRating,
+              score: ((kra.managerRating - 1) / 4) * 100,
+            })),
+          )
+        : 0;
 
     // Calculate Competency Score
     const competencyScore = data.competencies
@@ -130,7 +137,7 @@ export class PerformanceEngineService {
       goalScore,
       kpiScore,
       kraScore,
-      competencyScore
+      competencyScore,
     );
   }
 
@@ -250,26 +257,33 @@ export class PerformanceEngineService {
     }
 
     // Count distribution
-    const distribution = ratings.reduce((acc, rating) => {
-      acc[rating] = (acc[rating] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
+    const distribution = ratings.reduce(
+      (acc, rating) => {
+        acc[rating] = (acc[rating] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>,
+    );
 
     // Calculate percentages
     const total = ratings.length;
-    const percentages = Object.entries(distribution).reduce((acc, [rating, count]) => {
-      acc[rating] = (count / total) * 100;
-      return acc;
-    }, {} as Record<number, number>);
+    const percentages = Object.entries(distribution).reduce(
+      (acc, [rating, count]) => {
+        acc[rating] = (count / total) * 100;
+        return acc;
+      },
+      {} as Record<number, number>,
+    );
 
     // Calculate average
     const average = ratings.reduce((sum, r) => sum + r, 0) / total;
 
     // Calculate median
     const sorted = [...ratings].sort((a, b) => a - b);
-    const median = sorted.length % 2 === 0
-      ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-      : sorted[Math.floor(sorted.length / 2)];
+    const median =
+      sorted.length % 2 === 0
+        ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+        : sorted[Math.floor(sorted.length / 2)];
 
     return {
       distribution,
@@ -283,9 +297,18 @@ export class PerformanceEngineService {
    * Identify top performers
    */
   identifyTopPerformers(
-    performances: Array<{ employeeId: string; finalRating: number; finalScore: number }>,
-    topN: number = 10
-  ): Array<{ employeeId: string; finalRating: number; finalScore: number; rank: number }> {
+    performances: Array<{
+      employeeId: string;
+      finalRating: number;
+      finalScore: number;
+    }>,
+    topN: number = 10,
+  ): Array<{
+    employeeId: string;
+    finalRating: number;
+    finalScore: number;
+    rank: number;
+  }> {
     return performances
       .sort((a, b) => {
         // Sort by rating first, then by score
@@ -305,19 +328,30 @@ export class PerformanceEngineService {
    * Identify low performers (needs attention)
    */
   identifyLowPerformers(
-    performances: Array<{ employeeId: string; finalRating: number; finalScore: number }>,
-    threshold: number = 2
+    performances: Array<{
+      employeeId: string;
+      finalRating: number;
+      finalScore: number;
+    }>,
+    threshold: number = 2,
   ): Array<{ employeeId: string; finalRating: number; finalScore: number }> {
     return performances
-      .filter(perf => perf.finalRating <= threshold)
-      .sort((a, b) => a.finalRating - b.finalRating || a.finalScore - b.finalScore);
+      .filter((perf) => perf.finalRating <= threshold)
+      .sort(
+        (a, b) => a.finalRating - b.finalRating || a.finalScore - b.finalScore,
+      );
   }
 
   /**
    * Calculate performance trend
    */
   calculatePerformanceTrend(
-    historicalScores: Array<{ cycleId: string; score: number; rating: number; date: Date }>
+    historicalScores: Array<{
+      cycleId: string;
+      score: number;
+      rating: number;
+      date: Date;
+    }>,
   ): {
     trend: 'IMPROVING' | 'STABLE' | 'DECLINING' | 'INSUFFICIENT_DATA';
     trendPercentage: number;
@@ -332,8 +366,10 @@ export class PerformanceEngineService {
     }
 
     // Sort by date
-    const sorted = [...historicalScores].sort((a, b) => a.date.getTime() - b.date.getTime());
-    
+    const sorted = [...historicalScores].sort(
+      (a, b) => a.date.getTime() - b.date.getTime(),
+    );
+
     // Calculate trend
     const firstScore = sorted[0].score;
     const lastScore = sorted[sorted.length - 1].score;
@@ -349,9 +385,10 @@ export class PerformanceEngineService {
     }
 
     // Calculate consistency (standard deviation)
-    const scores = sorted.map(s => s.score);
+    const scores = sorted.map((s) => s.score);
     const mean = scores.reduce((sum, s) => sum + s, 0) / scores.length;
-    const variance = scores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / scores.length;
+    const variance =
+      scores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / scores.length;
     const stdDev = Math.sqrt(variance);
     const consistency = Math.max(0, 100 - stdDev); // Higher is more consistent
 
@@ -368,12 +405,12 @@ export class PerformanceEngineService {
   normalizeScoresForCalibration(
     scores: Array<{ id: string; score: number }>,
     targetDistribution?: {
-      outstanding: number;  // e.g., 10%
-      exceeds: number;      // e.g., 20%
-      meets: number;        // e.g., 50%
-      below: number;        // e.g., 15%
-      needs: number;        // e.g., 5%
-    }
+      outstanding: number; // e.g., 10%
+      exceeds: number; // e.g., 20%
+      meets: number; // e.g., 50%
+      below: number; // e.g., 15%
+      needs: number; // e.g., 5%
+    },
   ): Array<{ id: string; originalScore: number; normalizedRating: number }> {
     const defaultDistribution = {
       outstanding: 10,
@@ -390,10 +427,15 @@ export class PerformanceEngineService {
     const sorted = [...scores].sort((a, b) => b.score - a.score);
 
     // Calculate cutoff indices
-    const outstandingCutoff = Math.ceil(total * (distribution.outstanding / 100));
-    const exceedsCutoff = outstandingCutoff + Math.ceil(total * (distribution.exceeds / 100));
-    const meetsCutoff = exceedsCutoff + Math.ceil(total * (distribution.meets / 100));
-    const belowCutoff = meetsCutoff + Math.ceil(total * (distribution.below / 100));
+    const outstandingCutoff = Math.ceil(
+      total * (distribution.outstanding / 100),
+    );
+    const exceedsCutoff =
+      outstandingCutoff + Math.ceil(total * (distribution.exceeds / 100));
+    const meetsCutoff =
+      exceedsCutoff + Math.ceil(total * (distribution.meets / 100));
+    const belowCutoff =
+      meetsCutoff + Math.ceil(total * (distribution.below / 100));
 
     return sorted.map((item, index) => {
       let normalizedRating: number;

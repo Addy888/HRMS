@@ -1,13 +1,13 @@
 /**
  * TAX PROVIDER INTERFACE
- * 
+ *
  * Abstracts tax calculations from Payroll Engine.
- * 
+ *
  * This allows:
  * - Different tax rules for different regions/countries
  * - Integration with external tax calculation services
  * - Easy updates when tax laws change
- * 
+ *
  * Future Implementations:
  * - IndianTaxProvider (Indian PF, ESI, PT, TDS rules)
  * - USTaxProvider (US Federal, State, Social Security)

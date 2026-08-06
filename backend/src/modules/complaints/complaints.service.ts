@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
   CreateComplaintDto,
@@ -56,7 +61,9 @@ export class ComplaintsService {
         // Validate size (10 MB = 10 * 1024 * 1024 bytes)
         const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
-          throw new BadRequestException('Attachment size exceeds the 10 MB limit');
+          throw new BadRequestException(
+            'Attachment size exceeds the 10 MB limit',
+          );
         }
 
         // Validate extension
@@ -68,7 +75,9 @@ export class ComplaintsService {
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
         if (!allowedTypes.includes(file.mimetype)) {
-          throw new BadRequestException('Invalid file type. Supported types: PDF, PNG, JPG, JPEG, DOCX');
+          throw new BadRequestException(
+            'Invalid file type. Supported types: PDF, PNG, JPG, JPEG, DOCX',
+          );
         }
 
         const fileUrl = `/uploads/complaints/${file.filename}`;
@@ -112,15 +121,20 @@ export class ComplaintsService {
       });
       const hrIds = hrUsers.map((h: any) => h.id);
       if (hrIds.length > 0) {
-        this.notificationService.createNotification(hrIds, {
-          title: dto.priority === 'CRITICAL' ? '🚨 CRITICAL Complaint Raised' : 'New Complaint Raised',
-          description: `Complaint ${complaintNumber} raised under category ${dto.category}. Priority: ${dto.priority}.`,
-          type: 'complaint.created',
-          module: 'COMPLAINT',
-          priority: dto.priority as any,
-          icon: 'life-buoy',
-          actionUrl: '/hr/complaints',
-        }).catch(() => {});
+        this.notificationService
+          .createNotification(hrIds, {
+            title:
+              dto.priority === 'CRITICAL'
+                ? '🚨 CRITICAL Complaint Raised'
+                : 'New Complaint Raised',
+            description: `Complaint ${complaintNumber} raised under category ${dto.category}. Priority: ${dto.priority}.`,
+            type: 'complaint.created',
+            module: 'COMPLAINT',
+            priority: dto.priority as any,
+            icon: 'life-buoy',
+            actionUrl: '/hr/complaints',
+          })
+          .catch(() => {});
       }
 
       return complaint;
@@ -176,7 +190,9 @@ export class ComplaintsService {
     // Format output to respect anonymity if necessary
     const formatted = data.map((item) => ({
       ...item,
-      raisedBy: item.anonymous ? 'Anonymous' : `${employee.firstName} ${employee.lastName}`,
+      raisedBy: item.anonymous
+        ? 'Anonymous'
+        : `${employee.firstName} ${employee.lastName}`,
     }));
 
     return {
@@ -186,7 +202,13 @@ export class ComplaintsService {
   }
 
   // Get Complaint Detail (HR and Employees)
-  async getComplaintById(id: string, userId: string, userRole: string, ipAddress?: string, userAgent?: string) {
+  async getComplaintById(
+    id: string,
+    userId: string,
+    userRole: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id },
       include: {
@@ -241,9 +263,10 @@ export class ComplaintsService {
     });
 
     // If Employee is viewing, hide internal replies and clean up anonymous profile
-    const showReplies = userRole === 'HR'
-      ? complaint.replies
-      : complaint.replies.filter((r) => !r.isInternal);
+    const showReplies =
+      userRole === 'HR'
+        ? complaint.replies
+        : complaint.replies.filter((r) => !r.isInternal);
 
     const formattedReplies = showReplies.map((r) => {
       const isActorHR = r.user.roleId === 'HR'; // or role checking
@@ -255,7 +278,12 @@ export class ComplaintsService {
         sender: r.user.employee
           ? `${r.user.employee.firstName} ${r.user.employee.lastName}`
           : 'System Admin',
-        senderRole: r.user.id === complaint.raisedBy.userId && complaint.anonymous ? 'Anonymous' : (r.user.employee ? 'Employee' : 'HR'),
+        senderRole:
+          r.user.id === complaint.raisedBy.userId && complaint.anonymous
+            ? 'Anonymous'
+            : r.user.employee
+              ? 'Employee'
+              : 'HR',
       };
     });
 
@@ -272,17 +300,24 @@ export class ComplaintsService {
       updatedAt: complaint.updatedAt,
       resolvedAt: complaint.resolvedAt,
       resolutionTime: complaint.resolutionTime,
-      raisedBy: complaint.anonymous && userRole !== 'HR'
-        ? { id: '', firstName: 'Anonymous', lastName: '', department: null, designation: null }
-        : {
-            id: complaint.raisedBy.id,
-            firstName: complaint.raisedBy.firstName,
-            lastName: complaint.raisedBy.lastName,
-            email: complaint.raisedBy.user.email,
-            employeeId: complaint.raisedBy.employeeId,
-            department: complaint.raisedBy.department?.name || '—',
-            designation: complaint.raisedBy.designation?.name || '—',
-          },
+      raisedBy:
+        complaint.anonymous && userRole !== 'HR'
+          ? {
+              id: '',
+              firstName: 'Anonymous',
+              lastName: '',
+              department: null,
+              designation: null,
+            }
+          : {
+              id: complaint.raisedBy.id,
+              firstName: complaint.raisedBy.firstName,
+              lastName: complaint.raisedBy.lastName,
+              email: complaint.raisedBy.user.email,
+              employeeId: complaint.raisedBy.employeeId,
+              department: complaint.raisedBy.department?.name || '—',
+              designation: complaint.raisedBy.designation?.name || '—',
+            },
       assignedTo: complaint.assignedTo
         ? {
             id: complaint.assignedTo.id,
@@ -296,7 +331,9 @@ export class ComplaintsService {
         action: t.action,
         details: t.details,
         createdAt: t.createdAt,
-        actorName: t.actor.employee ? `${t.actor.employee.firstName} ${t.actor.employee.lastName}` : 'System',
+        actorName: t.actor.employee
+          ? `${t.actor.employee.firstName} ${t.actor.employee.lastName}`
+          : 'System',
       })),
       replies: formattedReplies,
     };
@@ -374,7 +411,9 @@ export class ComplaintsService {
         data: {
           complaintId: id,
           action: userRole === 'HR' ? 'HR_REPLIED' : 'EMPLOYEE_REPLIED',
-          details: isInternal ? `HR logged an internal note` : `New message posted`,
+          details: isInternal
+            ? `HR logged an internal note`
+            : `New message posted`,
           actorId: userId,
         },
       });
@@ -393,28 +432,34 @@ export class ComplaintsService {
 
       // 5. Send Notification (fire-and-forget)
       if (userRole === 'HR' && !isInternal) {
-        this.notificationService.createNotification([complaint.raisedBy.userId], {
-          title: 'HR Replied to Helpdesk Ticket',
-          description: `HR has replied to your ticket ${complaint.complaintNumber}. Please check the details.`,
-          type: 'complaint.replied',
-          module: 'COMPLAINT',
-          priority: 'MEDIUM',
-          icon: 'message-square',
-          actionUrl: '/employee/complaints',
-        }).catch(() => {});
+        this.notificationService
+          .createNotification([complaint.raisedBy.userId], {
+            title: 'HR Replied to Helpdesk Ticket',
+            description: `HR has replied to your ticket ${complaint.complaintNumber}. Please check the details.`,
+            type: 'complaint.replied',
+            module: 'COMPLAINT',
+            priority: 'MEDIUM',
+            icon: 'message-square',
+            actionUrl: '/employee/complaints',
+          })
+          .catch(() => {});
       } else if (userRole === 'EMPLOYEE') {
         if (complaint.assignedToId) {
-          const hr = await tx.employee.findUnique({ where: { id: complaint.assignedToId } });
+          const hr = await tx.employee.findUnique({
+            where: { id: complaint.assignedToId },
+          });
           if (hr) {
-            this.notificationService.createNotification([hr.userId], {
-              title: 'Employee Replied to Ticket',
-              description: `Employee replied to ticket ${complaint.complaintNumber}.`,
-              type: 'complaint.replied',
-              module: 'COMPLAINT',
-              priority: 'LOW',
-              icon: 'message-circle',
-              actionUrl: '/hr/complaints',
-            }).catch(() => {});
+            this.notificationService
+              .createNotification([hr.userId], {
+                title: 'Employee Replied to Ticket',
+                description: `Employee replied to ticket ${complaint.complaintNumber}.`,
+                type: 'complaint.replied',
+                module: 'COMPLAINT',
+                priority: 'LOW',
+                icon: 'message-circle',
+                actionUrl: '/hr/complaints',
+              })
+              .catch(() => {});
           }
         }
       }
@@ -424,7 +469,13 @@ export class ComplaintsService {
   }
 
   // Close Complaint (Employee or HR)
-  async closeComplaint(id: string, userId: string, userRole: string, ipAddress?: string, userAgent?: string) {
+  async closeComplaint(
+    id: string,
+    userId: string,
+    userRole: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id },
       include: { raisedBy: true },
@@ -470,15 +521,17 @@ export class ComplaintsService {
 
       // Notification (fire-and-forget)
       if (userRole === 'HR') {
-        this.notificationService.createNotification([complaint.raisedBy.userId], {
-          title: 'Ticket Closed',
-          description: `Your ticket ${complaint.complaintNumber} has been marked as closed by HR.`,
-          type: 'complaint.closed',
-          module: 'COMPLAINT',
-          priority: 'MEDIUM',
-          icon: 'check-circle',
-          actionUrl: '/employee/complaints',
-        }).catch(() => {});
+        this.notificationService
+          .createNotification([complaint.raisedBy.userId], {
+            title: 'Ticket Closed',
+            description: `Your ticket ${complaint.complaintNumber} has been marked as closed by HR.`,
+            type: 'complaint.closed',
+            module: 'COMPLAINT',
+            priority: 'MEDIUM',
+            icon: 'check-circle',
+            actionUrl: '/employee/complaints',
+          })
+          .catch(() => {});
       }
 
       return updated;
@@ -546,7 +599,9 @@ export class ComplaintsService {
 
     const formatted = data.map((item) => ({
       ...item,
-      raisedByName: item.anonymous ? 'Anonymous' : `${item.raisedBy.firstName} ${item.raisedBy.lastName}`,
+      raisedByName: item.anonymous
+        ? 'Anonymous'
+        : `${item.raisedBy.firstName} ${item.raisedBy.lastName}`,
       department: item.raisedBy.department?.name || '—',
     }));
 
@@ -557,7 +612,11 @@ export class ComplaintsService {
   }
 
   // Admin: Update Status or Details (HR)
-  async updateHRComplaint(id: string, hrUserId: string, dto: UpdateComplaintDto) {
+  async updateHRComplaint(
+    id: string,
+    hrUserId: string,
+    dto: UpdateComplaintDto,
+  ) {
     const complaint = await this.prisma.complaint.findUnique({ where: { id } });
     if (!complaint) {
       throw new NotFoundException('Complaint not found');
@@ -650,22 +709,28 @@ export class ComplaintsService {
       });
 
       // Send Notification to Assignee (fire-and-forget)
-      this.notificationService.createNotification([hrAssignee.userId], {
-        title: 'New Support Ticket Assigned',
-        description: `Ticket ${complaint.complaintNumber} has been assigned to you. Please review and take action.`,
-        type: 'complaint.assigned',
-        module: 'COMPLAINT',
-        priority: 'HIGH',
-        icon: 'user-check',
-        actionUrl: '/hr/complaints',
-      }).catch(() => {});
+      this.notificationService
+        .createNotification([hrAssignee.userId], {
+          title: 'New Support Ticket Assigned',
+          description: `Ticket ${complaint.complaintNumber} has been assigned to you. Please review and take action.`,
+          type: 'complaint.assigned',
+          module: 'COMPLAINT',
+          priority: 'HIGH',
+          icon: 'user-check',
+          actionUrl: '/hr/complaints',
+        })
+        .catch(() => {});
 
       return updated;
     });
   }
 
   // Admin: Resolve Complaint
-  async resolveComplaint(id: string, hrUserId: string, dto: ResolveComplaintDto) {
+  async resolveComplaint(
+    id: string,
+    hrUserId: string,
+    dto: ResolveComplaintDto,
+  ) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id },
       include: { raisedBy: true },
@@ -675,7 +740,9 @@ export class ComplaintsService {
     }
 
     const now = new Date();
-    const resolutionTimeMinutes = Math.round((now.getTime() - complaint.createdAt.getTime()) / (1000 * 60));
+    const resolutionTimeMinutes = Math.round(
+      (now.getTime() - complaint.createdAt.getTime()) / (1000 * 60),
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.complaint.update({
@@ -708,15 +775,17 @@ export class ComplaintsService {
       });
 
       // Notify employee (fire-and-forget)
-      this.notificationService.createNotification([complaint.raisedBy.userId], {
-        title: 'Ticket Resolved',
-        description: `Your ticket ${complaint.complaintNumber} has been resolved. Please review and confirm closure.`,
-        type: 'complaint.resolved',
-        module: 'COMPLAINT',
-        priority: 'MEDIUM',
-        icon: 'check-circle-2',
-        actionUrl: '/employee/complaints',
-      }).catch(() => {});
+      this.notificationService
+        .createNotification([complaint.raisedBy.userId], {
+          title: 'Ticket Resolved',
+          description: `Your ticket ${complaint.complaintNumber} has been resolved. Please review and confirm closure.`,
+          type: 'complaint.resolved',
+          module: 'COMPLAINT',
+          priority: 'MEDIUM',
+          icon: 'check-circle-2',
+          actionUrl: '/employee/complaints',
+        })
+        .catch(() => {});
 
       return updated;
     });
@@ -752,15 +821,17 @@ export class ComplaintsService {
       });
 
       // Notify employee (fire-and-forget)
-      this.notificationService.createNotification([complaint.raisedBy.userId], {
-        title: 'Ticket Reopened',
-        description: `Your ticket ${complaint.complaintNumber} has been reopened by HR for further inspection.`,
-        type: 'complaint.updated',
-        module: 'COMPLAINT',
-        priority: 'MEDIUM',
-        icon: 'refresh-cw',
-        actionUrl: '/employee/complaints',
-      }).catch(() => {});
+      this.notificationService
+        .createNotification([complaint.raisedBy.userId], {
+          title: 'Ticket Reopened',
+          description: `Your ticket ${complaint.complaintNumber} has been reopened by HR for further inspection.`,
+          type: 'complaint.updated',
+          module: 'COMPLAINT',
+          priority: 'MEDIUM',
+          icon: 'refresh-cw',
+          actionUrl: '/employee/complaints',
+        })
+        .catch(() => {});
 
       return updated;
     });
@@ -768,15 +839,24 @@ export class ComplaintsService {
 
   // Admin: Get HR Dashboard stats
   async getHRDashboardStats() {
-    const [total, open, inProgress, resolved, closed, highPriority, critical] = await Promise.all([
-      this.prisma.complaint.count(),
-      this.prisma.complaint.count({ where: { status: ComplaintStatus.OPEN } }),
-      this.prisma.complaint.count({ where: { status: ComplaintStatus.IN_PROGRESS } }),
-      this.prisma.complaint.count({ where: { status: ComplaintStatus.RESOLVED } }),
-      this.prisma.complaint.count({ where: { status: ComplaintStatus.CLOSED } }),
-      this.prisma.complaint.count({ where: { priority: 'HIGH' } }),
-      this.prisma.complaint.count({ where: { priority: 'CRITICAL' } }),
-    ]);
+    const [total, open, inProgress, resolved, closed, highPriority, critical] =
+      await Promise.all([
+        this.prisma.complaint.count(),
+        this.prisma.complaint.count({
+          where: { status: ComplaintStatus.OPEN },
+        }),
+        this.prisma.complaint.count({
+          where: { status: ComplaintStatus.IN_PROGRESS },
+        }),
+        this.prisma.complaint.count({
+          where: { status: ComplaintStatus.RESOLVED },
+        }),
+        this.prisma.complaint.count({
+          where: { status: ComplaintStatus.CLOSED },
+        }),
+        this.prisma.complaint.count({ where: { priority: 'HIGH' } }),
+        this.prisma.complaint.count({ where: { priority: 'CRITICAL' } }),
+      ]);
 
     const resolvedTickets = await this.prisma.complaint.findMany({
       where: {
@@ -787,10 +867,12 @@ export class ComplaintsService {
       },
     });
 
-    const sum = resolvedTickets.reduce((acc, t) => acc + (t.resolutionTime ?? 0), 0);
-    const averageResolutionTime = resolvedTickets.length > 0
-      ? Math.round(sum / resolvedTickets.length)
-      : 0; // in minutes
+    const sum = resolvedTickets.reduce(
+      (acc, t) => acc + (t.resolutionTime ?? 0),
+      0,
+    );
+    const averageResolutionTime =
+      resolvedTickets.length > 0 ? Math.round(sum / resolvedTickets.length) : 0; // in minutes
 
     return {
       total,
@@ -821,7 +903,10 @@ export class ComplaintsService {
         where: { raisedById: employee.id, status: ComplaintStatus.RESOLVED },
       }),
       this.prisma.complaint.count({
-        where: { raisedById: employee.id, status: ComplaintStatus.WAITING_FOR_EMPLOYEE },
+        where: {
+          raisedById: employee.id,
+          status: ComplaintStatus.WAITING_FOR_EMPLOYEE,
+        },
       }),
       this.prisma.complaint.count({
         where: { raisedById: employee.id, status: ComplaintStatus.CLOSED },

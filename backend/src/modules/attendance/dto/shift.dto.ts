@@ -1,7 +1,17 @@
 /**
  * Shift Management DTOs
  */
-import { IsString, IsNotEmpty, IsNumber, IsBoolean, IsOptional, IsDateString, Matches, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsDateString,
+  Matches,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateShiftDto {
@@ -17,67 +27,107 @@ export class CreateShiftDto {
 
   @ApiProperty({ description: 'Start time (HH:mm)', example: '09:00' })
   @IsNotEmpty()
-  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, { message: 'Start time must be in HH:mm format' })
+  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, {
+    message: 'Start time must be in HH:mm format',
+  })
   startTime: string;
 
   @ApiProperty({ description: 'End time (HH:mm)', example: '18:00' })
   @IsNotEmpty()
-  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, { message: 'End time must be in HH:mm format' })
+  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, {
+    message: 'End time must be in HH:mm format',
+  })
   endTime: string;
 
-  @ApiPropertyOptional({ description: 'Grace time in minutes', example: 15, default: 15 })
+  @ApiPropertyOptional({
+    description: 'Grace time in minutes',
+    example: 15,
+    default: 15,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(120)
   graceTime?: number;
 
-  @ApiPropertyOptional({ description: 'Late mark after minutes', example: 15, default: 15 })
+  @ApiPropertyOptional({
+    description: 'Late mark after minutes',
+    example: 15,
+    default: 15,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(120)
   lateMarkAfter?: number;
 
-  @ApiPropertyOptional({ description: 'Half day if late by minutes', example: 240, default: 240 })
+  @ApiPropertyOptional({
+    description: 'Half day if late by minutes',
+    example: 240,
+    default: 240,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(480)
   halfDayIfLateBy?: number;
 
-  @ApiPropertyOptional({ description: 'Minimum working hours', example: 8.0, default: 8.0 })
+  @ApiPropertyOptional({
+    description: 'Minimum working hours',
+    example: 8.0,
+    default: 8.0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(24)
   minimumWorkingHours?: number;
 
-  @ApiPropertyOptional({ description: 'Maximum working hours', example: 12.0, default: 12.0 })
+  @ApiPropertyOptional({
+    description: 'Maximum working hours',
+    example: 12.0,
+    default: 12.0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(24)
   maximumWorkingHours?: number;
 
-  @ApiPropertyOptional({ description: 'Break time in minutes', example: 60, default: 60 })
+  @ApiPropertyOptional({
+    description: 'Break time in minutes',
+    example: 60,
+    default: 60,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(240)
   breakTime?: number;
 
-  @ApiPropertyOptional({ description: 'Overtime applicable', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Overtime applicable',
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   overtimeApplicable?: boolean;
 
-  @ApiPropertyOptional({ description: 'Flexible shift', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Flexible shift',
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   flexibleShift?: boolean;
 
-  @ApiPropertyOptional({ description: 'Weekends (comma-separated)', example: 'SATURDAY,SUNDAY', default: 'SATURDAY,SUNDAY' })
+  @ApiPropertyOptional({
+    description: 'Weekends (comma-separated)',
+    example: 'SATURDAY,SUNDAY',
+    default: 'SATURDAY,SUNDAY',
+  })
   @IsOptional()
   @IsString()
   weekends?: string;
@@ -96,12 +146,16 @@ export class UpdateShiftDto {
 
   @ApiPropertyOptional({ description: 'Start time (HH:mm)', example: '09:00' })
   @IsOptional()
-  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, { message: 'Start time must be in HH:mm format' })
+  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, {
+    message: 'Start time must be in HH:mm format',
+  })
   startTime?: string;
 
   @ApiPropertyOptional({ description: 'End time (HH:mm)', example: '18:00' })
   @IsOptional()
-  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, { message: 'End time must be in HH:mm format' })
+  @Matches(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, {
+    message: 'End time must be in HH:mm format',
+  })
   endTime?: string;
 
   @ApiPropertyOptional({ description: 'Grace time in minutes' })
@@ -188,7 +242,10 @@ export class AssignShiftDto {
   @IsDateString()
   effectiveFrom: string;
 
-  @ApiPropertyOptional({ description: 'Effective to date', example: '2026-12-31' })
+  @ApiPropertyOptional({
+    description: 'Effective to date',
+    example: '2026-12-31',
+  })
   @IsOptional()
   @IsDateString()
   effectiveTo?: string;

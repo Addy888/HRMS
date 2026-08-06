@@ -1,6 +1,6 @@
 /**
  * DTO for 360-Degree Feedback
- * 
+ *
  * Multi-source feedback from:
  * - Manager
  * - Peers
@@ -8,11 +8,19 @@
  * - HR
  * - Subordinates
  * - Customers (future)
- * 
+ *
  * Supports anonymous feedback
  */
 
-import { IsString, IsEnum, IsInt, IsBoolean, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum FeedbackType {
@@ -37,25 +45,25 @@ export class CreateFeedback360Dto {
   @IsBoolean()
   isAnonymous: boolean;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'Excellent team player, always willing to help',
-    description: 'Strengths observed' 
+    description: 'Strengths observed',
   })
   @IsOptional()
   @IsString()
   strengths?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'Could improve communication with other teams',
-    description: 'Areas needing improvement' 
+    description: 'Areas needing improvement',
   })
   @IsOptional()
   @IsString()
   weaknesses?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     example: 'Continue the great work, consider taking on mentorship role',
-    description: 'Suggestions for improvement' 
+    description: 'Suggestions for improvement',
   })
   @IsOptional()
   @IsString()
@@ -185,9 +193,9 @@ export class RequestFeedback360Dto {
   @IsString()
   reviewId: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: ['user-uuid-1', 'user-uuid-2'],
-    description: 'User IDs to request feedback from' 
+    description: 'User IDs to request feedback from',
   })
   @IsString({ each: true })
   feedbackFromUserIds: string[];

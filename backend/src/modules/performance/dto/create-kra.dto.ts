@@ -1,11 +1,18 @@
 /**
  * DTO for KRA Management (Key Responsibility Areas)
- * 
+ *
  * KRAs define key responsibilities and expected outcomes
  * Manager reviews and rates employee performance on KRAs
  */
 
-import { IsString, IsNumber, IsOptional, IsInt, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum KRAStatus {
@@ -20,27 +27,41 @@ export class CreateKRADto {
   @IsString()
   cycleId: string;
 
-  @ApiProperty({ example: 'Sales Performance Management', description: 'KRA title' })
+  @ApiProperty({
+    example: 'Sales Performance Management',
+    description: 'KRA title',
+  })
   @IsString()
   title: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Manage and drive sales performance for assigned territory',
-    description: 'KRA description' 
+    description: 'KRA description',
   })
   @IsString()
   description: string;
 
-  @ApiProperty({ example: 'employee-uuid', description: 'Employee ID to assign KRA' })
+  @ApiProperty({
+    example: 'employee-uuid',
+    description: 'Employee ID to assign KRA',
+  })
   @IsString()
   assignedTo: string;
 
-  @ApiPropertyOptional({ example: 'manager-user-uuid', description: 'Assigned by user ID' })
+  @ApiPropertyOptional({
+    example: 'manager-user-uuid',
+    description: 'Assigned by user ID',
+  })
   @IsOptional()
   @IsString()
   assignedBy?: string;
 
-  @ApiProperty({ example: 30, description: 'KRA weightage (0-100)', minimum: 0, maximum: 100 })
+  @ApiProperty({
+    example: 30,
+    description: 'KRA weightage (0-100)',
+    minimum: 0,
+    maximum: 100,
+  })
   @IsNumber()
   @Min(0)
   @Max(100)
@@ -75,14 +96,21 @@ export class UpdateKRADto {
   @IsString()
   targetMetric?: string;
 
-  @ApiPropertyOptional({ enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'REVIEWED'] })
+  @ApiPropertyOptional({
+    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'REVIEWED'],
+  })
   @IsOptional()
   @IsString()
   status?: string;
 }
 
 export class ReviewKRADto {
-  @ApiProperty({ example: 4, description: 'Manager rating (1-5)', minimum: 1, maximum: 5 })
+  @ApiProperty({
+    example: 4,
+    description: 'Manager rating (1-5)',
+    minimum: 1,
+    maximum: 5,
+  })
   @IsInt()
   @Min(1)
   @Max(5)

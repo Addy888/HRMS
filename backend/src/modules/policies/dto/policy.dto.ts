@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsUUID, IsArray, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsArray,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum PolicyCategory {
@@ -100,7 +108,10 @@ export class AssignPolicyDto {
   @IsEnum(AssignmentTargetType)
   targetType: AssignmentTargetType;
 
-  @ApiPropertyOptional({ description: 'Department ID, Designation ID, or Employee ID (ignored if targetType is ALL)' })
+  @ApiPropertyOptional({
+    description:
+      'Department ID, Designation ID, or Employee ID (ignored if targetType is ALL)',
+  })
   @IsUUID()
   @IsOptional()
   targetId?: string;

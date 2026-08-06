@@ -19,7 +19,9 @@ import { UpdateSalaryStructureDto } from '../dto/update-salary-structure.dto';
 @Controller('salary-structure')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SalaryStructureController {
-  constructor(private readonly salaryStructureService: SalaryStructureService) {}
+  constructor(
+    private readonly salaryStructureService: SalaryStructureService,
+  ) {}
 
   @Post()
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
@@ -57,7 +59,10 @@ export class SalaryStructureController {
 
   @Put(':id')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
-  async update(@Param('id') id: string, @Body() updateDto: UpdateSalaryStructureDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateSalaryStructureDto,
+  ) {
     return this.salaryStructureService.update(id, updateDto);
   }
 

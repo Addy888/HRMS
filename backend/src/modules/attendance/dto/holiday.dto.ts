@@ -1,7 +1,14 @@
 /**
  * Holiday Management DTOs
  */
-import { IsString, IsNotEmpty, IsDateString, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsBoolean,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum HolidayType {
@@ -22,12 +29,18 @@ export class CreateHolidayDto {
   @IsDateString()
   date: string;
 
-  @ApiProperty({ description: 'Holiday type', enum: HolidayType, example: HolidayType.NATIONAL })
+  @ApiProperty({
+    description: 'Holiday type',
+    enum: HolidayType,
+    example: HolidayType.NATIONAL,
+  })
   @IsNotEmpty()
   @IsEnum(HolidayType)
   type: HolidayType;
 
-  @ApiPropertyOptional({ description: 'Department ID (if department-specific)' })
+  @ApiPropertyOptional({
+    description: 'Department ID (if department-specific)',
+  })
   @IsOptional()
   @IsString()
   departmentId?: string;
@@ -37,7 +50,11 @@ export class CreateHolidayDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Is optional holiday', example: false, default: false })
+  @ApiPropertyOptional({
+    description: 'Is optional holiday',
+    example: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   isOptional?: boolean;
@@ -81,7 +98,19 @@ export class CreateWeekOffDto {
   @IsString()
   employeeId?: string;
 
-  @ApiProperty({ description: 'Day of week', example: 'SUNDAY', enum: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] })
+  @ApiProperty({
+    description: 'Day of week',
+    example: 'SUNDAY',
+    enum: [
+      'SUNDAY',
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
+    ],
+  })
   @IsNotEmpty()
   @IsString()
   dayOfWeek: string;
@@ -91,7 +120,10 @@ export class CreateWeekOffDto {
   @IsDateString()
   effectiveFrom: string;
 
-  @ApiPropertyOptional({ description: 'Effective to date', example: '2026-12-31' })
+  @ApiPropertyOptional({
+    description: 'Effective to date',
+    example: '2026-12-31',
+  })
   @IsOptional()
   @IsDateString()
   effectiveTo?: string;

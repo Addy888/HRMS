@@ -1,9 +1,9 @@
 /**
  * AI INTERFACE SERVICE
- * 
+ *
  * Interface layer for AI/ML integration
  * Provides contracts and mock implementations for future AI features
- * 
+ *
  * AI FEATURES (INTERFACES READY):
  * - Skill Gap Analysis
  * - Attrition Prediction
@@ -11,7 +11,7 @@
  * - Training Recommendations
  * - Promotion Prediction
  * - Sentiment Analysis
- * 
+ *
  * INTEGRATION POINTS:
  * - OpenAI GPT
  * - Azure ML
@@ -88,35 +88,41 @@ export class AIInterfaceService {
    * Analyze skill gaps (Mock implementation)
    * Replace with actual AI/ML service call
    */
-  async analyzeSkillGap(request: SkillGapAnalysisRequest): Promise<SkillGapAnalysisResponse> {
+  async analyzeSkillGap(
+    request: SkillGapAnalysisRequest,
+  ): Promise<SkillGapAnalysisResponse> {
     // TODO: Integrate with actual AI/ML service
-    
-    const skillGaps = request.requiredSkills.map(required => {
-      const current = request.currentSkills.find(s => s.skill === required.skill);
-      const currentLevel = current?.level || 0;
-      const gap = required.level - currentLevel;
 
-      let priority: 'HIGH' | 'MEDIUM' | 'LOW';
-      if (required.importance >= 0.8 && gap >= 2) {
-        priority = 'HIGH';
-      } else if (required.importance >= 0.5 || gap >= 2) {
-        priority = 'MEDIUM';
-      } else {
-        priority = 'LOW';
-      }
+    const skillGaps = request.requiredSkills
+      .map((required) => {
+        const current = request.currentSkills.find(
+          (s) => s.skill === required.skill,
+        );
+        const currentLevel = current?.level || 0;
+        const gap = required.level - currentLevel;
 
-      return {
-        skill: required.skill,
-        currentLevel,
-        requiredLevel: required.level,
-        gap: Math.max(0, gap),
-        priority,
-      };
-    }).filter(sg => sg.gap > 0);
+        let priority: 'HIGH' | 'MEDIUM' | 'LOW';
+        if (required.importance >= 0.8 && gap >= 2) {
+          priority = 'HIGH';
+        } else if (required.importance >= 0.5 || gap >= 2) {
+          priority = 'MEDIUM';
+        } else {
+          priority = 'LOW';
+        }
+
+        return {
+          skill: required.skill,
+          currentLevel,
+          requiredLevel: required.level,
+          gap: Math.max(0, gap),
+          priority,
+        };
+      })
+      .filter((sg) => sg.gap > 0);
 
     const recommendations = skillGaps
-      .filter(sg => sg.priority === 'HIGH' || sg.priority === 'MEDIUM')
-      .map(sg => ({
+      .filter((sg) => sg.priority === 'HIGH' || sg.priority === 'MEDIUM')
+      .map((sg) => ({
         training: `${sg.skill} Training - Level ${sg.requiredLevel}`,
         estimatedTime: `${sg.gap * 2} weeks`,
         priority: sg.priority === 'HIGH' ? 1 : 2,
@@ -134,11 +140,17 @@ export class AIInterfaceService {
    * Predict attrition risk (Mock implementation)
    * Replace with actual ML model
    */
-  async predictAttrition(request: AttritionPredictionRequest): Promise<AttritionPredictionResponse> {
+  async predictAttrition(
+    request: AttritionPredictionRequest,
+  ): Promise<AttritionPredictionResponse> {
     // TODO: Integrate with actual ML model
-    
+
     let riskScore = 0;
-    const factors: Array<{ factor: string; weight: number; contribution: number }> = [];
+    const factors: Array<{
+      factor: string;
+      weight: number;
+      contribution: number;
+    }> = [];
 
     // Analyze performance trend
     if (request.performanceHistory.length >= 2) {
@@ -156,11 +168,13 @@ export class AIInterfaceService {
 
     // Check promotion/increment recency
     if (request.engagementMetrics?.lastPromotionDate) {
-      const daysSincePromotion = 
-        (new Date().getTime() - request.engagementMetrics.lastPromotionDate.getTime()) / 
+      const daysSincePromotion =
+        (new Date().getTime() -
+          request.engagementMetrics.lastPromotionDate.getTime()) /
         (1000 * 60 * 60 * 24);
-      
-      if (daysSincePromotion > 730) { // 2 years
+
+      if (daysSincePromotion > 730) {
+        // 2 years
         const contrib = 0.15;
         riskScore += contrib;
         factors.push({
@@ -201,10 +215,10 @@ export class AIInterfaceService {
    * Generate performance insights (Mock implementation)
    */
   async generatePerformanceInsights(
-    request: PerformanceInsightsRequest
+    request: PerformanceInsightsRequest,
   ): Promise<PerformanceInsightsResponse> {
     // TODO: Integrate with actual AI service (GPT, etc.)
-    
+
     return {
       insights: [
         'Consistent high performance in technical delivery',
@@ -221,11 +235,7 @@ export class AIInterfaceService {
         'Stakeholder communication',
         'Strategic thinking',
       ],
-      careerPath: [
-        'Senior Engineer',
-        'Tech Lead',
-        'Engineering Manager',
-      ],
+      careerPath: ['Senior Engineer', 'Tech Lead', 'Engineering Manager'],
     };
   }
 
@@ -234,16 +244,18 @@ export class AIInterfaceService {
    */
   async recommendTraining(
     skillGaps: SkillGapAnalysisResponse,
-    performanceData: any
-  ): Promise<Array<{
-    trainingTitle: string;
-    description: string;
-    priority: 'HIGH' | 'MEDIUM' | 'LOW';
-    estimatedDuration: string;
-  }>> {
+    performanceData: any,
+  ): Promise<
+    Array<{
+      trainingTitle: string;
+      description: string;
+      priority: 'HIGH' | 'MEDIUM' | 'LOW';
+      estimatedDuration: string;
+    }>
+  > {
     // TODO: Integrate with actual recommendation engine
-    
-    return skillGaps.recommendations.map(rec => ({
+
+    return skillGaps.recommendations.map((rec) => ({
       trainingTitle: rec.training,
       description: `Training program to bridge skill gap`,
       priority: rec.priority === 1 ? 'HIGH' : 'MEDIUM',
@@ -258,7 +270,7 @@ export class AIInterfaceService {
     employeeId: string,
     performanceHistory: any[],
     currentRole: string,
-    targetRole: string
+    targetRole: string,
   ): Promise<{
     readinessScore: number;
     recommendation: 'READY' | 'DEVELOPING' | 'NOT_READY';
@@ -266,7 +278,7 @@ export class AIInterfaceService {
     timeline: string;
   }> {
     // TODO: Integrate with actual ML model
-    
+
     return {
       readinessScore: 0.75,
       recommendation: 'DEVELOPING',

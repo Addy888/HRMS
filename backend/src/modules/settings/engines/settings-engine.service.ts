@@ -1,8 +1,8 @@
 /**
  * SETTINGS ENGINE SERVICE
- * 
+ *
  * Central configuration management engine
- * 
+ *
  * FEATURES:
  * - Type-safe configuration access
  * - In-memory caching for performance
@@ -11,13 +11,13 @@
  * - Default value management
  * - Configuration encryption/decryption
  * - Hot-reload without restart
- * 
+ *
  * CACHING STRATEGY:
  * - Settings cached in memory
  * - Cache TTL: 5 minutes (configurable)
  * - Cache invalidation on updates
  * - Distributed cache ready (Redis)
- * 
+ *
  * USAGE:
  * const companyName = await settingsEngine.get('COMPANY', 'NAME', 'Default Co.');
  * await settingsEngine.set('COMPANY', 'NAME', 'New Company Name', userId);
@@ -139,13 +139,15 @@ export class SettingsEngineService implements OnModuleInit {
   /**
    * Get all settings (for admin UI)
    */
-  async getAll(includeEncrypted: boolean = false): Promise<SettingDefinition[]> {
+  async getAll(
+    includeEncrypted: boolean = false,
+  ): Promise<SettingDefinition[]> {
     const settings = await this.database.systemSetting.findMany({
       where: includeEncrypted ? undefined : { isEncrypted: false },
       orderBy: [{ category: 'asc' }, { key: 'asc' }],
     });
 
-    return settings.map(s => ({
+    return settings.map((s) => ({
       category: s.category,
       key: s.key,
       value: this.parseValue(s.value, s.dataType),
@@ -280,7 +282,9 @@ export class SettingsEngineService implements OnModuleInit {
   /**
    * Detect data type from value
    */
-  private detectDataType(value: any): 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' {
+  private detectDataType(
+    value: any,
+  ): 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' {
     if (typeof value === 'number') return 'NUMBER';
     if (typeof value === 'boolean') return 'BOOLEAN';
     if (Array.isArray(value)) return 'ARRAY';
@@ -291,35 +295,55 @@ export class SettingsEngineService implements OnModuleInit {
   /**
    * Helper: Get string setting
    */
-  async getString(category: string, key: string, defaultValue: string = ''): Promise<string> {
+  async getString(
+    category: string,
+    key: string,
+    defaultValue: string = '',
+  ): Promise<string> {
     return this.get<string>(category, key, defaultValue);
   }
 
   /**
    * Helper: Get number setting
    */
-  async getNumber(category: string, key: string, defaultValue: number = 0): Promise<number> {
+  async getNumber(
+    category: string,
+    key: string,
+    defaultValue: number = 0,
+  ): Promise<number> {
     return this.get<number>(category, key, defaultValue);
   }
 
   /**
    * Helper: Get boolean setting
    */
-  async getBoolean(category: string, key: string, defaultValue: boolean = false): Promise<boolean> {
+  async getBoolean(
+    category: string,
+    key: string,
+    defaultValue: boolean = false,
+  ): Promise<boolean> {
     return this.get<boolean>(category, key, defaultValue);
   }
 
   /**
    * Helper: Get JSON setting
    */
-  async getJSON<T = any>(category: string, key: string, defaultValue: T = {} as T): Promise<T> {
+  async getJSON<T = any>(
+    category: string,
+    key: string,
+    defaultValue: T = {} as T,
+  ): Promise<T> {
     return this.get<T>(category, key, defaultValue);
   }
 
   /**
    * Helper: Get array setting
    */
-  async getArray<T = any>(category: string, key: string, defaultValue: T[] = []): Promise<T[]> {
+  async getArray<T = any>(
+    category: string,
+    key: string,
+    defaultValue: T[] = [],
+  ): Promise<T[]> {
     return this.get<T[]>(category, key, defaultValue);
   }
 }

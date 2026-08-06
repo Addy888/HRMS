@@ -1,16 +1,16 @@
 /**
  * ATTENDANCE PROVIDER INTERFACE
- * 
+ *
  * This interface abstracts attendance data access from the Payroll Engine.
- * 
+ *
  * CRITICAL: Payroll Engine NEVER directly queries Attendance tables.
  * Instead, it uses this interface.
- * 
+ *
  * This allows:
  * - Switching from internal Attendance to external Biometric systems
  * - Integration with third-party Time & Attendance systems
  * - Multiple attendance sources without changing payroll logic
- * 
+ *
  * Future Implementations:
  * - InternalAttendanceProvider (uses our Attendance module)
  * - BiometricAttendanceProvider (ZKTeco, eSSL, etc.)

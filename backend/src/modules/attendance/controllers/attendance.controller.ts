@@ -15,9 +15,19 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AttendanceService } from '../services/attendance.service.js';
-import { CheckInDto, CheckOutDto, GetAttendanceQueryDto, GetMonthlyAttendanceDto } from '../dto/index.js';
+import {
+  CheckInDto,
+  CheckOutDto,
+  GetAttendanceQueryDto,
+  GetMonthlyAttendanceDto,
+} from '../dto/index.js';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard.js';
 import { RolesGuard, Roles } from '../../../common/guards/roles.guard.js';
 import { UserRole } from '../../../common/constants/index.js';
@@ -100,7 +110,10 @@ export class AttendanceController {
   @Get('my/monthly')
   @ApiOperation({ summary: 'Get my monthly attendance' })
   @ApiResponse({ status: 200, description: 'Monthly attendance retrieved' })
-  async getMyMonthlyAttendance(@Request() req, @Query() dto: GetMonthlyAttendanceDto) {
+  async getMyMonthlyAttendance(
+    @Request() req,
+    @Query() dto: GetMonthlyAttendanceDto,
+  ) {
     // Get employee ID from authenticated user
     const employee = await req.prisma.employee.findUnique({
       where: { userId: req.user.userId },
@@ -118,8 +131,8 @@ export class AttendanceController {
    * Get today's attendance status
    */
   @Get('my/today')
-  @ApiOperation({ summary: 'Get today\'s attendance status' })
-  @ApiResponse({ status: 200, description: 'Today\'s attendance status' })
+  @ApiOperation({ summary: "Get today's attendance status" })
+  @ApiResponse({ status: 200, description: "Today's attendance status" })
   async getTodayStatus(@Request() req) {
     // Get employee ID from authenticated user
     const employee = await req.prisma.employee.findUnique({
@@ -147,7 +160,8 @@ export class AttendanceController {
       date: today,
       attendance,
       canCheckIn: !attendance || !attendance.checkInTime,
-      canCheckOut: attendance && attendance.checkInTime && !attendance.checkOutTime,
+      canCheckOut:
+        attendance && attendance.checkInTime && !attendance.checkOutTime,
     };
   }
 
@@ -187,7 +201,10 @@ export class AttendanceController {
   @Get('employee/:employeeId/monthly')
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Get employee monthly attendance (HR only)' })
-  @ApiResponse({ status: 200, description: 'Employee monthly attendance retrieved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Employee monthly attendance retrieved',
+  })
   async getEmployeeMonthlyAttendance(
     @Param('employeeId') employeeId: string,
     @Query() dto: GetMonthlyAttendanceDto,

@@ -2,7 +2,13 @@
  * Attendance Correction DTOs
  * For requesting and managing attendance corrections
  */
-import { IsString, IsNotEmpty, IsDateString, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum CorrectionField {
@@ -33,19 +39,28 @@ export class CreateAttendanceCorrectionDto {
   @IsString()
   newValue: string;
 
-  @ApiProperty({ description: 'Reason for correction', example: 'Missed punch due to system issue' })
+  @ApiProperty({
+    description: 'Reason for correction',
+    example: 'Missed punch due to system issue',
+  })
   @IsNotEmpty()
   @IsString()
   reason: string;
 }
 
 export class UpdateCorrectionStatusDto {
-  @ApiProperty({ description: 'Correction status', enum: ['APPROVED', 'REJECTED'] })
+  @ApiProperty({
+    description: 'Correction status',
+    enum: ['APPROVED', 'REJECTED'],
+  })
   @IsNotEmpty()
   @IsEnum(['APPROVED', 'REJECTED'])
   status: 'APPROVED' | 'REJECTED';
 
-  @ApiPropertyOptional({ description: 'Rejection reason (if rejected)', example: 'Invalid reason provided' })
+  @ApiPropertyOptional({
+    description: 'Rejection reason (if rejected)',
+    example: 'Invalid reason provided',
+  })
   @IsOptional()
   @IsString()
   rejectionReason?: string;

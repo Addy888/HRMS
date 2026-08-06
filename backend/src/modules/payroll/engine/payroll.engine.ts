@@ -1,27 +1,27 @@
 /**
  * PAYROLL ENGINE
- * 
+ *
  * The CORE of the Payroll system.
- * 
+ *
  * CRITICAL ARCHITECTURE PRINCIPLE:
  * This engine does NOT directly depend on:
  * - Attendance tables
  * - Leave tables
  * - Tax calculation logic
  * - Accounting systems
- * 
+ *
  * Instead, it depends ONLY on interfaces:
  * - IAttendanceProvider
  * - ILeaveProvider
  * - ITaxProvider
  * - IAccountingProvider
- * 
+ *
  * This allows:
  * - Switching from internal Attendance to external Biometric systems
  * - Integrating with Tally, Zoho Books, QuickBooks, SAP WITHOUT changing this code
  * - Different tax rules for different countries
  * - Multiple data sources
- * 
+ *
  * This is DEPENDENCY INVERSION PRINCIPLE in action.
  */
 
@@ -45,7 +45,9 @@ export class PayrollEngine {
     private readonly taxProvider: ITaxProvider,
   ) {
     this.logger.log('Payroll Engine initialized');
-    this.logger.log(`Using Attendance Provider: ${attendanceProvider.getName()}`);
+    this.logger.log(
+      `Using Attendance Provider: ${attendanceProvider.getName()}`,
+    );
     this.logger.log(`Using Leave Provider: ${leaveProvider.getName()}`);
     this.logger.log(`Using Tax Provider: ${taxProvider.getName()}`);
   }
@@ -54,8 +56,12 @@ export class PayrollEngine {
    * CALCULATE PAYROLL
    * Main method to calculate salary for an employee
    */
-  async calculatePayroll(input: IPayrollCalculationInput): Promise<IPayrollCalculationOutput> {
-    this.logger.log(`Calculating payroll for employee ${input.employeeId}, ${input.month}/${input.year}`);
+  async calculatePayroll(
+    input: IPayrollCalculationInput,
+  ): Promise<IPayrollCalculationOutput> {
+    this.logger.log(
+      `Calculating payroll for employee ${input.employeeId}, ${input.month}/${input.year}`,
+    );
 
     const { employeeId, month, year, salaryStructure } = input;
 
@@ -96,17 +102,25 @@ export class PayrollEngine {
     salaryComponents.tds = taxData.tds;
 
     // Step 6: Calculate deductions
-    salaryComponents.totalDeductions = this.calculateTotalDeductions(salaryComponents, input);
+    salaryComponents.totalDeductions = this.calculateTotalDeductions(
+      salaryComponents,
+      input,
+    );
 
     // Step 7: Calculate net salary
-    salaryComponents.netSalary = salaryComponents.totalEarnings - salaryComponents.totalDeductions;
+    salaryComponents.netSalary =
+      salaryComponents.totalEarnings - salaryComponents.totalDeductions;
 
     // Step 8: Employer contributions (not part of net, but tracked for CTC)
     salaryComponents.employerPF = taxData.employerPF;
     salaryComponents.employerESI = taxData.employerESI;
 
     // Step 9: Build calculation breakdown
-    const calculationBreakdown = this.buildCalculationBreakdown(salaryComponents, attendanceData, leaveData);
+    const calculationBreakdown = this.buildCalculationBreakdown(
+      salaryComponents,
+      attendanceData,
+      leaveData,
+    );
 
     return {
       employeeId,
@@ -129,20 +143,20 @@ export class PayrollEngine {
     leave: any,
     input: IPayrollCalculationInput,
   ): Promise<ISalaryComponents> {
-    const { totalWorkingDays, daysPresent, daysHalfDay, overtimeHours } = attendance;
+    const { totalWorkingDays, daysPresent, daysHalfDay, overtimeHours } =
+      attendance;
     const { unpaidLeaveDays } = leave;
 
     // Calculate per-day salary
     const perDaySalary = structure.basicSalary / 30; // Assuming 30 days in a month
 
     // Calculate effective days (accounting for half days and unpaid leaves)
-    const effectiveDays = daysPresent + (daysHalfDay * 0.5);
+    const effectiveDays = daysPresent + daysHalfDay * 0.5;
     const lwpDays = unpaidLeaveDays; // Loss of Pay days
 
     // Calculate proportionate salary based on attendance
-    const attendanceFactor = totalWorkingDays > 0 
-      ? (effectiveDays / totalWorkingDays) 
-      : 1;
+    const attendanceFactor =
+      totalWorkingDays > 0 ? effectiveDays / totalWorkingDays : 1;
 
     // Earnings
     const basicSalary = structure.basicSalary * attendanceFactor;
@@ -163,7 +177,7 @@ export class PayrollEngine {
     const reimbursement = 0;
 
     // Total earnings
-    const totalEarnings = 
+    const totalEarnings =
       basicSalary +
       hra +
       da +
@@ -177,8 +191,14 @@ export class PayrollEngine {
       reimbursement;
 
     // Deductions (will be calculated later by tax provider and loan/advance logic)
-    const loanDeduction = input.loans.reduce((sum, loan) => sum + loan.emiAmount, 0);
-    const advanceDeduction = input.advances.reduce((sum, adv) => sum + adv.recoveryAmount, 0);
+    const loanDeduction = input.loans.reduce(
+      (sum, loan) => sum + loan.emiAmount,
+      0,
+    );
+    const advanceDeduction = input.advances.reduce(
+      (sum, adv) => sum + adv.recoveryAmount,
+      0,
+    );
     const lateDeduction = 0; // Can be configured based on policy
     const lwpDeduction = lwpDays * perDaySalary;
     const otherDeductions = 0;
@@ -195,9 +215,9 @@ export class PayrollEngine {
       incentive: Math.round(incentive * 100) / 100,
       overtimePay: Math.round(overtimePay * 100) / 100,
       reimbursement: Math.round(reimbursement * 100) / 100,
-      
+
       totalEarnings: Math.round(totalEarnings * 100) / 100,
-      
+
       employeePF: 0, // Will be set by tax provider
       employeeESI: 0,
       professionalTax: 0,
@@ -207,11 +227,11 @@ export class PayrollEngine {
       lateDeduction: Math.round(lateDeduction * 100) / 100,
       lwpDeduction: Math.round(lwpDeduction * 100) / 100,
       otherDeductions: Math.round(otherDeductions * 100) / 100,
-      
+
       totalDeductions: 0, // Will be calculated later
-      
+
       netSalary: 0, // Will be calculated later
-      
+
       employerPF: 0, // Will be set by tax provider
       employerESI: 0,
     };

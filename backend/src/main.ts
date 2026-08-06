@@ -16,12 +16,14 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'development') {
     app.use(helmet());
   } else {
-    app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+    app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   }
 
   // CORS config
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : 'http://localhost:3000',
+    origin: process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : 'http://localhost:3000',
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Accept,Authorization',
@@ -37,7 +39,7 @@ async function bootstrap() {
   const express = await import('express');
   const { join } = await import('path');
   const fs = await import('fs');
-  
+
   // Ensure directories exist
   const uploadPath = join(process.cwd(), 'uploads/avatars');
   if (!fs.existsSync(uploadPath)) {
@@ -68,7 +70,9 @@ async function bootstrap() {
   const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
   const swaggerConfig = new DocumentBuilder()
     .setTitle('FCS HRMS API')
-    .setDescription('Enterprise Human Resource Management System backend API endpoints')
+    .setDescription(
+      'Enterprise Human Resource Management System backend API endpoints',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -77,6 +81,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(`FCS HRMS backend API successfully running on: http://localhost:${port}/api/v1`);
+  console.log(
+    `FCS HRMS backend API successfully running on: http://localhost:${port}/api/v1`,
+  );
 }
 bootstrap();

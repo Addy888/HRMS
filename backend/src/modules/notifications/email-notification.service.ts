@@ -46,7 +46,12 @@ export class EmailNotificationService {
   /**
    * Generic send method
    */
-  async sendEmail(to: string, subject: string, message: string, actionUrl?: string): Promise<boolean> {
+  async sendEmail(
+    to: string,
+    subject: string,
+    message: string,
+    actionUrl?: string,
+  ): Promise<boolean> {
     const html = this.generateTemplate(subject, message, actionUrl);
     try {
       return await this.provider.send({
@@ -64,7 +69,11 @@ export class EmailNotificationService {
   /**
    * Simple clean responsive HTML template generator
    */
-  private generateTemplate(title: string, message: string, actionUrl?: string): string {
+  private generateTemplate(
+    title: string,
+    message: string,
+    actionUrl?: string,
+  ): string {
     const actionBtn = actionUrl
       ? `<div style="margin: 30px 0; text-align: center;">
           <a href="${actionUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Action Item</a>

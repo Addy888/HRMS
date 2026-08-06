@@ -35,17 +35,19 @@ export class EmployeeSalaryController {
   async getMySalary(@Request() req: any) {
     // Get employee ID from authenticated user
     const employeeId = req.user.employeeId;
-    
+
     if (!employeeId) {
       throw new ForbiddenException('Employee ID not found');
     }
 
     // Get active salary structure
-    const salaryStructure = await this.salaryStructureService.getActiveSalaryStructure(employeeId);
+    const salaryStructure =
+      await this.salaryStructureService.getActiveSalaryStructure(employeeId);
 
+    // Return null if no salary structure exists (don't throw error)
     return {
       success: true,
-      data: salaryStructure,
+      data: salaryStructure || null,
     };
   }
 
@@ -56,16 +58,20 @@ export class EmployeeSalaryController {
   @Get('my-salary-history')
   async getMySalaryHistory(@Request() req: any) {
     const employeeId = req.user.employeeId;
-    
+
     if (!employeeId) {
       throw new ForbiddenException('Employee ID not found');
     }
 
-    const salarySlips = await this.salarySlipService.getEmployeeSalarySlips(employeeId, 12);
+    const salarySlips = await this.salarySlipService.getEmployeeSalarySlips(
+      employeeId,
+      12,
+    );
 
+    // Return empty array if no salary slips exist (don't throw error)
     return {
       success: true,
-      data: salarySlips,
+      data: salarySlips || [],
     };
   }
 
@@ -76,16 +82,25 @@ export class EmployeeSalaryController {
   @Get('my-payroll-status')
   async getMyPayrollStatus(@Request() req: any) {
     const employeeId = req.user.employeeId;
-    
+
     if (!employeeId) {
       throw new ForbiddenException('Employee ID not found');
     }
 
     const status = await this.salarySlipService.getPayrollStatus(employeeId);
 
+    // Always return status even if no payroll exists
     return {
       success: true,
-      data: status,
+      data: status || {
+        currentMonth: {
+          month: new Date().getMonth() + 1,
+          year: new Date().getFullYear(),
+          status: 'NOT_GENERATED',
+          netSalary: 0,
+        },
+        recentPayrolls: [],
+      },
     };
   }
 
@@ -94,14 +109,18 @@ export class EmployeeSalaryController {
    * Employee can only view their own payslip
    */
   @Get('payslip/:payrollRunId')
-  async getMyPayslip(@Request() req: any, @Param('payrollRunId') payrollRunId: string) {
+  async getMyPayslip(
+    @Request() req: any,
+    @Param('payrollRunId') payrollRunId: string,
+  ) {
     const employeeId = req.user.employeeId;
-    
+
     if (!employeeId) {
       throw new ForbiddenException('Employee ID not found');
     }
 
-    const payslipData = await this.salarySlipService.generateSalarySlipData(payrollRunId);
+    const payslipData =
+      await this.salarySlipService.generateSalarySlipData(payrollRunId);
 
     // Verify the payslip belongs to the requesting employee
     if (payslipData.employee.employeeId !== req.user.employee?.employeeId) {

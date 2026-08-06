@@ -1,10 +1,18 @@
 /**
  * DTOs for System Settings
- * 
+ *
  * System-wide configuration management
  */
 
-import { IsString, IsBoolean, IsInt, IsOptional, IsEnum, IsObject, Min } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsEnum,
+  IsObject,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum ThemeMode {
@@ -102,7 +110,10 @@ export class UIPreferencesDto {
   @IsString()
   defaultLanguage?: string;
 
-  @ApiPropertyOptional({ default: 30, description: 'Session timeout in minutes' })
+  @ApiPropertyOptional({
+    default: 30,
+    description: 'Session timeout in minutes',
+  })
   @IsOptional()
   @IsInt()
   @Min(5)

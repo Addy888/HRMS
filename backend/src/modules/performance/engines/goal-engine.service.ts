@@ -1,8 +1,8 @@
 /**
  * GOAL ENGINE SERVICE
- * 
+ *
  * Specialized engine for goal management and tracking
- * 
+ *
  * FEATURES:
  * - Goal progress calculation
  * - Goal cascading (Company → Department → Team → Individual)
@@ -10,7 +10,7 @@
  * - Milestone management
  * - Goal alignment analysis
  * - Completion prediction
- * 
+ *
  * GOAL TYPES:
  * - COMPANY: Organization-wide strategic goals
  * - DEPARTMENT: Department-specific goals
@@ -55,10 +55,12 @@ export class GoalEngineService {
   /**
    * Calculate goal progress based on milestones
    */
-  calculateProgressFromMilestones(milestones: Array<{ completed: boolean }>): number {
+  calculateProgressFromMilestones(
+    milestones: Array<{ completed: boolean }>,
+  ): number {
     if (!milestones || milestones.length === 0) return 0;
 
-    const completed = milestones.filter(m => m.completed).length;
+    const completed = milestones.filter((m) => m.completed).length;
     return (completed / milestones.length) * 100;
   }
 
@@ -76,8 +78,12 @@ export class GoalEngineService {
     if (now > dueDate) return true;
 
     // Goal is at risk if less than 20% of time remaining and progress < 80%
-    const totalTime = dueDate.getTime() - (goal.startDate ? new Date(goal.startDate).getTime() : now.getTime());
-    const elapsed = now.getTime() - (goal.startDate ? new Date(goal.startDate).getTime() : now.getTime());
+    const totalTime =
+      dueDate.getTime() -
+      (goal.startDate ? new Date(goal.startDate).getTime() : now.getTime());
+    const elapsed =
+      now.getTime() -
+      (goal.startDate ? new Date(goal.startDate).getTime() : now.getTime());
     const timeProgress = (elapsed / totalTime) * 100;
 
     return timeProgress > 80 && goal.progress < 80;
@@ -86,7 +92,11 @@ export class GoalEngineService {
   /**
    * Calculate completion percentage based on target vs actual
    */
-  calculateCompletionPercentage(targetValue: string, actualValue: string, measurementType: string): number {
+  calculateCompletionPercentage(
+    targetValue: string,
+    actualValue: string,
+    measurementType: string,
+  ): number {
     if (!targetValue || !actualValue) return 0;
 
     try {
@@ -132,19 +142,22 @@ export class GoalEngineService {
       };
     }
 
-    const completed = goals.filter(g => g.status === 'COMPLETED').length;
-    const inProgress = goals.filter(g => g.status === 'IN_PROGRESS').length;
-    const delayed = goals.filter(g => this.isGoalDelayed(g)).length;
+    const completed = goals.filter((g) => g.status === 'COMPLETED').length;
+    const inProgress = goals.filter((g) => g.status === 'IN_PROGRESS').length;
+    const delayed = goals.filter((g) => this.isGoalDelayed(g)).length;
     const onTrack = goals.length - delayed - completed;
 
-    const averageProgress = goals.reduce((sum, g) => sum + g.progress, 0) / goals.length;
+    const averageProgress =
+      goals.reduce((sum, g) => sum + g.progress, 0) / goals.length;
     const onTrackPercentage = (onTrack / goals.length) * 100;
 
     // Calculate weighted completion
     const totalWeightage = goals.reduce((sum, g) => sum + g.weightage, 0);
-    const weightedCompletion = totalWeightage > 0
-      ? goals.reduce((sum, g) => sum + (g.progress * g.weightage), 0) / totalWeightage
-      : 0;
+    const weightedCompletion =
+      totalWeightage > 0
+        ? goals.reduce((sum, g) => sum + g.progress * g.weightage, 0) /
+          totalWeightage
+        : 0;
 
     return {
       totalGoals: goals.length,
@@ -161,10 +174,7 @@ export class GoalEngineService {
    * Check goal dependencies
    * Returns list of blocking goals (dependencies not completed)
    */
-  getBlockingDependencies(
-    goal: Goal,
-    allGoals: Map<string, Goal>
-  ): Goal[] {
+  getBlockingDependencies(goal: Goal, allGoals: Map<string, Goal>): Goal[] {
     if (!goal.dependencies || goal.dependencies.length === 0) {
       return [];
     }
@@ -188,7 +198,7 @@ export class GoalEngineService {
     individualGoals: Goal[],
     teamGoals: Goal[],
     departmentGoals: Goal[],
-    companyGoals: Goal[]
+    companyGoals: Goal[],
   ): {
     alignmentScore: number;
     alignedGoals: number;
@@ -215,9 +225,9 @@ export class GoalEngineService {
     // In real implementation, this would check goal relationships/tags/categories
     // For now, we'll use a simplified approach based on goal categories
 
-    let companyAligned = 0;
-    let departmentAligned = 0;
-    let teamAligned = 0;
+    const companyAligned = 0;
+    const departmentAligned = 0;
+    const teamAligned = 0;
 
     // This is a placeholder - in real implementation,
     // you'd have explicit linking between goals
@@ -278,7 +288,9 @@ export class GoalEngineService {
       return {
         predictedDate: null,
         confidence: 'LOW',
-        daysRemaining: Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+        daysRemaining: Math.ceil(
+          (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        ),
         likelihood: 'AT_RISK',
       };
     }
@@ -286,10 +298,14 @@ export class GoalEngineService {
     // Calculate predicted completion
     const remainingProgress = 100 - goal.progress;
     const daysToComplete = remainingProgress / velocity;
-    const predictedDate = new Date(now.getTime() + daysToComplete * 24 * 60 * 60 * 1000);
+    const predictedDate = new Date(
+      now.getTime() + daysToComplete * 24 * 60 * 60 * 1000,
+    );
 
     // Determine confidence and likelihood
-    const daysRemaining = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.ceil(
+      (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const buffer = daysRemaining - daysToComplete;
 
     let confidence: 'HIGH' | 'MEDIUM' | 'LOW';
@@ -327,25 +343,25 @@ export class GoalEngineService {
 
     if (analysis.delayedGoals > 0) {
       recommendations.push(
-        `${analysis.delayedGoals} goal(s) are delayed. Consider reassessing priorities or extending deadlines.`
+        `${analysis.delayedGoals} goal(s) are delayed. Consider reassessing priorities or extending deadlines.`,
       );
     }
 
     if (analysis.averageProgress < 50 && analysis.totalGoals > 0) {
       recommendations.push(
-        'Average goal progress is below 50%. Review resource allocation and remove blockers.'
+        'Average goal progress is below 50%. Review resource allocation and remove blockers.',
       );
     }
 
     if (analysis.weightedCompletion < analysis.averageProgress) {
       recommendations.push(
-        'High-priority goals are lagging. Focus on goals with higher weightage.'
+        'High-priority goals are lagging. Focus on goals with higher weightage.',
       );
     }
 
     if (analysis.onTrackPercentage < 70) {
       recommendations.push(
-        'Less than 70% of goals are on track. Consider a strategy review meeting.'
+        'Less than 70% of goals are on track. Consider a strategy review meeting.',
       );
     }
 

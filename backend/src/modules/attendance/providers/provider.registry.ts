@@ -1,37 +1,40 @@
 /**
  * ATTENDANCE PROVIDER REGISTRY
- * 
+ *
  * This is the PROVIDER FACTORY that manages all attendance providers.
- * 
+ *
  * RESPONSIBILITIES:
  * 1. Register providers (manual, biometric, RFID, face recognition, etc.)
  * 2. Get active provider instance
  * 3. Switch between providers without code changes
  * 4. Maintain provider metadata
- * 
+ *
  * EXTENSIBILITY:
  * New providers are added by:
  * 1. Implementing IAttendanceProvider interface
  * 2. Registering in the registry
  * 3. NO changes to business logic
- * 
+ *
  * This implements the Strategy Pattern + Factory Pattern
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { IAttendanceProvider, IProviderMetadata } from './base/attendance.provider.interface';
+import {
+  IAttendanceProvider,
+  IProviderMetadata,
+} from './base/attendance.provider.interface';
 import { AttendanceSource } from '../enums';
 
 @Injectable()
 export class AttendanceProviderRegistry implements OnModuleInit {
   private readonly logger = new Logger(AttendanceProviderRegistry.name);
-  
+
   // Registry of all available providers
   private providers: Map<string, IAttendanceProvider> = new Map();
-  
+
   // Provider metadata for UI and configuration
   private metadata: Map<string, IProviderMetadata> = new Map();
-  
+
   // Currently active provider (only one at a time)
   private activeProviderName: string | null = null;
 
@@ -42,7 +45,9 @@ export class AttendanceProviderRegistry implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('Initializing Attendance Provider Registry');
-    this.logger.log(`Registered providers: ${Array.from(this.providers.keys()).join(', ')}`);
+    this.logger.log(
+      `Registered providers: ${Array.from(this.providers.keys()).join(', ')}`,
+    );
   }
 
   /**
@@ -71,7 +76,7 @@ export class AttendanceProviderRegistry implements OnModuleInit {
     }
 
     const provider = this.providers.get(this.activeProviderName);
-    
+
     if (!provider) {
       throw new Error(
         `Active provider '${this.activeProviderName}' not found. Available providers: ${Array.from(this.providers.keys()).join(', ')}`,
@@ -103,7 +108,7 @@ export class AttendanceProviderRegistry implements OnModuleInit {
    */
   async setActiveProvider(name: string): Promise<void> {
     const provider = this.providers.get(name);
-    
+
     if (!provider) {
       throw new Error(
         `Provider '${name}' not found. Available providers: ${Array.from(this.providers.keys()).join(', ')}`,
@@ -177,9 +182,11 @@ export class AttendanceProviderRegistry implements OnModuleInit {
    * HEALTH CHECK ALL PROVIDERS
    * Monitor health of all providers
    */
-  async healthCheckAll(): Promise<Map<string, { healthy: boolean; message?: string }>> {
+  async healthCheckAll(): Promise<
+    Map<string, { healthy: boolean; message?: string }>
+  > {
     const results = new Map();
-    
+
     for (const [name, provider] of this.providers) {
       try {
         const health = await provider.healthCheck();
@@ -191,7 +198,7 @@ export class AttendanceProviderRegistry implements OnModuleInit {
         });
       }
     }
-    
+
     return results;
   }
 }

@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service.js';
 
 export interface JwtPayload {
-  sub: string;       // user.id
+  sub: string; // user.id
   email: string;
   role: string;
   employeeId?: string;
@@ -20,7 +20,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'fcs-hrms-super-secret-key',
+      secretOrKey:
+        configService.get<string>('JWT_SECRET') || 'fcs-hrms-super-secret-key',
     });
   }
 
@@ -29,7 +30,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.sub },
       include: {
         role: true,
-        employee: { select: { id: true, employeeId: true, onboardingStatus: true } },
+        employee: {
+          select: { id: true, employeeId: true, onboardingStatus: true },
+        },
       },
     });
 

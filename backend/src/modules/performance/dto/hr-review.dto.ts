@@ -1,6 +1,6 @@
 /**
  * DTO for HR Review (Final Review)
- * 
+ *
  * HR conducts final assessment including:
  * - Final rating and calibration
  * - Salary recommendations
@@ -9,7 +9,17 @@
  * - Action items and follow-ups
  */
 
-import { IsString, IsInt, IsNumber, IsBoolean, IsDateString, IsOptional, IsArray, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsNumber,
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsArray,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class HRReviewDto {
@@ -17,23 +27,34 @@ export class HRReviewDto {
   @IsString()
   reviewId: string;
 
-  @ApiPropertyOptional({ example: 'Calibrated rating based on department-wide performance' })
+  @ApiPropertyOptional({
+    example: 'Calibrated rating based on department-wide performance',
+  })
   @IsOptional()
   @IsString()
   hrComments?: string;
 
-  @ApiPropertyOptional({ example: 'Discussed in calibration meeting, aligned with peer group' })
+  @ApiPropertyOptional({
+    example: 'Discussed in calibration meeting, aligned with peer group',
+  })
   @IsOptional()
   @IsString()
   calibrationNotes?: string;
 
-  @ApiProperty({ example: 4, description: 'Final rating (1-5)', minimum: 1, maximum: 5 })
+  @ApiProperty({
+    example: 4,
+    description: 'Final rating (1-5)',
+    minimum: 1,
+    maximum: 5,
+  })
   @IsInt()
   @Min(1)
   @Max(5)
   finalRating: number;
 
-  @ApiPropertyOptional({ example: 'Rating justified based on achievements and manager feedback' })
+  @ApiPropertyOptional({
+    example: 'Rating justified based on achievements and manager feedback',
+  })
   @IsOptional()
   @IsString()
   ratingJustification?: string;
@@ -58,12 +79,17 @@ export class HRReviewDto {
   @Max(100)
   incrementPercentage?: number;
 
-  @ApiPropertyOptional({ example: '2026-04-01', description: 'Increment effective date' })
+  @ApiPropertyOptional({
+    example: '2026-04-01',
+    description: 'Increment effective date',
+  })
   @IsOptional()
   @IsDateString()
   incrementEffectiveDate?: string;
 
-  @ApiPropertyOptional({ example: 'Based on performance and market benchmarking' })
+  @ApiPropertyOptional({
+    example: 'Based on performance and market benchmarking',
+  })
   @IsOptional()
   @IsString()
   salaryRemarks?: string;
@@ -79,12 +105,17 @@ export class HRReviewDto {
   @IsString()
   recommendedDesignation?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-01', description: 'Promotion effective date' })
+  @ApiPropertyOptional({
+    example: '2026-04-01',
+    description: 'Promotion effective date',
+  })
   @IsOptional()
   @IsDateString()
   promotionEffectiveDate?: string;
 
-  @ApiPropertyOptional({ example: 'Ready for leadership role, demonstrated strong performance' })
+  @ApiPropertyOptional({
+    example: 'Ready for leadership role, demonstrated strong performance',
+  })
   @IsOptional()
   @IsString()
   promotionRemarks?: string;
@@ -93,9 +124,17 @@ export class HRReviewDto {
   @ApiPropertyOptional({
     description: 'Action items for follow-up',
     example: [
-      { action: 'Complete leadership training', dueDate: '2026-06-01', responsible: 'HR' },
-      { action: 'Schedule promotion discussion', dueDate: '2026-04-15', responsible: 'Manager' }
-    ]
+      {
+        action: 'Complete leadership training',
+        dueDate: '2026-06-01',
+        responsible: 'HR',
+      },
+      {
+        action: 'Schedule promotion discussion',
+        dueDate: '2026-04-15',
+        responsible: 'Manager',
+      },
+    ],
   })
   @IsOptional()
   @IsArray()

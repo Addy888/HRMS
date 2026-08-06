@@ -1,9 +1,9 @@
 /**
  * SETTINGS SERVICE
- * 
+ *
  * Main service for system settings management
  * Provides high-level API for configuration operations
- * 
+ *
  * RESPONSIBILITIES:
  * - Settings CRUD operations
  * - Category-based settings management
@@ -12,11 +12,19 @@
  * - Settings versioning
  */
 
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { SettingsEngineService } from '../engines/settings-engine.service';
 import { AuditEngineService } from '../engines/audit-engine.service';
-import { SystemSettingDto, UpdateSystemSettingDto, BulkUpdateSystemSettingsDto } from '../dto/system-settings.dto';
+import {
+  SystemSettingDto,
+  UpdateSystemSettingDto,
+  BulkUpdateSystemSettingsDto,
+} from '../dto/system-settings.dto';
 
 @Injectable()
 export class SettingsService {
@@ -50,7 +58,7 @@ export class SettingsService {
     }
 
     const value = await this.settingsEngine.get(category, key);
-    
+
     return {
       category,
       key,
@@ -162,8 +170,11 @@ export class SettingsService {
 
     for (const setting of data.settings) {
       try {
-        const oldValue = await this.settingsEngine.get(setting.category, setting.key);
-        
+        const oldValue = await this.settingsEngine.get(
+          setting.category,
+          setting.key,
+        );
+
         await this.settingsEngine.set(
           setting.category,
           setting.key,
@@ -253,7 +264,7 @@ export class SettingsService {
     const allSettings = await this.settingsEngine.getAll(false);
 
     if (categories && categories.length > 0) {
-      return allSettings.filter(s => categories.includes(s.category));
+      return allSettings.filter((s) => categories.includes(s.category));
     }
 
     return allSettings;
@@ -295,8 +306,8 @@ export class SettingsService {
 
     return {
       success: true,
-      imported: results.filter(r => r.success).length,
-      failed: results.filter(r => !r.success).length,
+      imported: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
       results,
     };
   }
@@ -308,10 +319,11 @@ export class SettingsService {
     const allSettings = await this.settingsEngine.getAll(false);
     const regex = new RegExp(pattern, 'i');
 
-    return allSettings.filter(s => 
-      regex.test(s.category) || 
-      regex.test(s.key) || 
-      regex.test(s.description || '')
+    return allSettings.filter(
+      (s) =>
+        regex.test(s.category) ||
+        regex.test(s.key) ||
+        regex.test(s.description || ''),
     );
   }
 
@@ -322,7 +334,10 @@ export class SettingsService {
     const defaults = this.getDefaultSettings();
 
     for (const setting of defaults) {
-      const exists = await this.settingsEngine.exists(setting.category, setting.key);
+      const exists = await this.settingsEngine.exists(
+        setting.category,
+        setting.key,
+      );
       if (!exists) {
         await this.settingsEngine.set(
           setting.category,
@@ -351,14 +366,20 @@ export class SettingsService {
         }
         break;
       case 'BOOLEAN':
-        if (typeof value !== 'boolean' && value !== 'true' && value !== 'false') {
+        if (
+          typeof value !== 'boolean' &&
+          value !== 'true' &&
+          value !== 'false'
+        ) {
           throw new BadRequestException('Value must be a boolean');
         }
         break;
       case 'JSON':
       case 'ARRAY':
         if (typeof value !== 'object') {
-          throw new BadRequestException(`Value must be ${dataType.toLowerCase()}`);
+          throw new BadRequestException(
+            `Value must be ${dataType.toLowerCase()}`,
+          );
         }
         break;
     }

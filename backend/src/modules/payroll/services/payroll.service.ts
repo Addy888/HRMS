@@ -1,11 +1,16 @@
 /**
  * PAYROLL SERVICE (Simplified)
- * 
+ *
  * Works with existing Prisma schema
  * Generates payroll based on SalaryStructure
  */
 
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 
 @Injectable()
@@ -17,7 +22,12 @@ export class PayrollService {
   /**
    * GENERATE PAYROLL FOR SINGLE EMPLOYEE
    */
-  async generateForEmployee(employeeId: string, month: number, year: number, processedBy?: string) {
+  async generateForEmployee(
+    employeeId: string,
+    month: number,
+    year: number,
+    processedBy?: string,
+  ) {
     // Check if payroll already exists
     const existing = await this.database.payrollRun.findFirst({
       where: { employeeId, month, year },
@@ -46,10 +56,18 @@ export class PayrollService {
       month,
       year,
       basicSalary: salaryStructure.basicSalary,
-      allowances: salaryStructure.hra + salaryStructure.conveyance + salaryStructure.medicalAllowance + 
-                  salaryStructure.specialAllowance + salaryStructure.otherAllowances,
-      deductions: salaryStructure.pf + salaryStructure.esi + salaryStructure.professionalTax + 
-                  salaryStructure.tds + salaryStructure.otherDeductions,
+      allowances:
+        salaryStructure.hra +
+        salaryStructure.conveyance +
+        salaryStructure.medicalAllowance +
+        salaryStructure.specialAllowance +
+        salaryStructure.otherAllowances,
+      deductions:
+        salaryStructure.pf +
+        salaryStructure.esi +
+        salaryStructure.professionalTax +
+        salaryStructure.tds +
+        salaryStructure.otherDeductions,
       grossSalary: salaryStructure.grossSalary,
       netSalary: salaryStructure.netSalary,
       status: 'PENDING',
@@ -69,25 +87,37 @@ export class PayrollService {
   /**
    * GENERATE FOR ALL EMPLOYEES
    */
-  async generateForAllEmployees(month: number, year: number, processedBy?: string) {
+  async generateForAllEmployees(
+    month: number,
+    year: number,
+    processedBy?: string,
+  ) {
     const employees = await this.database.employee.findMany({
       select: { id: true, firstName: true, lastName: true, employeeId: true },
     });
 
-    const results: Array<{ employeeId: string; success: boolean; error?: string }> = [];
+    const results: Array<{
+      employeeId: string;
+      success: boolean;
+      error?: string;
+    }> = [];
     for (const employee of employees) {
       try {
         await this.generateForEmployee(employee.id, month, year, processedBy);
         results.push({ employeeId: employee.employeeId, success: true });
       } catch (error) {
-        results.push({ employeeId: employee.employeeId, success: false, error: error.message });
+        results.push({
+          employeeId: employee.employeeId,
+          success: false,
+          error: error.message,
+        });
       }
     }
 
     return {
       totalEmployees: employees.length,
-      successCount: results.filter(r => r.success).length,
-      failureCount: results.filter(r => !r.success).length,
+      successCount: results.filter((r) => r.success).length,
+      failureCount: results.filter((r) => !r.success).length,
       results,
     };
   }
@@ -187,14 +217,20 @@ export class PayrollService {
 
     const summary = {
       totalEmployees: payrollRuns.length,
-      totalGrossSalary: payrollRuns.reduce((sum, run) => sum + run.grossSalary, 0),
-      totalDeductions: payrollRuns.reduce((sum, run) => sum + run.deductions, 0),
+      totalGrossSalary: payrollRuns.reduce(
+        (sum, run) => sum + run.grossSalary,
+        0,
+      ),
+      totalDeductions: payrollRuns.reduce(
+        (sum, run) => sum + run.deductions,
+        0,
+      ),
       totalNetSalary: payrollRuns.reduce((sum, run) => sum + run.netSalary, 0),
       byStatus: {
-        PENDING: payrollRuns.filter(r => r.status === 'PENDING').length,
-        PROCESSED: payrollRuns.filter(r => r.status === 'PROCESSED').length,
-        PAID: payrollRuns.filter(r => r.status === 'PAID').length,
-        FAILED: payrollRuns.filter(r => r.status === 'FAILED').length,
+        PENDING: payrollRuns.filter((r) => r.status === 'PENDING').length,
+        PROCESSED: payrollRuns.filter((r) => r.status === 'PROCESSED').length,
+        PAID: payrollRuns.filter((r) => r.status === 'PAID').length,
+        FAILED: payrollRuns.filter((r) => r.status === 'FAILED').length,
       },
     };
 

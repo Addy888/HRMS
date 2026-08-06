@@ -1,6 +1,6 @@
 /**
  * DTO for Self Appraisal
- * 
+ *
  * Employee submits self-assessment including:
  * - Achievements and challenges
  * - Self-rating on goals, KPIs, KRAs
@@ -8,7 +8,15 @@
  * - Supporting documents
  */
 
-import { IsString, IsInt, IsOptional, IsArray, IsObject, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsArray,
+  IsObject,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SelfAppraisalDto {
@@ -16,47 +24,64 @@ export class SelfAppraisalDto {
   @IsString()
   reviewId: string;
 
-  @ApiProperty({ 
-    example: 'Successfully led the Q1 product launch, exceeded sales targets by 20%',
-    description: 'Major achievements' 
+  @ApiProperty({
+    example:
+      'Successfully led the Q1 product launch, exceeded sales targets by 20%',
+    description: 'Major achievements',
   })
   @IsString()
   achievements: string;
 
-  @ApiPropertyOptional({ 
-    example: 'Faced resource constraints, managed to overcome with cross-functional collaboration' 
+  @ApiPropertyOptional({
+    example:
+      'Faced resource constraints, managed to overcome with cross-functional collaboration',
   })
   @IsOptional()
   @IsString()
   challenges?: string;
 
-  @ApiPropertyOptional({ example: 'Learned advanced project management techniques' })
+  @ApiPropertyOptional({
+    example: 'Learned advanced project management techniques',
+  })
   @IsOptional()
   @IsString()
   learnings?: string;
 
-  @ApiPropertyOptional({ example: 'Lead the Q2 expansion project, improve team productivity by 15%' })
+  @ApiPropertyOptional({
+    example: 'Lead the Q2 expansion project, improve team productivity by 15%',
+  })
   @IsOptional()
   @IsString()
   futureGoals?: string;
 
-  @ApiPropertyOptional({ example: 'Advanced leadership training, PMP certification' })
+  @ApiPropertyOptional({
+    example: 'Advanced leadership training, PMP certification',
+  })
   @IsOptional()
   @IsString()
   trainingRequired?: string;
 
-  @ApiPropertyOptional({ example: 'Aiming for senior management role in next 2 years' })
+  @ApiPropertyOptional({
+    example: 'Aiming for senior management role in next 2 years',
+  })
   @IsOptional()
   @IsString()
   careerAspirations?: string;
 
-  @ApiProperty({ example: 4, description: 'Self rating (1-5)', minimum: 1, maximum: 5 })
+  @ApiProperty({
+    example: 4,
+    description: 'Self rating (1-5)',
+    minimum: 1,
+    maximum: 5,
+  })
   @IsInt()
   @Min(1)
   @Max(5)
   selfRating: number;
 
-  @ApiPropertyOptional({ example: 'I believe I have exceeded expectations this quarter' })
+  @ApiPropertyOptional({
+    example: 'I believe I have exceeded expectations this quarter',
+  })
   @IsOptional()
   @IsString()
   selfComments?: string;
@@ -64,9 +89,17 @@ export class SelfAppraisalDto {
   @ApiPropertyOptional({
     description: 'Goal self-assessment',
     example: [
-      { goalId: 'goal-uuid-1', selfRating: 4, comments: 'Achieved 95% of target' },
-      { goalId: 'goal-uuid-2', selfRating: 5, comments: 'Exceeded expectations' }
-    ]
+      {
+        goalId: 'goal-uuid-1',
+        selfRating: 4,
+        comments: 'Achieved 95% of target',
+      },
+      {
+        goalId: 'goal-uuid-2',
+        selfRating: 5,
+        comments: 'Exceeded expectations',
+      },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -79,8 +112,12 @@ export class SelfAppraisalDto {
   @ApiPropertyOptional({
     description: 'KPI self-assessment',
     example: [
-      { kpiId: 'kpi-uuid-1', selfRating: 4, comments: 'Consistently met targets' }
-    ]
+      {
+        kpiId: 'kpi-uuid-1',
+        selfRating: 4,
+        comments: 'Consistently met targets',
+      },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -93,8 +130,8 @@ export class SelfAppraisalDto {
   @ApiPropertyOptional({
     description: 'KRA self-assessment',
     example: [
-      { kraId: 'kra-uuid-1', selfRating: 5, comments: 'Excellent performance' }
-    ]
+      { kraId: 'kra-uuid-1', selfRating: 5, comments: 'Excellent performance' },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -106,7 +143,7 @@ export class SelfAppraisalDto {
 
   @ApiPropertyOptional({
     description: 'Supporting document URLs',
-    example: ['https://example.com/doc1.pdf', 'https://example.com/doc2.pdf']
+    example: ['https://example.com/doc1.pdf', 'https://example.com/doc2.pdf'],
   })
   @IsOptional()
   @IsArray()

@@ -1,8 +1,8 @@
 /**
  * COMPANY SERVICE
- * 
+ *
  * Manages company profile and settings
- * 
+ *
  * RESPONSIBILITIES:
  * - Company profile CRUD
  * - Company settings management
@@ -13,7 +13,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { AuditEngineService } from '../engines/audit-engine.service';
-import { CreateCompanyDto, UpdateCompanyDto } from '../dto/company-settings.dto';
+import {
+  CreateCompanyDto,
+  UpdateCompanyDto,
+} from '../dto/company-settings.dto';
 
 @Injectable()
 export class CompanyService {

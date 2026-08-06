@@ -1,16 +1,25 @@
 /**
  * DTO for Goal Management
- * 
+ *
  * Goals can be:
  * - INDIVIDUAL: Personal employee goals
  * - TEAM: Team-level goals
  * - DEPARTMENT: Department-wide goals
  * - COMPANY: Organization-wide goals
- * 
+ *
  * Supports goal cascading and weightage-based scoring
  */
 
-import { IsString, IsEnum, IsOptional, IsNumber, IsDateString, IsArray, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  IsDateString,
+  IsArray,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum GoalType {
@@ -57,7 +66,10 @@ export class CreateGoalDto {
   @IsString()
   title: string;
 
-  @ApiProperty({ example: 'Achieve 20% growth in Q1 sales compared to Q4', description: 'Goal description' })
+  @ApiProperty({
+    example: 'Achieve 20% growth in Q1 sales compared to Q4',
+    description: 'Goal description',
+  })
   @IsString()
   description: string;
 
@@ -69,7 +81,10 @@ export class CreateGoalDto {
   @IsEnum(GoalTargetType)
   targetType: GoalTargetType;
 
-  @ApiPropertyOptional({ example: 'employee-uuid', description: 'Target employee/team/department ID' })
+  @ApiPropertyOptional({
+    example: 'employee-uuid',
+    description: 'Target employee/team/department ID',
+  })
   @IsOptional()
   @IsString()
   targetId?: string;
@@ -82,7 +97,10 @@ export class CreateGoalDto {
   @IsEnum(GoalPriority)
   priority: GoalPriority;
 
-  @ApiProperty({ enum: GoalMeasurementType, example: GoalMeasurementType.PERCENTAGE })
+  @ApiProperty({
+    enum: GoalMeasurementType,
+    example: GoalMeasurementType.PERCENTAGE,
+  })
   @IsEnum(GoalMeasurementType)
   measurementType: GoalMeasurementType;
 
@@ -96,23 +114,37 @@ export class CreateGoalDto {
   @IsString()
   unit?: string;
 
-  @ApiProperty({ example: 25, description: 'Goal weightage (0-100)', minimum: 0, maximum: 100 })
+  @ApiProperty({
+    example: 25,
+    description: 'Goal weightage (0-100)',
+    minimum: 0,
+    maximum: 100,
+  })
   @IsNumber()
   @Min(0)
   @Max(100)
   weightage: number;
 
-  @ApiPropertyOptional({ example: 'employee-uuid', description: 'Goal owner employee ID' })
+  @ApiPropertyOptional({
+    example: 'employee-uuid',
+    description: 'Goal owner employee ID',
+  })
   @IsOptional()
   @IsString()
   ownerId?: string;
 
-  @ApiPropertyOptional({ example: 'manager-user-uuid', description: 'Assigned by user ID' })
+  @ApiPropertyOptional({
+    example: 'manager-user-uuid',
+    description: 'Assigned by user ID',
+  })
   @IsOptional()
   @IsString()
   assignedBy?: string;
 
-  @ApiPropertyOptional({ example: '2026-01-01', description: 'Goal start date' })
+  @ApiPropertyOptional({
+    example: '2026-01-01',
+    description: 'Goal start date',
+  })
   @IsOptional()
   @IsDateString()
   startDate?: string;
@@ -122,20 +154,20 @@ export class CreateGoalDto {
   @IsDateString()
   dueDate?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Milestones (JSON array)',
     example: [
       { title: 'Complete Phase 1', dueDate: '2026-02-01', completed: false },
-      { title: 'Complete Phase 2', dueDate: '2026-03-01', completed: false }
-    ]
+      { title: 'Complete Phase 2', dueDate: '2026-03-01', completed: false },
+    ],
   })
   @IsOptional()
   @IsArray()
   milestones?: any[];
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Dependent goal IDs',
-    example: ['goal-uuid-1', 'goal-uuid-2']
+    example: ['goal-uuid-1', 'goal-uuid-2'],
   })
   @IsOptional()
   @IsArray()

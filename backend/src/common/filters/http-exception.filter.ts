@@ -1,4 +1,10 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
@@ -15,7 +21,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       message = exception.getResponse();
-    } else if (exception && typeof exception === 'object' && 'code' in exception && exception instanceof Prisma.PrismaClientKnownRequestError) {
+    } else if (
+      exception &&
+      typeof exception === 'object' &&
+      'code' in exception &&
+      exception instanceof Prisma.PrismaClientKnownRequestError
+    ) {
       // Prisma error mapping
       switch (exception.code) {
         case 'P2002':

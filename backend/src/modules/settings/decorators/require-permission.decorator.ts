@@ -1,18 +1,18 @@
 /**
  * PERMISSION DECORATORS
- * 
+ *
  * Custom decorators for permission-based access control
- * 
+ *
  * USAGE:
- * 
+ *
  * Single permission:
  * @RequirePermission('employees:user:create')
  * async createEmployee() { ... }
- * 
+ *
  * Multiple permissions (requires ALL):
  * @RequirePermissions(['employees:user:update', 'employees:user:read'])
  * async updateEmployee() { ... }
- * 
+ *
  * Multiple permissions (requires ANY):
  * @RequirePermissions(['employees:user:update', 'employees:user:delete'], 'ANY')
  * async modifyEmployee() { ... }
@@ -27,7 +27,7 @@ export const PERMISSIONS_MODE_KEY = 'permissions_mode';
 /**
  * Decorator to require a single permission
  */
-export const RequirePermission = (permission: string) => 
+export const RequirePermission = (permission: string) =>
   SetMetadata(PERMISSION_KEY, permission);
 
 /**
@@ -39,7 +39,11 @@ export const RequirePermissions = (
   permissions: string[],
   mode: 'ALL' | 'ANY' = 'ALL',
 ) => {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (
+    target: any,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     SetMetadata(PERMISSIONS_KEY, permissions)(target, propertyKey, descriptor);
     SetMetadata(PERMISSIONS_MODE_KEY, mode)(target, propertyKey, descriptor);
   };

@@ -1,8 +1,8 @@
 /**
  * PERFORMANCE MANAGEMENT MODULE - PHASE 14
- * 
+ *
  * Enterprise Performance Management System
- * 
+ *
  * FEATURES:
  * - Performance Cycle Management (Quarterly, Half-Yearly, Annual, Custom)
  * - Goal Management (Individual, Team, Department, Company)
@@ -19,7 +19,7 @@
  * - Comprehensive Reporting
  * - AI-Ready Interfaces (Skill Gap, Attrition Prediction)
  * - Audit Logging & Version Control
- * 
+ *
  * ARCHITECTURE:
  * - Controllers: API endpoints for all features
  * - Services: Business logic and data operations
@@ -27,13 +27,13 @@
  * - DTOs: Request/response validation
  * - Guards: Role-based access control
  * - Interfaces: AI/ML integration points
- * 
+ *
  * ROLES:
  * - SUPER_ADMIN: Full system access
  * - HR: Manage cycles, final reviews, promotions
  * - MANAGER: Team reviews, recommendations
  * - EMPLOYEE: Self-appraisal, goal tracking
- * 
+ *
  * WORKFLOW:
  * 1. HR creates Performance Cycle
  * 2. HR/Manager assigns Goals, KPIs, KRAs
@@ -43,7 +43,7 @@
  * 6. HR conducts Final Review
  * 7. System generates Performance Letter
  * 8. Promotion/Training recommendations processed
- * 
+ *
  * INTEGRATION READY FOR:
  * - Microsoft Viva
  * - SAP SuccessFactors

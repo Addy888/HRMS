@@ -2,14 +2,7 @@
  * SALARY SLIP CONTROLLER
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../../../common/guards/roles.guard';
 import { SalarySlipService } from '../services/salary-slip-new.service';

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum DocumentVerificationAction {
@@ -8,7 +14,10 @@ export enum DocumentVerificationAction {
 }
 
 export class UploadDocumentDto {
-  @ApiProperty({ description: 'The document type, e.g. RESUME, AADHAAR, PAN, MARKSHEET_10TH, etc.' })
+  @ApiProperty({
+    description:
+      'The document type, e.g. RESUME, AADHAAR, PAN, MARKSHEET_10TH, etc.',
+  })
   @IsString()
   @IsNotEmpty()
   type: string;
@@ -48,7 +57,10 @@ export class QueryDocumentDto {
   @IsOptional()
   departmentId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by verification status (PENDING, APPROVED, REJECTED, RE_UPLOAD_REQUIRED)' })
+  @ApiPropertyOptional({
+    description:
+      'Filter by verification status (PENDING, APPROVED, REJECTED, RE_UPLOAD_REQUIRED)',
+  })
   @IsString()
   @IsOptional()
   status?: string;

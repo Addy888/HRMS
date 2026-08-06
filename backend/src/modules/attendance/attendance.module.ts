@@ -1,8 +1,8 @@
 /**
  * ATTENDANCE MODULE
- * 
+ *
  * Complete attendance management system with provider-based architecture
- * 
+ *
  * FEATURES:
  * - Multiple attendance sources (Manual, Biometric, RFID, Face Recognition, QR, GPS, API)
  * - Provider pattern for extensibility
@@ -12,13 +12,13 @@
  * - Real-time and scheduled sync
  * - Comprehensive reporting
  * - Audit logging
- * 
+ *
  * ARCHITECTURE:
  * - IAttendanceProvider interface for all providers
  * - AttendanceProviderRegistry for provider management
  * - AttendanceService for business logic
  * - Controllers for API endpoints
- * 
+ *
  * TO ADD NEW PROVIDER:
  * 1. Create provider class implementing IAttendanceProvider
  * 2. Add to providers array below
@@ -64,10 +64,10 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     // Core Services
     AttendanceService,
     ShiftService,
-    
+
     // Provider Registry (Factory)
     AttendanceProviderRegistry,
-    
+
     // Attendance Providers (Strategy Pattern)
     ManualAttendanceProvider,
     // BiometricAttendanceProvider, // Future
@@ -77,7 +77,7 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     // GPSAttendanceProvider, // Future
     // APIAttendanceProvider, // Future
     // WebhookAttendanceProvider, // Future
-    
+
     // Additional services can be added here:
     // HolidayService,
     // AttendanceCorrectionService,
@@ -86,10 +86,6 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     // AttendanceCalculationService,
     // AttendanceReportService,
   ],
-  exports: [
-    AttendanceService,
-    ShiftService,
-    AttendanceProviderRegistry,
-  ],
+  exports: [AttendanceService, ShiftService, AttendanceProviderRegistry],
 })
 export class AttendanceModule {}

@@ -1,8 +1,8 @@
 /**
  * ACCOUNTING PROVIDER INTERFACE
- * 
+ *
  * Abstracts accounting/ERP integration from Payroll Engine.
- * 
+ *
  * This allows integration with:
  * - Tally
  * - Zoho Books
@@ -12,9 +12,9 @@
  * - Dynamics 365
  * - NetSuite
  * - Custom accounting systems
- * 
+ *
  * WITHOUT CHANGING PAYROLL LOGIC!
- * 
+ *
  * Future Implementations:
  * - TallyAccountingProvider
  * - ZohoBooksProvider
@@ -24,7 +24,10 @@
  * - ManualAccountingProvider (exports to CSV/Excel)
  */
 
-import { IAccountingEntry, IBankTransferData } from '../../interfaces/payroll-data.interface';
+import {
+  IAccountingEntry,
+  IBankTransferData,
+} from '../../interfaces/payroll-data.interface';
 
 export interface IAccountingProvider {
   /**
@@ -35,7 +38,9 @@ export interface IAccountingProvider {
   /**
    * Post salary entry to accounting system
    */
-  postSalaryEntry(entry: IAccountingEntry): Promise<{ success: boolean; voucherNumber?: string; error?: string }>;
+  postSalaryEntry(
+    entry: IAccountingEntry,
+  ): Promise<{ success: boolean; voucherNumber?: string; error?: string }>;
 
   /**
    * Post bulk salary entries

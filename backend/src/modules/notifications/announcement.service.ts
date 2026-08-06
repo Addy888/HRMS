@@ -60,7 +60,9 @@ export class AnnouncementService {
       read: false,
     });
 
-    this.logger.log(`Announcement published: ${announcement.title}. Broadcasted to ${activeUsers.length} users.`);
+    this.logger.log(
+      `Announcement published: ${announcement.title}. Broadcasted to ${activeUsers.length} users.`,
+    );
 
     // 4. Log to notification audits
     await this.prisma.notificationAuditLog.create({

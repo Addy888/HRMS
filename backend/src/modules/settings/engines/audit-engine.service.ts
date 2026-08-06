@@ -1,8 +1,8 @@
 /**
  * AUDIT ENGINE SERVICE
- * 
+ *
  * Comprehensive audit logging engine
- * 
+ *
  * FEATURES:
  * - Automatic audit trail for all operations
  * - User action tracking
@@ -11,7 +11,7 @@
  * - Async logging for performance
  * - Audit log search and filtering
  * - Compliance reporting
- * 
+ *
  * AUDIT CATEGORIES:
  * - AUTHENTICATION: Login, logout, password changes
  * - USER_MANAGEMENT: User creation, updates, deletion
@@ -20,7 +20,7 @@
  * - DATA_ACCESS: Read operations on sensitive data
  * - DATA_MODIFICATION: Create, update, delete operations
  * - SECURITY: Security-related events
- * 
+ *
  * USAGE:
  * await auditEngine.log({
  *   userId: user.id,
@@ -83,7 +83,12 @@ export class AuditEngineService {
    * Log authentication event
    */
   async logAuth(
-    action: 'LOGIN' | 'LOGOUT' | 'LOGIN_FAILED' | 'PASSWORD_RESET' | 'PASSWORD_CHANGED',
+    action:
+      | 'LOGIN'
+      | 'LOGOUT'
+      | 'LOGIN_FAILED'
+      | 'PASSWORD_RESET'
+      | 'PASSWORD_CHANGED',
     userId: string,
     details: string,
     ipAddress?: string,
@@ -278,7 +283,10 @@ export class AuditEngineService {
   /**
    * Get audit summary for user
    */
-  async getUserSummary(userId: string, days: number = 30): Promise<{
+  async getUserSummary(
+    userId: string,
+    days: number = 30,
+  ): Promise<{
     totalActions: number;
     actionsByType: Record<string, number>;
     recentActions: any[];
@@ -383,10 +391,12 @@ export class AuditEngineService {
       const batch = this.logQueue.splice(0, this.BATCH_SIZE);
 
       await this.database.auditLog.createMany({
-        data: batch.map(entry => ({
+        data: batch.map((entry) => ({
           userId: entry.userId,
           action: entry.action,
-          details: entry.details + (entry.metadata ? ` | ${JSON.stringify(entry.metadata)}` : ''),
+          details:
+            entry.details +
+            (entry.metadata ? ` | ${JSON.stringify(entry.metadata)}` : ''),
           ipAddress: entry.ipAddress,
           userAgent: entry.userAgent,
         })),
@@ -411,7 +421,10 @@ export class AuditEngineService {
   /**
    * Detect changes between old and new data
    */
-  private detectChanges(oldData: any, newData: any): Record<string, { old: any; new: any }> {
+  private detectChanges(
+    oldData: any,
+    newData: any,
+  ): Record<string, { old: any; new: any }> {
     const changes: Record<string, { old: any; new: any }> = {};
 
     if (!oldData || !newData) {

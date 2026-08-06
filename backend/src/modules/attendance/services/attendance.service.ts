@@ -1,29 +1,54 @@
 /**
  * ATTENDANCE SERVICE
- * 
+ *
  * CORE BUSINESS LOGIC for attendance management.
- * 
+ *
  * KEY PRINCIPLE: This service communicates ONLY with IAttendanceProvider interface.
  * It NEVER directly uses ManualAttendanceProvider, BiometricProvider, etc.
- * 
+ *
  * This ensures:
  * 1. Business logic is decoupled from attendance source
  * 2. New providers can be added without changing this service
  * 3. Provider can be switched at runtime
  * 4. Easy testing with mock providers
- * 
+ *
  * ARCHITECTURE:
  * Employee/HR -> Controller -> AttendanceService -> AttendanceProviderRegistry -> ActiveProvider
  *                                                                                  (Manual/Biometric/RFID/etc.)
  */
 
-import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { AttendanceProviderRegistry } from '../providers/provider.registry';
-import { AttendanceEventType, AttendanceStatus, AttendanceSource } from '../enums';
-import { CheckInDto, CheckOutDto, ManualAttendanceDto, GetAttendanceQueryDto, GetMonthlyAttendanceDto } from '../dto';
+import {
+  AttendanceEventType,
+  AttendanceStatus,
+  AttendanceSource,
+} from '../enums';
+import {
+  CheckInDto,
+  CheckOutDto,
+  ManualAttendanceDto,
+  GetAttendanceQueryDto,
+  GetMonthlyAttendanceDto,
+} from '../dto';
 import { IAttendanceEvent } from '../interfaces/attendance-event.interface';
-import { startOfDay, endOfDay, startOfMonth, endOfMonth, differenceInMinutes, differenceInHours, format, parseISO } from 'date-fns';
+import {
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  differenceInMinutes,
+  differenceInHours,
+  format,
+  parseISO,
+} from 'date-fns';
 
 @Injectable()
 export class AttendanceService {
@@ -101,13 +126,17 @@ export class AttendanceService {
     const recordedEvent = await provider.recordAttendance(attendanceEvent);
 
     // Save to database
-    const attendance = await this.saveAttendance(employee, recordedEvent, dto.remarks);
+    const attendance = await this.saveAttendance(
+      employee,
+      recordedEvent,
+      dto.remarks,
+    );
 
     // Log attendance event
     await this.logAttendanceEvent(recordedEvent, attendance.id);
 
     this.logger.log(`Check-in successful for employee: ${employeeId}`);
-    
+
     return {
       success: true,
       message: 'Checked in successfully',
@@ -186,13 +215,17 @@ export class AttendanceService {
     const recordedEvent = await provider.recordAttendance(attendanceEvent);
 
     // Update attendance with checkout
-    const attendance = await this.updateCheckOut(existingAttendance, recordedEvent, dto.remarks);
+    const attendance = await this.updateCheckOut(
+      existingAttendance,
+      recordedEvent,
+      dto.remarks,
+    );
 
     // Log attendance event
     await this.logAttendanceEvent(recordedEvent, attendance.id);
 
     this.logger.log(`Check-out successful for employee: ${employeeId}`);
-    
+
     return {
       success: true,
       message: 'Checked out successfully',
@@ -204,7 +237,11 @@ export class AttendanceService {
    * SAVE ATTENDANCE (CHECK-IN)
    * Private method to save attendance record
    */
-  private async saveAttendance(employee: any, event: IAttendanceEvent, remarks?: string) {
+  private async saveAttendance(
+    employee: any,
+    event: IAttendanceEvent,
+    remarks?: string,
+  ) {
     const date = startOfDay(event.timestamp);
 
     // Get employee shift
@@ -213,10 +250,7 @@ export class AttendanceService {
         employeeId: employee.id,
         isActive: true,
         effectiveFrom: { lte: date },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: date } },
-        ],
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: date } }],
       },
       include: { shift: true },
     });
@@ -232,7 +266,7 @@ export class AttendanceService {
       shiftStart.setHours(startHour, startMinute, 0, 0);
 
       const minutesLate = differenceInMinutes(event.timestamp, shiftStart);
-      
+
       if (minutesLate > shift.graceTime) {
         lateBy = minutesLate - shift.graceTime;
         if (lateBy >= shift.halfDayIfLateBy) {
@@ -247,10 +281,7 @@ export class AttendanceService {
     const holiday = await this.prisma.holiday.findFirst({
       where: {
         date: date,
-        OR: [
-          { departmentId: null },
-          { departmentId: employee.departmentId },
-        ],
+        OR: [{ departmentId: null }, { departmentId: employee.departmentId }],
       },
     });
 
@@ -309,7 +340,11 @@ export class AttendanceService {
    * UPDATE CHECK-OUT
    * Private method to update attendance with check-out
    */
-  private async updateCheckOut(attendance: any, event: IAttendanceEvent, remarks?: string) {
+  private async updateCheckOut(
+    attendance: any,
+    event: IAttendanceEvent,
+    remarks?: string,
+  ) {
     const checkInTime = attendance.checkInTime;
     const checkOutTime = event.timestamp;
 
@@ -319,7 +354,7 @@ export class AttendanceService {
 
     // Calculate break time (if applicable)
     const breakTime = attendance.shift?.breakTime || 0;
-    const netWorkingHours = Math.max(0, workingHours - (breakTime / 60));
+    const netWorkingHours = Math.max(0, workingHours - breakTime / 60);
 
     // Calculate overtime
     const minimumHours = attendance.shift?.minimumWorkingHours || 8;
@@ -328,7 +363,9 @@ export class AttendanceService {
     // Calculate early exit
     let earlyExitBy = 0;
     if (attendance.shift) {
-      const [endHour, endMinute] = attendance.shift.endTime.split(':').map(Number);
+      const [endHour, endMinute] = attendance.shift.endTime
+        .split(':')
+        .map(Number);
       const shiftEnd = new Date(checkOutTime);
       shiftEnd.setHours(endHour, endMinute, 0, 0);
 
@@ -364,7 +401,10 @@ export class AttendanceService {
    * LOG ATTENDANCE EVENT
    * Save attendance log for audit trail
    */
-  private async logAttendanceEvent(event: IAttendanceEvent, attendanceId?: string) {
+  private async logAttendanceEvent(
+    event: IAttendanceEvent,
+    attendanceId?: string,
+  ) {
     const date = startOfDay(event.timestamp);
 
     await this.prisma.attendanceLog.create({
@@ -477,7 +517,11 @@ export class AttendanceService {
    * GET ATTENDANCE SUMMARY
    * Calculate monthly statistics
    */
-  private async getAttendanceSummary(employeeId: string, month: number, year: number) {
+  private async getAttendanceSummary(
+    employeeId: string,
+    month: number,
+    year: number,
+  ) {
     const startDate = startOfMonth(new Date(year, month - 1, 1));
     const endDate = endOfMonth(new Date(year, month - 1, 1));
 
@@ -491,28 +535,54 @@ export class AttendanceService {
       },
     });
 
-    const totalPresent = attendances.filter(a => 
-      [AttendanceStatus.PRESENT, AttendanceStatus.LATE].includes(a.status as AttendanceStatus)
+    const totalPresent = attendances.filter((a) =>
+      [AttendanceStatus.PRESENT, AttendanceStatus.LATE].includes(
+        a.status as AttendanceStatus,
+      ),
     ).length;
 
-    const totalAbsent = attendances.filter(a => a.status === AttendanceStatus.ABSENT).length;
-    const totalLate = attendances.filter(a => a.status === AttendanceStatus.LATE).length;
-    const totalHalfDay = attendances.filter(a => a.status === AttendanceStatus.HALF_DAY).length;
-    const totalHolidays = attendances.filter(a => a.status === AttendanceStatus.HOLIDAY).length;
-    const totalWeekOffs = attendances.filter(a => a.status === AttendanceStatus.WEEK_OFF).length;
-    const totalWFH = attendances.filter(a => a.status === AttendanceStatus.WFH).length;
-    const totalOnDuty = attendances.filter(a => a.status === AttendanceStatus.ON_DUTY).length;
-
-    const totalWorkingHours = attendances.reduce((sum, a) => sum + (a.workingHours || 0), 0);
-    const totalOvertime = attendances.reduce((sum, a) => sum + (a.overtime || 0), 0);
-
-    const workingDays = attendances.filter(a => 
-      ![AttendanceStatus.HOLIDAY, AttendanceStatus.WEEK_OFF].includes(a.status as AttendanceStatus)
+    const totalAbsent = attendances.filter(
+      (a) => a.status === AttendanceStatus.ABSENT,
+    ).length;
+    const totalLate = attendances.filter(
+      (a) => a.status === AttendanceStatus.LATE,
+    ).length;
+    const totalHalfDay = attendances.filter(
+      (a) => a.status === AttendanceStatus.HALF_DAY,
+    ).length;
+    const totalHolidays = attendances.filter(
+      (a) => a.status === AttendanceStatus.HOLIDAY,
+    ).length;
+    const totalWeekOffs = attendances.filter(
+      (a) => a.status === AttendanceStatus.WEEK_OFF,
+    ).length;
+    const totalWFH = attendances.filter(
+      (a) => a.status === AttendanceStatus.WFH,
+    ).length;
+    const totalOnDuty = attendances.filter(
+      (a) => a.status === AttendanceStatus.ON_DUTY,
     ).length;
 
-    const attendancePercentage = workingDays > 0 
-      ? ((totalPresent + totalWFH + totalOnDuty) / workingDays) * 100 
-      : 0;
+    const totalWorkingHours = attendances.reduce(
+      (sum, a) => sum + (a.workingHours || 0),
+      0,
+    );
+    const totalOvertime = attendances.reduce(
+      (sum, a) => sum + (a.overtime || 0),
+      0,
+    );
+
+    const workingDays = attendances.filter(
+      (a) =>
+        ![AttendanceStatus.HOLIDAY, AttendanceStatus.WEEK_OFF].includes(
+          a.status as AttendanceStatus,
+        ),
+    ).length;
+
+    const attendancePercentage =
+      workingDays > 0
+        ? ((totalPresent + totalWFH + totalOnDuty) / workingDays) * 100
+        : 0;
 
     return {
       totalWorkingDays: workingDays,
@@ -526,7 +596,10 @@ export class AttendanceService {
       totalOnDuty,
       totalWorkingHours: parseFloat(totalWorkingHours.toFixed(2)),
       totalOvertime: parseFloat(totalOvertime.toFixed(2)),
-      averageWorkingHours: workingDays > 0 ? parseFloat((totalWorkingHours / workingDays).toFixed(2)) : 0,
+      averageWorkingHours:
+        workingDays > 0
+          ? parseFloat((totalWorkingHours / workingDays).toFixed(2))
+          : 0,
       attendancePercentage: parseFloat(attendancePercentage.toFixed(2)),
     };
   }

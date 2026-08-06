@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { CreateSalaryStructureDto } from '../dto/create-salary-structure.dto';
 import { UpdateSalaryStructureDto } from '../dto/update-salary-structure.dto';
@@ -54,7 +59,9 @@ export class SalaryStructureService {
         netSalary,
         ctc,
         effectiveFrom: new Date(createDto.effectiveFrom),
-        effectiveTo: createDto.effectiveTo ? new Date(createDto.effectiveTo) : null,
+        effectiveTo: createDto.effectiveTo
+          ? new Date(createDto.effectiveTo)
+          : null,
       },
       include: {
         employee: {
@@ -83,10 +90,28 @@ export class SalaryStructureService {
     // Recalculate if any salary component is updated
     const updatedData: any = { ...updateDto };
 
-    if (Object.keys(updateDto).some(key => ['basicSalary', 'hra', 'conveyance', 'medicalAllowance', 'specialAllowance', 'otherAllowances', 'pf', 'esi', 'professionalTax', 'tds', 'otherDeductions'].includes(key))) {
+    if (
+      Object.keys(updateDto).some((key) =>
+        [
+          'basicSalary',
+          'hra',
+          'conveyance',
+          'medicalAllowance',
+          'specialAllowance',
+          'otherAllowances',
+          'pf',
+          'esi',
+          'professionalTax',
+          'tds',
+          'otherDeductions',
+        ].includes(key),
+      )
+    ) {
       const mergedData = { ...existing, ...updateDto };
       updatedData.grossSalary = this.calculateGrossSalary(mergedData as any);
-      updatedData.netSalary = updatedData.grossSalary - this.calculateTotalDeductions(mergedData as any);
+      updatedData.netSalary =
+        updatedData.grossSalary -
+        this.calculateTotalDeductions(mergedData as any);
       updatedData.ctc = updatedData.grossSalary + (mergedData.pf || 0);
     }
 
@@ -131,8 +156,10 @@ export class SalaryStructureService {
 
     if (filters.departmentId || filters.designationId) {
       where.employee = {};
-      if (filters.departmentId) where.employee.departmentId = filters.departmentId;
-      if (filters.designationId) where.employee.designationId = filters.designationId;
+      if (filters.departmentId)
+        where.employee.departmentId = filters.departmentId;
+      if (filters.designationId)
+        where.employee.designationId = filters.designationId;
     }
 
     const page = filters.page || 1;
@@ -202,10 +229,7 @@ export class SalaryStructureService {
         employeeId,
         isActive: true,
         effectiveFrom: { lte: new Date() },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: new Date() } },
-        ],
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
       },
       include: {
         employee: {
@@ -257,7 +281,9 @@ export class SalaryStructureService {
     });
 
     if (payrollCount > 0) {
-      throw new BadRequestException('Cannot delete salary structure with associated payroll runs. Consider deactivating instead.');
+      throw new BadRequestException(
+        'Cannot delete salary structure with associated payroll runs. Consider deactivating instead.',
+      );
     }
 
     await this.database.salaryStructure.delete({ where: { id } });
@@ -291,7 +317,9 @@ export class SalaryStructureService {
   /**
    * HELPER: CALCULATE TOTAL DEDUCTIONS
    */
-  private calculateTotalDeductions(data: CreateSalaryStructureDto | any): number {
+  private calculateTotalDeductions(
+    data: CreateSalaryStructureDto | any,
+  ): number {
     return (
       (data.pf || 0) +
       (data.esi || 0) +
@@ -305,7 +333,13 @@ export class SalaryStructureService {
    * GET DASHBOARD STATS
    */
   async getDashboardStats() {
-    const [totalEmployeesWithSalary, totalActive, avgSalary, totalGross, totalNet] = await Promise.all([
+    const [
+      totalEmployeesWithSalary,
+      totalActive,
+      avgSalary,
+      totalGross,
+      totalNet,
+    ] = await Promise.all([
       this.database.salaryStructure.count(),
       this.database.salaryStructure.count({ where: { isActive: true } }),
       this.database.salaryStructure.aggregate({

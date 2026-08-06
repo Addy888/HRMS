@@ -1,10 +1,23 @@
 import {
-  Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PoliciesService } from './policies.service.js';
 import {
-  CreatePolicyDto, UpdatePolicyDto, AssignPolicyDto, AcceptPolicyDto, SubmitAcknowledgementDto
+  CreatePolicyDto,
+  UpdatePolicyDto,
+  AssignPolicyDto,
+  AcceptPolicyDto,
+  SubmitAcknowledgementDto,
 } from './dto/policy.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { Roles } from '../../common/guards/roles.guard.js';
@@ -20,7 +33,10 @@ export class PoliciesController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'List all policies with optional search/status/category filter (HR Only)' })
+  @ApiOperation({
+    summary:
+      'List all policies with optional search/status/category filter (HR Only)',
+  })
   listPolicies(@Query() query: any) {
     return this.policiesService.listPolicies(query);
   }
@@ -43,7 +59,10 @@ export class PoliciesController {
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Update policy details & automatically backup version if revised (HR Only)' })
+  @ApiOperation({
+    summary:
+      'Update policy details & automatically backup version if revised (HR Only)',
+  })
   updatePolicy(
     @GetUser('id') hrUserId: string,
     @Param('id') id: string,
@@ -95,7 +114,9 @@ export class PoliciesController {
   @Get('tracking')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get details tracking list of employee acceptances (HR Only)' })
+  @ApiOperation({
+    summary: 'Get details tracking list of employee acceptances (HR Only)',
+  })
   getHRTracking(@Query() query: any) {
     return this.policiesService.getHRTracking(query);
   }
@@ -104,7 +125,9 @@ export class PoliciesController {
   @Get('assigned')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
-  @ApiOperation({ summary: 'Get assigned policies checklist for logged-in employee' })
+  @ApiOperation({
+    summary: 'Get assigned policies checklist for logged-in employee',
+  })
   getEmployeePolicies(@GetUser('id') userId: string) {
     return this.policiesService.getEmployeePolicies(userId);
   }
@@ -124,7 +147,9 @@ export class PoliciesController {
   @Post('acknowledge')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
-  @ApiOperation({ summary: 'Submit final digital signature signoff (onboarding milestone 4)' })
+  @ApiOperation({
+    summary: 'Submit final digital signature signoff (onboarding milestone 4)',
+  })
   submitAcknowledgement(
     @GetUser('id') userId: string,
     @Body() dto: SubmitAcknowledgementDto,

@@ -43,7 +43,8 @@ export class CompanyPoliciesService {
     });
 
     return {
-      message: 'Company policy uploaded successfully. Previous policies archived.',
+      message:
+        'Company policy uploaded successfully. Previous policies archived.',
     };
   }
 

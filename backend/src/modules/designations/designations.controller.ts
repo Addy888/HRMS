@@ -1,7 +1,24 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { DesignationsService } from './designations.service';
-import { CreateDesignationDto, UpdateDesignationDto } from './dto/designation.dto';
+import {
+  CreateDesignationDto,
+  UpdateDesignationDto,
+} from './dto/designation.dto';
 import { Roles } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/constants';
 
@@ -34,7 +51,10 @@ export class DesignationsController {
   @Put(':id')
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Update designation details (HR Only)' })
-  update(@Param('id') id: string, @Body() updateDesignationDto: UpdateDesignationDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateDesignationDto: UpdateDesignationDto,
+  ) {
     return this.designationsService.update(id, updateDesignationDto);
   }
 

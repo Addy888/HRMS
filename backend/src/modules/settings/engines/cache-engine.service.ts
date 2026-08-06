@@ -1,15 +1,15 @@
 /**
  * CACHE ENGINE SERVICE
- * 
+ *
  * Abstraction layer for caching
- * 
+ *
  * FEATURES:
  * - In-memory caching (default)
  * - Redis ready (for distributed systems)
  * - TTL support
  * - Pattern-based invalidation
  * - Cache statistics
- * 
+ *
  * IMPLEMENTATION:
  * - Currently uses in-memory Map
  * - Can be extended to use Redis, Memcached, etc.
@@ -162,6 +162,6 @@ export class CacheEngineService {
     }
 
     const regex = new RegExp(pattern.replace('*', '.*'));
-    return keys.filter(key => regex.test(key));
+    return keys.filter((key) => regex.test(key));
   }
 }

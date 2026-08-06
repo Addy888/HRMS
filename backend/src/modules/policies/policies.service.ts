@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { CreatePolicyDto, UpdatePolicyDto, AssignPolicyDto, AcceptPolicyDto, SubmitAcknowledgementDto } from './dto/policy.dto.js';
+import {
+  CreatePolicyDto,
+  UpdatePolicyDto,
+  AssignPolicyDto,
+  AcceptPolicyDto,
+  SubmitAcknowledgementDto,
+} from './dto/policy.dto.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
 @Injectable()
@@ -31,7 +41,10 @@ export class PoliciesService {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
-        include: { assignments: true, _count: { select: { acceptances: true } } },
+        include: {
+          assignments: true,
+          _count: { select: { acceptances: true } },
+        },
       }),
       this.prisma.policy.count({ where }),
     ]);
@@ -61,14 +74,18 @@ export class PoliciesService {
       where: { OR: [{ title: dto.title }, { policyNumber: dto.policyNumber }] },
     });
     if (existing) {
-      throw new BadRequestException('A policy with this title or policy number already exists.');
+      throw new BadRequestException(
+        'A policy with this title or policy number already exists.',
+      );
     }
 
     const hrUser = await this.prisma.user.findUnique({
       where: { id: hrUserId },
       include: { employee: true },
     });
-    const creatorName = hrUser?.employee ? `${hrUser.employee.firstName} ${hrUser.employee.lastName}` : 'HR Admin';
+    const creatorName = hrUser?.employee
+      ? `${hrUser.employee.firstName} ${hrUser.employee.lastName}`
+      : 'HR Admin';
 
     return this.prisma.$transaction(async (tx) => {
       const policy = await tx.policy.create({
@@ -119,13 +136,16 @@ export class PoliciesService {
       where: { id: hrUserId },
       include: { employee: true },
     });
-    const updaterName = hrUser?.employee ? `${hrUser.employee.firstName} ${hrUser.employee.lastName}` : 'HR Admin';
+    const updaterName = hrUser?.employee
+      ? `${hrUser.employee.firstName} ${hrUser.employee.lastName}`
+      : 'HR Admin';
 
     const updateData: any = {};
     if (dto.title) updateData.title = dto.title;
     if (dto.category) updateData.category = dto.category;
     if (dto.description !== undefined) updateData.description = dto.description;
-    if (dto.effectiveDate) updateData.effectiveDate = new Date(dto.effectiveDate);
+    if (dto.effectiveDate)
+      updateData.effectiveDate = new Date(dto.effectiveDate);
     if (dto.expiryDate) updateData.expiryDate = new Date(dto.expiryDate);
     updateData.updatedBy = updaterName;
 
@@ -172,7 +192,11 @@ export class PoliciesService {
     });
   }
 
-  async setPolicyStatus(hrUserId: string, id: string, status: 'PUBLISHED' | 'ARCHIVED' | 'DRAFT') {
+  async setPolicyStatus(
+    hrUserId: string,
+    id: string,
+    status: 'PUBLISHED' | 'ARCHIVED' | 'DRAFT',
+  ) {
     const policy = await this.prisma.policy.findUnique({ where: { id } });
     if (!policy) throw new NotFoundException('Policy not found');
 
@@ -185,7 +209,12 @@ export class PoliciesService {
       data: {
         policyId: id,
         userId: hrUserId,
-        action: status === 'PUBLISHED' ? 'PUBLISH' : status === 'ARCHIVED' ? 'ARCHIVE' : 'DRAFT',
+        action:
+          status === 'PUBLISHED'
+            ? 'PUBLISH'
+            : status === 'ARCHIVED'
+              ? 'ARCHIVE'
+              : 'DRAFT',
         details: `Policy status updated to ${status}`,
       },
     });
@@ -225,17 +254,23 @@ export class PoliciesService {
       });
 
       // Send notifications to affected employees in the background
-      const targets = await this.resolveTargetUserIds(dto.targetType, dto.targetId, tx);
+      const targets = await this.resolveTargetUserIds(
+        dto.targetType,
+        dto.targetId,
+        tx,
+      );
       if (targets.length > 0) {
-        this.notificationService.createNotification(targets, {
-          title: 'New Policy Assigned',
-          description: `A new policy "${policy.title}" has been assigned. Please review and accept it.`,
-          type: 'policy.assigned',
-          module: 'POLICY',
-          priority: 'MEDIUM',
-          icon: 'shield-check',
-          actionUrl: '/employee/policies',
-        }).catch(() => {});
+        this.notificationService
+          .createNotification(targets, {
+            title: 'New Policy Assigned',
+            description: `A new policy "${policy.title}" has been assigned. Please review and accept it.`,
+            type: 'policy.assigned',
+            module: 'POLICY',
+            priority: 'MEDIUM',
+            icon: 'shield-check',
+            actionUrl: '/employee/policies',
+          })
+          .catch(() => {});
       }
 
       return assignment;
@@ -263,9 +298,18 @@ export class PoliciesService {
       if (pol.assignments.length === 0) return true; // default unassigned is fallback ALL
       return pol.assignments.some((assign) => {
         if (assign.targetType === 'ALL') return true;
-        if (assign.targetType === 'DEPARTMENT' && assign.targetId === emp.departmentId) return true;
-        if (assign.targetType === 'DESIGNATION' && assign.targetId === emp.designationId) return true;
-        if (assign.targetType === 'EMPLOYEE' && assign.targetId === emp.id) return true;
+        if (
+          assign.targetType === 'DEPARTMENT' &&
+          assign.targetId === emp.departmentId
+        )
+          return true;
+        if (
+          assign.targetType === 'DESIGNATION' &&
+          assign.targetId === emp.designationId
+        )
+          return true;
+        if (assign.targetType === 'EMPLOYEE' && assign.targetId === emp.id)
+          return true;
         return false;
       });
     });
@@ -281,7 +325,9 @@ export class PoliciesService {
         content: pol.content,
         version: pol.version,
         effectiveDate: pol.effectiveDate,
-        accepted: acceptance ? acceptance.versionAccepted === pol.version : false,
+        accepted: acceptance
+          ? acceptance.versionAccepted === pol.version
+          : false,
         versionAccepted: acceptance?.versionAccepted || null,
         acceptedAt: acceptance?.acceptedAt || null,
       };
@@ -350,7 +396,9 @@ export class PoliciesService {
     const assigned = await this.getEmployeePolicies(userId);
     const pending = assigned.filter((p) => !p.accepted);
     if (pending.length > 0) {
-      throw new BadRequestException(`Please accept all assigned policies first. ${pending.length} pending.`);
+      throw new BadRequestException(
+        `Please accept all assigned policies first. ${pending.length} pending.`,
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -393,15 +441,17 @@ export class PoliciesService {
       });
       const hrIds = hrUsers.map((h: any) => h.id);
       if (hrIds.length > 0) {
-        this.notificationService.createNotification(hrIds, {
-          title: 'Onboarding Complete',
-          description: `${emp.firstName} ${emp.lastName} has completed all policies and signed final acknowledgement.`,
-          type: 'employee.onboarding_completed',
-          module: 'EMPLOYEE',
-          priority: 'HIGH',
-          icon: 'sparkles',
-          actionUrl: '/hr/employees',
-        }).catch(() => {});
+        this.notificationService
+          .createNotification(hrIds, {
+            title: 'Onboarding Complete',
+            description: `${emp.firstName} ${emp.lastName} has completed all policies and signed final acknowledgement.`,
+            type: 'employee.onboarding_completed',
+            module: 'EMPLOYEE',
+            priority: 'HIGH',
+            icon: 'sparkles',
+            actionUrl: '/hr/employees',
+          })
+          .catch(() => {});
       }
 
       return ack;
@@ -504,7 +554,12 @@ export class PoliciesService {
         designation: emp.designation?.name || '—',
         totalAssigned,
         acceptedCount,
-        status: totalAssigned === 0 ? 'NO_POLICIES' : acceptedCount === totalAssigned ? 'COMPLETED' : 'PENDING',
+        status:
+          totalAssigned === 0
+            ? 'NO_POLICIES'
+            : acceptedCount === totalAssigned
+              ? 'COMPLETED'
+              : 'PENDING',
       });
     }
 
@@ -520,7 +575,11 @@ export class PoliciesService {
   }
 
   // Helper: Find affected employee user IDs based on scoping
-  private async resolveTargetUserIds(targetType: string, targetId: string | undefined, tx: any): Promise<string[]> {
+  private async resolveTargetUserIds(
+    targetType: string,
+    targetId: string | undefined,
+    tx: any,
+  ): Promise<string[]> {
     const whereClause: any = {
       user: { role: { name: 'EMPLOYEE' } },
     };

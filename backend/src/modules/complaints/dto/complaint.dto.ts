@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum ComplaintCategory {
@@ -41,7 +48,10 @@ export class CreateComplaintDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ enum: ComplaintCategory, example: ComplaintCategory.SALARY_ISSUE })
+  @ApiProperty({
+    enum: ComplaintCategory,
+    example: ComplaintCategory.SALARY_ISSUE,
+  })
   @IsEnum(ComplaintCategory)
   category: ComplaintCategory;
 
@@ -49,7 +59,10 @@ export class CreateComplaintDto {
   @IsEnum(ComplaintPriority)
   priority: ComplaintPriority;
 
-  @ApiProperty({ example: 'My salary has not been credited yet despite submitting timesheets on time.' })
+  @ApiProperty({
+    example:
+      'My salary has not been credited yet despite submitting timesheets on time.',
+  })
   @IsString()
   @IsNotEmpty()
   description: string;
@@ -78,12 +91,17 @@ export class UpdateComplaintDto {
 }
 
 export class CreateReplyDto {
-  @ApiProperty({ example: 'Thank you for updating. I will check with finance.' })
+  @ApiProperty({
+    example: 'Thank you for updating. I will check with finance.',
+  })
   @IsString()
   @IsNotEmpty()
   message: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Only visible to HR. Ignored for employee replies.' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Only visible to HR. Ignored for employee replies.',
+  })
   @IsBoolean()
   @IsOptional()
   isInternal?: boolean;
@@ -97,7 +115,10 @@ export class AssignComplaintDto {
 }
 
 export class ResolveComplaintDto {
-  @ApiProperty({ example: 'Finance confirmed delay due to bank processing. It will be cleared by tomorrow.' })
+  @ApiProperty({
+    example:
+      'Finance confirmed delay due to bank processing. It will be cleared by tomorrow.',
+  })
   @IsString()
   @IsNotEmpty()
   resolutionDetails: string;

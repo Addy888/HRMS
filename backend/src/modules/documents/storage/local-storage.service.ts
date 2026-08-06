@@ -21,15 +21,22 @@ export class LocalStorageService implements IStorageService {
     folder = 'documents',
   ): Promise<UploadedFileResponse> {
     // 1. Validate MIME Types
-    const allowedMimeTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+    const allowedMimeTypes = [
+      'application/pdf',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+    ];
     if (!allowedMimeTypes.includes(mimeType)) {
-      throw new BadRequestException('MIME type not allowed. Supported formats: PDF, PNG, JPG, JPEG.');
+      throw new BadRequestException(
+        'MIME type not allowed. Supported formats: PDF, PNG, JPG, JPEG.',
+      );
     }
 
     // 2. Prevent Path Traversal
     const sanitizedName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '');
     const ext = extname(sanitizedName);
-    
+
     // 3. Generate Unique File Name
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const uniqueFileName = `${uniqueSuffix}${ext}`;

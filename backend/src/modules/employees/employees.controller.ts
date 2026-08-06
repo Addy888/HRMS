@@ -1,10 +1,29 @@
 import {
-  Controller, Get, Post, Body, Param, Put, Delete, Query,
-  UseGuards, UseInterceptors, UploadedFile, BadRequestException
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { EmployeesService } from './employees.service.js';
-import { CreateEmployeeDto, UpdateEmployeeDto, QueryEmployeeDto } from './dto/employee.dto.js';
+import {
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  QueryEmployeeDto,
+} from './dto/employee.dto.js';
 import { UpdateProfileDto } from './dto/profile.dto.js';
 import { Roles } from '../../common/guards/roles.guard.js';
 import { UserRole } from '../../common/constants/index.js';
@@ -37,7 +56,9 @@ export class EmployeesController {
 
   @Get('profile/completion')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get profile onboarding completion status & percentage checklist' })
+  @ApiOperation({
+    summary: 'Get profile onboarding completion status & percentage checklist',
+  })
   getProfileCompletion(@GetUser('id') userId: string) {
     return this.employeesService.getProfileCompletion(userId);
   }
@@ -49,18 +70,24 @@ export class EmployeesController {
       storage: diskStorage({
         destination: './uploads/avatars',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `avatar-${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
-          return cb(new BadRequestException('Only JPG, JPEG, and PNG images are supported!'), false);
+          return cb(
+            new BadRequestException(
+              'Only JPG, JPEG, and PNG images are supported!',
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
       limits: { fileSize: 2 * 1024 * 1024 }, // 2MB Limit
-    })
+    }),
   )
   @ApiOperation({ summary: 'Upload/Replace profile avatar photo (Max 2MB)' })
   uploadPhoto(
@@ -84,29 +111,42 @@ export class EmployeesController {
   @Post()
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Register/Create a new employee profile (HR Only)' })
-  @ApiResponse({ status: 201, description: 'Employee registered successfully, temporary credentials returned' })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Employee registered successfully, temporary credentials returned',
+  })
   create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
   }
 
   @Get()
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get all employees with pagination, search & filters (HR Only)' })
+  @ApiOperation({
+    summary: 'Get all employees with pagination, search & filters (HR Only)',
+  })
   findAll(@Query() query: QueryEmployeeDto) {
     return this.employeesService.findAll(query);
   }
 
   @Get(':id')
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get full detail of a specific employee profile (HR Only)' })
+  @ApiOperation({
+    summary: 'Get full detail of a specific employee profile (HR Only)',
+  })
   findOne(@Param('id') id: string) {
     return this.employeesService.findOne(id);
   }
 
   @Put(':id')
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Update employee basic/contact profile details (HR Only)' })
-  update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
+  @ApiOperation({
+    summary: 'Update employee basic/contact profile details (HR Only)',
+  })
+  update(
+    @Param('id') id: string,
+    @Body() updateEmployeeDto: UpdateEmployeeDto,
+  ) {
     return this.employeesService.update(id, updateEmployeeDto);
   }
 
@@ -126,14 +166,19 @@ export class EmployeesController {
 
   @Post(':id/reset-password')
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Reset employee password back to default (1234) and force rewrite (HR Only)' })
+  @ApiOperation({
+    summary:
+      'Reset employee password back to default (1234) and force rewrite (HR Only)',
+  })
   resetPassword(@Param('id') id: string) {
     return this.employeesService.resetPassword(id);
   }
 
   @Delete(':id')
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Permanently remove employee user record from backend (HR Only)' })
+  @ApiOperation({
+    summary: 'Permanently remove employee user record from backend (HR Only)',
+  })
   remove(@Param('id') id: string) {
     return this.employeesService.remove(id);
   }

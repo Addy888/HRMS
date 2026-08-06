@@ -1,6 +1,15 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { CreateEmployeeDto, UpdateEmployeeDto, QueryEmployeeDto } from './dto/employee.dto.js';
+import {
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  QueryEmployeeDto,
+} from './dto/employee.dto.js';
 import * as bcrypt from 'bcrypt';
 import { UserRole, OnboardingStatus } from '../../common/constants/index.js';
 
@@ -14,7 +23,9 @@ export class EmployeesService {
       where: { email: createEmployeeDto.email },
     });
     if (existingUser) {
-      throw new ConflictException('A user with this email address already exists');
+      throw new ConflictException(
+        'A user with this email address already exists',
+      );
     }
 
     // 2. Fetch Employee Role
@@ -22,7 +33,9 @@ export class EmployeesService {
       where: { name: UserRole.EMPLOYEE },
     });
     if (!empRole) {
-      throw new BadRequestException('EMPLOYEE role not initialized in database.');
+      throw new BadRequestException(
+        'EMPLOYEE role not initialized in database.',
+      );
     }
 
     // 3. Generate default credentials
@@ -61,7 +74,9 @@ export class EmployeesService {
           bloodGroup: createEmployeeDto.bloodGroup,
           address: createEmployeeDto.address,
           emergencyContact: createEmployeeDto.emergencyContact,
-          joiningDate: createEmployeeDto.joiningDate ? new Date(createEmployeeDto.joiningDate) : new Date(),
+          joiningDate: createEmployeeDto.joiningDate
+            ? new Date(createEmployeeDto.joiningDate)
+            : new Date(),
           departmentId: createEmployeeDto.departmentId || null,
           designationId: createEmployeeDto.designationId || null,
           onboardingStatus: OnboardingStatus.PENDING,
@@ -86,7 +101,9 @@ export class EmployeesService {
       });
 
       // Simulated Welcome Email logic
-      console.log(`[EMAIL DISPATCH] Sent welcome details to: ${createEmployeeDto.email}. Temporary Password: ${defaultPassword}`);
+      console.log(
+        `[EMAIL DISPATCH] Sent welcome details to: ${createEmployeeDto.email}. Temporary Password: ${defaultPassword}`,
+      );
 
       return {
         employee,
@@ -322,15 +339,37 @@ export class EmployeesService {
 
     const updateData: any = {};
     const allowedFields = [
-      'firstName', 'lastName', 'fatherName', 'motherName', 'gender', 'bloodGroup',
-      'maritalStatus', 'nationality', 'phone', 'alternatePhone', 'personalEmail',
-      'permanentAddress', 'currentAddress', 'emergencyContactName', 'emergencyContactPhone',
-      'emergencyContactRelation', 'reportingManager', 'employmentType', 'bankAccountHolder',
-      'bankName', 'bankBranch', 'bankAccountNumber', 'bankIfsc', 'upiId',
-      'aadhaarNumber', 'panNumber', 'passportNumber', 'drivingLicenseNumber'
+      'firstName',
+      'lastName',
+      'fatherName',
+      'motherName',
+      'gender',
+      'bloodGroup',
+      'maritalStatus',
+      'nationality',
+      'phone',
+      'alternatePhone',
+      'personalEmail',
+      'permanentAddress',
+      'currentAddress',
+      'emergencyContactName',
+      'emergencyContactPhone',
+      'emergencyContactRelation',
+      'reportingManager',
+      'employmentType',
+      'bankAccountHolder',
+      'bankName',
+      'bankBranch',
+      'bankAccountNumber',
+      'bankIfsc',
+      'upiId',
+      'aadhaarNumber',
+      'panNumber',
+      'passportNumber',
+      'drivingLicenseNumber',
     ];
 
-    allowedFields.forEach(f => {
+    allowedFields.forEach((f) => {
       if (dto[f] !== undefined) updateData[f] = dto[f];
     });
 
@@ -397,32 +436,97 @@ export class EmployeesService {
 
   // Internal helper to calculate percentage and checklist
   private calculateSections(emp: any) {
-    const personal = [emp.firstName, emp.lastName, emp.fatherName, emp.motherName, emp.dob, emp.gender, emp.bloodGroup, emp.maritalStatus, emp.nationality];
+    const personal = [
+      emp.firstName,
+      emp.lastName,
+      emp.fatherName,
+      emp.motherName,
+      emp.dob,
+      emp.gender,
+      emp.bloodGroup,
+      emp.maritalStatus,
+      emp.nationality,
+    ];
     const personalFilled = personal.filter(Boolean).length;
     const personalPct = Math.round((personalFilled / personal.length) * 100);
 
-    const contact = [emp.phone, emp.alternatePhone, emp.personalEmail, emp.permanentAddress, emp.currentAddress, emp.emergencyContactName, emp.emergencyContactPhone, emp.emergencyContactRelation];
+    const contact = [
+      emp.phone,
+      emp.alternatePhone,
+      emp.personalEmail,
+      emp.permanentAddress,
+      emp.currentAddress,
+      emp.emergencyContactName,
+      emp.emergencyContactPhone,
+      emp.emergencyContactRelation,
+    ];
     const contactFilled = contact.filter(Boolean).length;
     const contactPct = Math.round((contactFilled / contact.length) * 100);
 
-    const professional = [emp.employeeId, emp.departmentId, emp.designationId, emp.reportingManager, emp.employmentType, emp.joiningDate];
+    const professional = [
+      emp.employeeId,
+      emp.departmentId,
+      emp.designationId,
+      emp.reportingManager,
+      emp.employmentType,
+      emp.joiningDate,
+    ];
     const professionalFilled = professional.filter(Boolean).length;
-    const professionalPct = Math.round((professionalFilled / professional.length) * 100);
+    const professionalPct = Math.round(
+      (professionalFilled / professional.length) * 100,
+    );
 
-    const bank = [emp.bankAccountHolder, emp.bankName, emp.bankBranch, emp.bankAccountNumber, emp.bankIfsc, emp.upiId];
+    const bank = [
+      emp.bankAccountHolder,
+      emp.bankName,
+      emp.bankBranch,
+      emp.bankAccountNumber,
+      emp.bankIfsc,
+      emp.upiId,
+    ];
     const bankFilled = bank.filter(Boolean).length;
     const bankPct = Math.round((bankFilled / bank.length) * 100);
 
-    const govt = [emp.aadhaarNumber, emp.panNumber, emp.passportNumber, emp.drivingLicenseNumber];
+    const govt = [
+      emp.aadhaarNumber,
+      emp.panNumber,
+      emp.passportNumber,
+      emp.drivingLicenseNumber,
+    ];
     const govtFilled = govt.filter(Boolean).length;
     const govtPct = Math.round((govtFilled / govt.length) * 100);
 
     return {
-      personal: { percentage: personalPct, filled: personalFilled, total: personal.length, label: 'Personal Information' },
-      contact: { percentage: contactPct, filled: contactFilled, total: contact.length, label: 'Contact Details' },
-      professional: { percentage: professionalPct, filled: professionalFilled, total: professional.length, label: 'Professional Info' },
-      bank: { percentage: bankPct, filled: bankFilled, total: bank.length, label: 'Bank Details' },
-      government: { percentage: govtPct, filled: govtFilled, total: govt.length, label: 'Government ID Cards' },
+      personal: {
+        percentage: personalPct,
+        filled: personalFilled,
+        total: personal.length,
+        label: 'Personal Information',
+      },
+      contact: {
+        percentage: contactPct,
+        filled: contactFilled,
+        total: contact.length,
+        label: 'Contact Details',
+      },
+      professional: {
+        percentage: professionalPct,
+        filled: professionalFilled,
+        total: professional.length,
+        label: 'Professional Info',
+      },
+      bank: {
+        percentage: bankPct,
+        filled: bankFilled,
+        total: bank.length,
+        label: 'Bank Details',
+      },
+      government: {
+        percentage: govtPct,
+        filled: govtFilled,
+        total: govt.length,
+        label: 'Government ID Cards',
+      },
     };
   }
 
@@ -431,14 +535,15 @@ export class EmployeesService {
       where: { id: employeeId },
     });
     const sects = this.calculateSections(emp);
-    
+
     // Average of 5 sections (each counts for 20%)
     const finalPct = Math.round(
       (sects.personal.percentage +
         sects.contact.percentage +
         sects.professional.percentage +
         sects.bank.percentage +
-        sects.government.percentage) / 5
+        sects.government.percentage) /
+        5,
     );
 
     await tx.employeeProfile.update({

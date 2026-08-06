@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { SocketGateway } from './socket.gateway.js';
 import { EmailNotificationService } from './email-notification.service.js';
@@ -37,13 +42,20 @@ export class NotificationService {
   /**
    * Update preferences
    */
-  async updatePreferences(userId: string, dto: UpdateNotificationPreferenceDto) {
+  async updatePreferences(
+    userId: string,
+    dto: UpdateNotificationPreferenceDto,
+  ) {
     const pref = await this.getOrCreatePreferences(userId);
     const updated = await this.prisma.notificationPreference.update({
       where: { userId },
       data: dto,
     });
-    await this.auditLog(userId, 'UPDATE_PREFERENCES', `Updated preferences: ${JSON.stringify(dto)}`);
+    await this.auditLog(
+      userId,
+      'UPDATE_PREFERENCES',
+      `Updated preferences: ${JSON.stringify(dto)}`,
+    );
     return updated;
   }
 
@@ -78,7 +90,7 @@ export class NotificationService {
     for (const userId of userIds) {
       try {
         const pref = await this.getOrCreatePreferences(userId);
-        
+
         // Socket emit (In-App)
         if (pref.inApp && !pref.doNotDisturb) {
           this.socketGateway.sendToUser(userId, 'notification.created', {
@@ -89,19 +101,31 @@ export class NotificationService {
 
         // Email delivery
         if (pref.email) {
-          const user = await this.prisma.user.findUnique({ where: { id: userId } });
+          const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+          });
           if (user && user.email) {
             // Non-blocking fire-and-forget email delivery
-            this.emailService.sendEmail(
-              user.email,
-              dto.title,
-              dto.description,
-              dto.actionUrl ? `http://localhost:3000${dto.actionUrl}` : undefined
-            ).catch((err) => this.logger.error(`Error sending notification email: ${err.message}`));
+            this.emailService
+              .sendEmail(
+                user.email,
+                dto.title,
+                dto.description,
+                dto.actionUrl
+                  ? `http://localhost:3000${dto.actionUrl}`
+                  : undefined,
+              )
+              .catch((err) =>
+                this.logger.error(
+                  `Error sending notification email: ${err.message}`,
+                ),
+              );
           }
         }
       } catch (err) {
-        this.logger.error(`Error dispatching notification to user ${userId}: ${err.message}`);
+        this.logger.error(
+          `Error dispatching notification to user ${userId}: ${err.message}`,
+        );
       }
     }
 
@@ -121,7 +145,10 @@ export class NotificationService {
   /**
    * Broadcast notifications by targeting filters (All, Department, Designation, Roles)
    */
-  async broadcastNotification(senderUserId: string, dto: BroadcastNotificationDto) {
+  async broadcastNotification(
+    senderUserId: string,
+    dto: BroadcastNotificationDto,
+  ) {
     let targetedUsers: string[] = [];
 
     if (dto.targetType === 'ALL') {
@@ -172,7 +199,10 @@ export class NotificationService {
       actionUrl: dto.actionUrl,
     };
 
-    const notification = await this.createNotification(targetedUsers, notificationDto);
+    const notification = await this.createNotification(
+      targetedUsers,
+      notificationDto,
+    );
 
     await this.prisma.notificationAuditLog.create({
       data: {
@@ -190,7 +220,14 @@ export class NotificationService {
    * Get User Notifications (Paginated, Searchable, Filterable)
    */
   async getUserNotifications(userId: string, query: GetNotificationsQueryDto) {
-    const { page = 1, limit = 10, search, module: searchModule, priority, read } = query;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      module: searchModule,
+      priority,
+      read,
+    } = query;
     const skip = (page - 1) * limit;
 
     const whereClause: any = {
@@ -286,7 +323,7 @@ export class NotificationService {
     }
 
     if (recipient.userId !== userId) {
-      throw new ForbiddenException('Cannot mark someone else\'s notification');
+      throw new ForbiddenException("Cannot mark someone else's notification");
     }
 
     const updated = await this.prisma.notificationRecipient.update({
@@ -307,7 +344,11 @@ export class NotificationService {
       readAt: updated.readAt,
     });
 
-    await this.auditLog(userId, 'READ', `Marked notification ${recipientId} as read.`);
+    await this.auditLog(
+      userId,
+      'READ',
+      `Marked notification ${recipientId} as read.`,
+    );
 
     return updated;
   }
@@ -331,7 +372,11 @@ export class NotificationService {
       read: true,
     });
 
-    await this.auditLog(userId, 'READ_ALL', `Marked all unread notifications as read. Count: ${result.count}`);
+    await this.auditLog(
+      userId,
+      'READ_ALL',
+      `Marked all unread notifications as read. Count: ${result.count}`,
+    );
 
     return { count: result.count };
   }
@@ -349,7 +394,7 @@ export class NotificationService {
     }
 
     if (recipient.userId !== userId) {
-      throw new ForbiddenException('Cannot delete someone else\'s notification');
+      throw new ForbiddenException("Cannot delete someone else's notification");
     }
 
     await this.prisma.notificationRecipient.delete({
@@ -360,7 +405,11 @@ export class NotificationService {
       id: recipientId,
     });
 
-    await this.auditLog(userId, 'DELETE', `Deleted notification ${recipientId}.`);
+    await this.auditLog(
+      userId,
+      'DELETE',
+      `Deleted notification ${recipientId}.`,
+    );
 
     return { success: true };
   }

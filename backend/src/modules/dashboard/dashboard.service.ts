@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { OnboardingStatus, DocumentStatus } from '../../common/constants/index.js';
+import {
+  OnboardingStatus,
+  DocumentStatus,
+} from '../../common/constants/index.js';
 
 @Injectable()
 export class DashboardService {

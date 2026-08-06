@@ -1,10 +1,18 @@
 /**
  * DTOs for Company Settings
- * 
+ *
  * Company profile and configuration management
  */
 
-import { IsString, IsOptional, IsEmail, IsUrl, IsInt, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsUrl,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCompanyDto {
@@ -132,7 +140,11 @@ export class CreateCompanyDto {
   @IsString()
   workWeekStart?: string;
 
-  @ApiPropertyOptional({ example: 4, default: 4, description: 'Fiscal year start month (1-12)' })
+  @ApiPropertyOptional({
+    example: 4,
+    default: 4,
+    description: 'Fiscal year start month (1-12)',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

@@ -1,6 +1,6 @@
 /**
  * DTO for Promotion Recommendations
- * 
+ *
  * Manages promotion workflow:
  * - Manager/HR recommendations
  * - Approval workflow
@@ -39,9 +39,10 @@ export class CreatePromotionRecommendationDto {
   @IsString()
   recommendedDesignation: string;
 
-  @ApiProperty({ 
-    example: 'Employee has consistently exceeded expectations and is ready for leadership role',
-    description: 'Justification for promotion' 
+  @ApiProperty({
+    example:
+      'Employee has consistently exceeded expectations and is ready for leadership role',
+    description: 'Justification for promotion',
   })
   @IsString()
   justification: string;
@@ -50,7 +51,10 @@ export class CreatePromotionRecommendationDto {
   @IsEnum(RecommendedByRole)
   recommendedByRole: RecommendedByRole;
 
-  @ApiPropertyOptional({ example: '2026-04-01', description: 'Proposed effective date' })
+  @ApiPropertyOptional({
+    example: '2026-04-01',
+    description: 'Proposed effective date',
+  })
   @IsOptional()
   @IsDateString()
   effectiveDate?: string;
@@ -83,7 +87,10 @@ export class ApprovePromotionDto {
   @IsString()
   id: string;
 
-  @ApiPropertyOptional({ example: '2026-04-01', description: 'Final effective date' })
+  @ApiPropertyOptional({
+    example: '2026-04-01',
+    description: 'Final effective date',
+  })
   @IsOptional()
   @IsDateString()
   effectiveDate?: string;
@@ -94,7 +101,9 @@ export class RejectPromotionDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ example: 'Does not meet experience requirements for this role' })
+  @ApiProperty({
+    example: 'Does not meet experience requirements for this role',
+  })
   @IsString()
   rejectionReason: string;
 }

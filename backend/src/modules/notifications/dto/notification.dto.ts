@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsArray, IsInt, Min } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsArray,
+  IsInt,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -38,7 +47,10 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   module: string;
 
-  @ApiProperty({ enum: NotificationPriority, default: NotificationPriority.MEDIUM })
+  @ApiProperty({
+    enum: NotificationPriority,
+    default: NotificationPriority.MEDIUM,
+  })
   @IsEnum(NotificationPriority)
   @IsOptional()
   priority?: string = 'MEDIUM';
@@ -60,7 +72,9 @@ export class BroadcastNotificationDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: 'The system will be down on Sunday from 2 AM to 4 AM.' })
+  @ApiProperty({
+    example: 'The system will be down on Sunday from 2 AM to 4 AM.',
+  })
   @IsString()
   @IsNotEmpty()
   description: string;
@@ -70,7 +84,10 @@ export class BroadcastNotificationDto {
   @IsNotEmpty()
   module: string;
 
-  @ApiProperty({ enum: NotificationPriority, default: NotificationPriority.MEDIUM })
+  @ApiProperty({
+    enum: NotificationPriority,
+    default: NotificationPriority.MEDIUM,
+  })
   @IsEnum(NotificationPriority)
   @IsOptional()
   priority?: string = 'MEDIUM';
@@ -85,7 +102,10 @@ export class BroadcastNotificationDto {
   @IsOptional()
   actionUrl?: string;
 
-  @ApiProperty({ example: 'ALL', description: 'ALL, DEPARTMENT, DESIGNATION, ROLE, EMPLOYEE' })
+  @ApiProperty({
+    example: 'ALL',
+    description: 'ALL, DEPARTMENT, DESIGNATION, ROLE, EMPLOYEE',
+  })
   @IsString()
   @IsNotEmpty()
   targetType: string;
@@ -102,7 +122,9 @@ export class CreateAnnouncementDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: 'August 15th will be a paid holiday for all employees.' })
+  @ApiProperty({
+    example: 'August 15th will be a paid holiday for all employees.',
+  })
   @IsString()
   @IsNotEmpty()
   content: string;

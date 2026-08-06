@@ -1,6 +1,6 @@
 /**
  * DTO for Manager Review
- * 
+ *
  * Manager conducts comprehensive review including:
  * - Overall assessment
  * - Competency ratings
@@ -9,7 +9,16 @@
  * - Training recommendations
  */
 
-import { IsString, IsInt, IsBoolean, IsNumber, IsOptional, IsArray, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ManagerReviewDto {
@@ -17,24 +26,33 @@ export class ManagerReviewDto {
   @IsString()
   reviewId: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Employee has shown exceptional performance throughout the cycle',
-    description: 'Overall assessment comments' 
+    description: 'Overall assessment comments',
   })
   @IsString()
   overallComments: string;
 
-  @ApiPropertyOptional({ example: 'Strong technical skills, excellent team player' })
+  @ApiPropertyOptional({
+    example: 'Strong technical skills, excellent team player',
+  })
   @IsOptional()
   @IsString()
   strengths?: string;
 
-  @ApiPropertyOptional({ example: 'Needs to improve time management and prioritization' })
+  @ApiPropertyOptional({
+    example: 'Needs to improve time management and prioritization',
+  })
   @IsOptional()
   @IsString()
   areasOfImprovement?: string;
 
-  @ApiProperty({ example: 4, description: 'Manager rating (1-5)', minimum: 1, maximum: 5 })
+  @ApiProperty({
+    example: 4,
+    description: 'Manager rating (1-5)',
+    minimum: 1,
+    maximum: 5,
+  })
   @IsInt()
   @Min(1)
   @Max(5)
@@ -43,13 +61,13 @@ export class ManagerReviewDto {
   @ApiPropertyOptional({
     description: 'Goal assessment by manager',
     example: [
-      { 
-        goalId: 'goal-uuid-1', 
-        managerRating: 4, 
+      {
+        goalId: 'goal-uuid-1',
+        managerRating: 4,
         comments: 'Good progress, achieved 90% of target',
-        achieved: true 
-      }
-    ]
+        achieved: true,
+      },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -63,13 +81,13 @@ export class ManagerReviewDto {
   @ApiPropertyOptional({
     description: 'KPI assessment by manager',
     example: [
-      { 
-        kpiId: 'kpi-uuid-1', 
-        managerRating: 5, 
+      {
+        kpiId: 'kpi-uuid-1',
+        managerRating: 5,
         actualValue: 105,
-        comments: 'Exceeded target consistently' 
-      }
-    ]
+        comments: 'Exceeded target consistently',
+      },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -83,8 +101,8 @@ export class ManagerReviewDto {
   @ApiPropertyOptional({
     description: 'KRA assessment by manager',
     example: [
-      { kraId: 'kra-uuid-1', managerRating: 4, comments: 'Strong performance' }
-    ]
+      { kraId: 'kra-uuid-1', managerRating: 4, comments: 'Strong performance' },
+    ],
   })
   @IsOptional()
   @IsArray()
@@ -156,7 +174,10 @@ export class ManagerReviewDto {
   @IsBoolean()
   recommendPromotion: boolean;
 
-  @ApiPropertyOptional({ example: 'Employee is ready for next level, consistently exceeds expectations' })
+  @ApiPropertyOptional({
+    example:
+      'Employee is ready for next level, consistently exceeds expectations',
+  })
   @IsOptional()
   @IsString()
   promotionReason?: string;
@@ -166,14 +187,19 @@ export class ManagerReviewDto {
   @IsBoolean()
   recommendIncrement: boolean;
 
-  @ApiPropertyOptional({ example: 15, description: 'Recommended increment percentage' })
+  @ApiPropertyOptional({
+    example: 15,
+    description: 'Recommended increment percentage',
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)
   incrementPercentage?: number;
 
-  @ApiPropertyOptional({ example: 'Based on exceptional performance and market standards' })
+  @ApiPropertyOptional({
+    example: 'Based on exceptional performance and market standards',
+  })
   @IsOptional()
   @IsString()
   incrementReason?: string;
@@ -183,7 +209,9 @@ export class ManagerReviewDto {
   @IsBoolean()
   recommendTraining: boolean;
 
-  @ApiPropertyOptional({ example: 'Advanced leadership program, Project management certification' })
+  @ApiPropertyOptional({
+    example: 'Advanced leadership program, Project management certification',
+  })
   @IsOptional()
   @IsString()
   trainingAreas?: string;

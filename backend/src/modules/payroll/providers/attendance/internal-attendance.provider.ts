@@ -1,13 +1,13 @@
 /**
  * INTERNAL ATTENDANCE PROVIDER
- * 
+ *
  * Implementation of IAttendanceProvider that uses our internal Attendance module.
- * 
+ *
  * This provider queries the Attendance tables to get attendance data for payroll.
- * 
+ *
  * KEY PRINCIPLE: Only this provider knows about Attendance tables.
  * Payroll Engine only knows about IAttendanceProvider interface.
- * 
+ *
  * This allows switching to external attendance systems without
  * changing payroll logic.
  */
@@ -33,7 +33,9 @@ export class InternalAttendanceProvider implements IAttendanceProvider {
     month: number,
     year: number,
   ): Promise<IAttendanceData> {
-    this.logger.log(`Fetching attendance data for employee ${employeeId}, ${month}/${year}`);
+    this.logger.log(
+      `Fetching attendance data for employee ${employeeId}, ${month}/${year}`,
+    );
 
     const startDate = startOfMonth(new Date(year, month - 1, 1));
     const endDate = endOfMonth(new Date(year, month - 1, 1));
@@ -51,37 +53,43 @@ export class InternalAttendanceProvider implements IAttendanceProvider {
     });
 
     // Get working days (excluding holidays and week-offs)
-    const totalWorkingDays = attendances.filter(a => 
-      !['HOLIDAY', 'WEEK_OFF'].includes(a.status)
+    const totalWorkingDays = attendances.filter(
+      (a) => !['HOLIDAY', 'WEEK_OFF'].includes(a.status),
     ).length;
 
     // Count statuses
-    const daysPresent = attendances.filter(a => 
-      ['PRESENT', 'WFH', 'ON_DUTY'].includes(a.status)
+    const daysPresent = attendances.filter((a) =>
+      ['PRESENT', 'WFH', 'ON_DUTY'].includes(a.status),
     ).length;
 
-    const daysAbsent = attendances.filter(a => a.status === 'ABSENT').length;
+    const daysAbsent = attendances.filter((a) => a.status === 'ABSENT').length;
 
-    const daysLate = attendances.filter(a => a.status === 'LATE').length;
+    const daysLate = attendances.filter((a) => a.status === 'LATE').length;
 
-    const daysHalfDay = attendances.filter(a => a.status === 'HALF_DAY').length;
+    const daysHalfDay = attendances.filter(
+      (a) => a.status === 'HALF_DAY',
+    ).length;
 
     // Calculate working hours and overtime
-    const totalWorkingHours = attendances.reduce((sum, a) => 
-      sum + (a.workingHours || 0), 0
+    const totalWorkingHours = attendances.reduce(
+      (sum, a) => sum + (a.workingHours || 0),
+      0,
     );
 
-    const overtimeHours = attendances.reduce((sum, a) => 
-      sum + (a.overtime || 0), 0
+    const overtimeHours = attendances.reduce(
+      (sum, a) => sum + (a.overtime || 0),
+      0,
     );
 
     // Calculate late and early exit minutes
-    const lateMinutes = attendances.reduce((sum, a) => 
-      sum + (a.lateBy || 0), 0
+    const lateMinutes = attendances.reduce(
+      (sum, a) => sum + (a.lateBy || 0),
+      0,
     );
 
-    const earlyExitMinutes = attendances.reduce((sum, a) => 
-      sum + (a.earlyExitBy || 0), 0
+    const earlyExitMinutes = attendances.reduce(
+      (sum, a) => sum + (a.earlyExitBy || 0),
+      0,
     );
 
     return {
@@ -105,7 +113,9 @@ export class InternalAttendanceProvider implements IAttendanceProvider {
     month: number,
     year: number,
   ): Promise<Map<string, IAttendanceData>> {
-    this.logger.log(`Fetching bulk attendance data for ${employeeIds.length} employees, ${month}/${year}`);
+    this.logger.log(
+      `Fetching bulk attendance data for ${employeeIds.length} employees, ${month}/${year}`,
+    );
 
     const resultMap = new Map<string, IAttendanceData>();
 
@@ -114,7 +124,7 @@ export class InternalAttendanceProvider implements IAttendanceProvider {
       employeeIds.map(async (employeeId) => {
         const data = await this.getAttendanceData(employeeId, month, year);
         resultMap.set(employeeId, data);
-      })
+      }),
     );
 
     return resultMap;
@@ -124,7 +134,7 @@ export class InternalAttendanceProvider implements IAttendanceProvider {
     try {
       // Check if we can query attendance table
       await this.prisma.attendance.findFirst();
-      
+
       return {
         healthy: true,
         message: 'Internal Attendance Provider is operational',

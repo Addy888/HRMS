@@ -43,7 +43,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       if (!token) {
-        this.logger.warn(`Connection rejected: No token provided for client ${client.id}`);
+        this.logger.warn(
+          `Connection rejected: No token provided for client ${client.id}`,
+        );
         client.disconnect();
         return;
       }
@@ -53,11 +55,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         token = token.slice(7, token.length).trim();
       }
 
-      const secret = this.configService.get<string>('JWT_SECRET') || 'fcs-hrms-super-secret-key';
+      const secret =
+        this.configService.get<string>('JWT_SECRET') ||
+        'fcs-hrms-super-secret-key';
       const payload = this.jwtService.verify(token, { secret });
 
       if (!payload || !payload.sub) {
-        this.logger.warn(`Connection rejected: Invalid JWT payload for client ${client.id}`);
+        this.logger.warn(
+          `Connection rejected: Invalid JWT payload for client ${client.id}`,
+        );
         client.disconnect();
         return;
       }
@@ -74,7 +80,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       if (!user || !user.isActive) {
-        this.logger.warn(`Connection rejected: User ${userId} is inactive or does not exist`);
+        this.logger.warn(
+          `Connection rejected: User ${userId} is inactive or does not exist`,
+        );
         client.disconnect();
         return;
       }
@@ -86,34 +94,46 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Join Personal Room
       await client.join(`user_${user.id}`);
-      this.logger.log(`Client ${client.id} joined personal room user_${user.id}`);
+      this.logger.log(
+        `Client ${client.id} joined personal room user_${user.id}`,
+      );
 
       // Join Role Room (HR, EMPLOYEE, SUPER_ADMIN)
       await client.join(`role_${user.role.name}`);
-      this.logger.log(`Client ${client.id} joined role room role_${user.role.name}`);
+      this.logger.log(
+        `Client ${client.id} joined role room role_${user.role.name}`,
+      );
 
       // Join Department & Designation rooms if employee is set
       if (user.employee) {
         if (user.employee.departmentId) {
           await client.join(`dept_${user.employee.departmentId}`);
-          this.logger.log(`Client ${client.id} joined department room dept_${user.employee.departmentId}`);
+          this.logger.log(
+            `Client ${client.id} joined department room dept_${user.employee.departmentId}`,
+          );
         }
         if (user.employee.designationId) {
           await client.join(`desg_${user.employee.designationId}`);
-          this.logger.log(`Client ${client.id} joined designation room desg_${user.employee.designationId}`);
+          this.logger.log(
+            `Client ${client.id} joined designation room desg_${user.employee.designationId}`,
+          );
         }
       }
 
       // Emit connected confirmation
       client.emit('connected', { userId: user.id, status: 'authenticated' });
     } catch (error) {
-      this.logger.error(`Socket connection error for client ${client.id}: ${error.message}`);
+      this.logger.error(
+        `Socket connection error for client ${client.id}: ${error.message}`,
+      );
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id} (User: ${client.data?.userId || 'unknown'})`);
+    this.logger.log(
+      `Client disconnected: ${client.id} (User: ${client.data?.userId || 'unknown'})`,
+    );
   }
 
   /**

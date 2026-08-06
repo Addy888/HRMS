@@ -86,7 +86,10 @@ export class PayrollController {
 
   @Patch(':id/pay')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
-  async markAsPaid(@Param('id') id: string, @Body() body: { paymentDate: string }) {
+  async markAsPaid(
+    @Param('id') id: string,
+    @Body() body: { paymentDate: string },
+  ) {
     return this.payrollService.markAsPaid(id, new Date(body.paymentDate));
   }
 
@@ -96,7 +99,10 @@ export class PayrollController {
     @Param('month') month: string,
     @Param('year') year: string,
   ) {
-    return this.payrollService.getPayrollSummary(parseInt(month), parseInt(year));
+    return this.payrollService.getPayrollSummary(
+      parseInt(month),
+      parseInt(year),
+    );
   }
 
   @Delete(':id')

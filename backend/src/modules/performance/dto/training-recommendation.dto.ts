@@ -1,6 +1,6 @@
 /**
  * DTO for Training Recommendations
- * 
+ *
  * Manages training needs and recommendations:
  * - Skill gap identification
  * - Training priorities
@@ -62,9 +62,10 @@ export class CreateTrainingRecommendationDto {
   @IsString()
   trainingTitle: string;
 
-  @ApiProperty({ 
-    example: 'Comprehensive leadership training covering team management, strategic thinking, and decision making',
-    description: 'Training description' 
+  @ApiProperty({
+    example:
+      'Comprehensive leadership training covering team management, strategic thinking, and decision making',
+    description: 'Training description',
   })
   @IsString()
   description: string;
@@ -115,7 +116,10 @@ export class ApproveTrainingDto {
   @IsString()
   id: string;
 
-  @ApiPropertyOptional({ example: '2026-05-01', description: 'Scheduled training date' })
+  @ApiPropertyOptional({
+    example: '2026-05-01',
+    description: 'Scheduled training date',
+  })
   @IsOptional()
   @IsDateString()
   scheduledDate?: string;
@@ -126,7 +130,10 @@ export class CompleteTrainingDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ example: '2026-05-15', description: 'Training completion date' })
+  @ApiProperty({
+    example: '2026-05-15',
+    description: 'Training completion date',
+  })
   @IsDateString()
   completedDate: string;
 }

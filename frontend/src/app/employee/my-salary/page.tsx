@@ -48,6 +48,7 @@ export default function MySalaryPage() {
   const isLoading = salaryLoading || statusLoading || historyLoading;
   const isError = salaryError || statusError || historyError;
 
+  // Handle error state
   if (isError) {
     return (
       <EmployeeLayout>
@@ -55,6 +56,52 @@ export default function MySalaryPage() {
           <AlertCircle className="w-14 h-14 text-red-400" />
           <h2 className="font-heading text-xl font-bold text-white">Failed to load salary information</h2>
           <p className="text-sm text-neutral-400">Please contact HR if this issue persists</p>
+        </div>
+      </EmployeeLayout>
+    );
+  }
+
+  // Handle empty state - no salary structure exists
+  if (!isLoading && !salaryData) {
+    return (
+      <EmployeeLayout>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Header */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+                  My Salary
+                </h1>
+                <p className="text-sm text-neutral-400">View your salary structure and payment history</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Empty State */}
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+            <div className="w-20 h-20 bg-neutral-800/50 rounded-full flex items-center justify-center">
+              <Wallet className="w-10 h-10 text-neutral-500" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-white">No Salary Information Available</h2>
+            <p className="text-sm text-neutral-400 text-center max-w-md">
+              No salary has been generated yet. Your salary structure will appear here once HR sets it up.
+            </p>
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 max-w-md">
+              <div className="flex gap-3">
+                <InfoIcon className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-400">
+                  <p className="font-semibold mb-1">Need Help?</p>
+                  <p className="text-blue-400/80">
+                    Please contact HR if you believe your salary structure should be available.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </EmployeeLayout>
     );

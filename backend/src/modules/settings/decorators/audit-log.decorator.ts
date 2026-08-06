@@ -1,12 +1,12 @@
 /**
  * AUDIT LOG DECORATOR
- * 
+ *
  * Automatic audit logging for controller methods
- * 
+ *
  * USAGE:
  * @AuditLog('USER_CREATED', 'Created new user')
  * async createUser(@Body() dto: CreateUserDto) { ... }
- * 
+ *
  * @AuditLog('USER_UPDATED')
  * async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) { ... }
  */
@@ -28,7 +28,11 @@ export interface AuditLogMetadata {
  * @param details - Optional details template (can use {{param}} placeholders)
  */
 export const AuditLog = (action: string, details?: string) => {
-  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
+  return (
+    target: any,
+    propertyKey: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     SetMetadata(AUDIT_LOG_KEY, true)(target, propertyKey, descriptor);
     SetMetadata(AUDIT_ACTION_KEY, action)(target, propertyKey, descriptor);
     if (details) {

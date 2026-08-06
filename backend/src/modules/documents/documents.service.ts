@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { LocalStorageService } from './storage/local-storage.service.js';
-import { VerifyDocumentDto, QueryDocumentDto, DocumentVerificationAction } from './dto/document.dto.js';
+import {
+  VerifyDocumentDto,
+  QueryDocumentDto,
+  DocumentVerificationAction,
+} from './dto/document.dto.js';
 import { OnboardingStatus } from '../../common/constants/index.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
@@ -16,12 +24,25 @@ export class DocumentsService {
   // Helper to map document types to category names
   private getCategoryNameForType(type: string): string {
     const uppercaseType = type.toUpperCase();
-    
+
     const categories: Record<string, string[]> = {
       PERSONAL: ['PHOTO', 'RESUME', 'CV'],
       GOVERNMENT: ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE'],
-      EDUCATIONAL: ['10TH_MARKSHEET', '12TH_MARKSHEET', 'DIPLOMA_CERTIFICATE', 'GRADUATION_DEGREE', 'POST_GRADUATION_DEGREE', 'PROFESSIONAL_CERTIFICATIONS'],
-      PROFESSIONAL: ['OFFER_LETTER', 'EXPERIENCE_LETTER', 'RELIEVING_LETTER', 'SALARY_SLIP', 'INTERNSHIP_CERTIFICATE'],
+      EDUCATIONAL: [
+        '10TH_MARKSHEET',
+        '12TH_MARKSHEET',
+        'DIPLOMA_CERTIFICATE',
+        'GRADUATION_DEGREE',
+        'POST_GRADUATION_DEGREE',
+        'PROFESSIONAL_CERTIFICATIONS',
+      ],
+      PROFESSIONAL: [
+        'OFFER_LETTER',
+        'EXPERIENCE_LETTER',
+        'RELIEVING_LETTER',
+        'SALARY_SLIP',
+        'INTERNSHIP_CERTIFICATE',
+      ],
     };
 
     for (const [category, types] of Object.entries(categories)) {
@@ -53,7 +74,9 @@ export class DocumentsService {
       throw new BadRequestException('File size exceeds the 10 MB limit');
     }
 
-    const employee = await this.prisma.employee.findUnique({ where: { userId } });
+    const employee = await this.prisma.employee.findUnique({
+      where: { userId },
+    });
     if (!employee) throw new NotFoundException('Employee not found');
 
     const catName = this.getCategoryNameForType(type);
@@ -67,7 +90,9 @@ export class DocumentsService {
       });
 
       if (existingDoc) {
-        throw new BadRequestException(`Document of type ${type} already exists. Please use the replace endpoint instead.`);
+        throw new BadRequestException(
+          `Document of type ${type} already exists. Please use the replace endpoint instead.`,
+        );
       }
 
       // Upload file physically
@@ -113,15 +138,17 @@ export class DocumentsService {
       });
 
       // Create Notification (fire-and-forget)
-      this.notificationService.createNotification([userId], {
-        title: 'Document Uploaded',
-        description: `Your ${type.replace(/_/g, ' ')} has been uploaded and is pending HR verification.`,
-        type: 'document.uploaded',
-        module: 'DOCUMENT',
-        priority: 'LOW',
-        icon: 'upload',
-        actionUrl: '/employee/documents',
-      }).catch(() => {});
+      this.notificationService
+        .createNotification([userId], {
+          title: 'Document Uploaded',
+          description: `Your ${type.replace(/_/g, ' ')} has been uploaded and is pending HR verification.`,
+          type: 'document.uploaded',
+          module: 'DOCUMENT',
+          priority: 'LOW',
+          icon: 'upload',
+          actionUrl: '/employee/documents',
+        })
+        .catch(() => {});
 
       return doc;
     });
@@ -141,7 +168,9 @@ export class DocumentsService {
       throw new BadRequestException('File size exceeds the 10 MB limit');
     }
 
-    const employee = await this.prisma.employee.findUnique({ where: { userId } });
+    const employee = await this.prisma.employee.findUnique({
+      where: { userId },
+    });
     if (!employee) throw new NotFoundException('Employee not found');
 
     const doc = await this.prisma.document.findUnique({
@@ -156,7 +185,9 @@ export class DocumentsService {
 
     // Replace is only allowed if PENDING or RE_UPLOAD_REQUIRED
     if (doc.status === 'APPROVED') {
-      throw new BadRequestException('Approved documents cannot be modified or replaced.');
+      throw new BadRequestException(
+        'Approved documents cannot be modified or replaced.',
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -215,10 +246,14 @@ export class DocumentsService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-    const employee = await this.prisma.employee.findUnique({ where: { userId } });
+    const employee = await this.prisma.employee.findUnique({
+      where: { userId },
+    });
     if (!employee) throw new NotFoundException('Employee not found');
 
-    const doc = await this.prisma.document.findUnique({ where: { id: documentId } });
+    const doc = await this.prisma.document.findUnique({
+      where: { id: documentId },
+    });
     if (!doc) throw new NotFoundException('Document not found');
 
     if (doc.employeeId !== employee.id) {
@@ -252,7 +287,9 @@ export class DocumentsService {
   }
 
   async getEmployeeDocuments(userId: string) {
-    const employee = await this.prisma.employee.findUnique({ where: { userId } });
+    const employee = await this.prisma.employee.findUnique({
+      where: { userId },
+    });
     if (!employee) throw new NotFoundException('Employee not found');
 
     return this.prisma.document.findMany({
@@ -343,8 +380,8 @@ export class DocumentsService {
       dto.action === DocumentVerificationAction.APPROVE
         ? 'APPROVED'
         : dto.action === DocumentVerificationAction.REJECT
-        ? 'REJECTED'
-        : 'RE_UPLOAD_REQUIRED';
+          ? 'REJECTED'
+          : 'RE_UPLOAD_REQUIRED';
 
     const hrUser = await this.prisma.user.findUnique({
       where: { id: hrUserId },
@@ -391,25 +428,28 @@ export class DocumentsService {
       });
 
       // 4. Send alert notification to the employee (fire-and-forget via NotificationService)
-      const notifType = mappedStatus === 'APPROVED'
-        ? 'document.approved'
-        : mappedStatus === 'REJECTED'
-        ? 'document.rejected'
-        : 'document.re_upload_requested';
+      const notifType =
+        mappedStatus === 'APPROVED'
+          ? 'document.approved'
+          : mappedStatus === 'REJECTED'
+            ? 'document.rejected'
+            : 'document.re_upload_requested';
 
       const notifPriority = mappedStatus === 'APPROVED' ? 'MEDIUM' : 'HIGH';
 
       const docLabel = doc.type.replace(/_/g, ' ');
 
-      this.notificationService.createNotification([doc.employee.userId], {
-        title: `Document ${mappedStatus.replace(/_/g, ' ')}`,
-        description: `Your ${docLabel} document has been ${mappedStatus.toLowerCase().replace(/_/g, ' ')}.${dto.comment ? ` Reason: "${dto.comment}"` : ''}`,
-        type: notifType,
-        module: 'DOCUMENT',
-        priority: notifPriority as any,
-        icon: mappedStatus === 'APPROVED' ? 'check-circle' : 'x-circle',
-        actionUrl: '/employee/documents',
-      }).catch(() => {});
+      this.notificationService
+        .createNotification([doc.employee.userId], {
+          title: `Document ${mappedStatus.replace(/_/g, ' ')}`,
+          description: `Your ${docLabel} document has been ${mappedStatus.toLowerCase().replace(/_/g, ' ')}.${dto.comment ? ` Reason: "${dto.comment}"` : ''}`,
+          type: notifType,
+          module: 'DOCUMENT',
+          priority: notifPriority as any,
+          icon: mappedStatus === 'APPROVED' ? 'check-circle' : 'x-circle',
+          actionUrl: '/employee/documents',
+        })
+        .catch(() => {});
 
       // 5. If all mandatory docs (Resume, Photo, Aadhaar, PAN) are approved, update onboardingStatus to DOCUMENTS_UPLOADED
       const mandatoryTypes = ['PHOTO', 'RESUME', 'AADHAAR', 'PAN'];
@@ -418,10 +458,13 @@ export class DocumentsService {
       });
 
       const approvedMandatory = docs.filter(
-        (d: any) => mandatoryTypes.includes(d.type) && d.status === 'APPROVED'
+        (d: any) => mandatoryTypes.includes(d.type) && d.status === 'APPROVED',
       );
 
-      if (approvedMandatory.length === mandatoryTypes.length && doc.employee.onboardingStatus === 'PROFILE_COMPLETED') {
+      if (
+        approvedMandatory.length === mandatoryTypes.length &&
+        doc.employee.onboardingStatus === 'PROFILE_COMPLETED'
+      ) {
         await tx.employee.update({
           where: { id: doc.employeeId },
           data: { onboardingStatus: 'DOCUMENTS_UPLOADED' },

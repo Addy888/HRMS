@@ -1,15 +1,24 @@
 /**
  * DTO for Creating Performance Cycle
- * 
+ *
  * Performance cycles define the appraisal period and timelines for:
  * - Self appraisal
  * - Manager review
  * - HR review
- * 
+ *
  * Supports: QUARTERLY, HALF_YEARLY, ANNUAL, CUSTOM cycles
  */
 
-import { IsString, IsEnum, IsInt, IsDateString, IsOptional, IsObject, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsInt,
+  IsDateString,
+  IsOptional,
+  IsObject,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum PerformanceCycleType {
@@ -29,11 +38,17 @@ export enum PerformanceCycleStatus {
 }
 
 export class CreatePerformanceCycleDto {
-  @ApiProperty({ example: 'Q1 2026 Performance Review', description: 'Cycle name' })
+  @ApiProperty({
+    example: 'Q1 2026 Performance Review',
+    description: 'Cycle name',
+  })
   @IsString()
   name: string;
 
-  @ApiProperty({ enum: PerformanceCycleType, example: PerformanceCycleType.QUARTERLY })
+  @ApiProperty({
+    enum: PerformanceCycleType,
+    example: PerformanceCycleType.QUARTERLY,
+  })
   @IsEnum(PerformanceCycleType)
   type: PerformanceCycleType;
 
@@ -43,7 +58,10 @@ export class CreatePerformanceCycleDto {
   @Max(2100)
   year: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'Quarter (1-4), required for QUARTERLY type' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Quarter (1-4), required for QUARTERLY type',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -58,32 +76,50 @@ export class CreatePerformanceCycleDto {
   @IsDateString()
   endDate: string;
 
-  @ApiPropertyOptional({ example: '2026-04-01', description: 'Self appraisal start date' })
+  @ApiPropertyOptional({
+    example: '2026-04-01',
+    description: 'Self appraisal start date',
+  })
   @IsOptional()
   @IsDateString()
   selfAppraisalStartDate?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-15', description: 'Self appraisal end date' })
+  @ApiPropertyOptional({
+    example: '2026-04-15',
+    description: 'Self appraisal end date',
+  })
   @IsOptional()
   @IsDateString()
   selfAppraisalEndDate?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-16', description: 'Manager review start date' })
+  @ApiPropertyOptional({
+    example: '2026-04-16',
+    description: 'Manager review start date',
+  })
   @IsOptional()
   @IsDateString()
   managerReviewStartDate?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-30', description: 'Manager review end date' })
+  @ApiPropertyOptional({
+    example: '2026-04-30',
+    description: 'Manager review end date',
+  })
   @IsOptional()
   @IsDateString()
   managerReviewEndDate?: string;
 
-  @ApiPropertyOptional({ example: '2026-05-01', description: 'HR review start date' })
+  @ApiPropertyOptional({
+    example: '2026-05-01',
+    description: 'HR review start date',
+  })
   @IsOptional()
   @IsDateString()
   hrReviewStartDate?: string;
 
-  @ApiPropertyOptional({ example: '2026-05-15', description: 'HR review end date' })
+  @ApiPropertyOptional({
+    example: '2026-05-15',
+    description: 'HR review end date',
+  })
   @IsOptional()
   @IsDateString()
   hrReviewEndDate?: string;
@@ -93,16 +129,16 @@ export class CreatePerformanceCycleDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Cycle settings',
-    example: { 
-      enableSelfAppraisal: true, 
-      enable360Feedback: true, 
+    example: {
+      enableSelfAppraisal: true,
+      enable360Feedback: true,
       enableGoalWeightage: true,
       enableKPITracking: true,
       enableKRATracking: true,
       allowLateSubmissions: false,
-    }
+    },
   })
   @IsOptional()
   @IsObject()

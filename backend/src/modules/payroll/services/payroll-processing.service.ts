@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
-import { ProcessPayrollDto, BulkProcessPayrollDto } from '../dto/process-payroll.dto';
+import {
+  ProcessPayrollDto,
+  BulkProcessPayrollDto,
+} from '../dto/process-payroll.dto';
 
 @Injectable()
 export class PayrollProcessingService {
@@ -11,7 +19,12 @@ export class PayrollProcessingService {
   /**
    * PROCESS PAYROLL FOR SINGLE EMPLOYEE
    */
-  async processForEmployee(employeeId: string, month: number, year: number, processedBy?: string) {
+  async processForEmployee(
+    employeeId: string,
+    month: number,
+    year: number,
+    processedBy?: string,
+  ) {
     // Check if already processed
     const existing = await this.database.payrollRun.findFirst({
       where: { employeeId, month, year },
@@ -32,18 +45,25 @@ export class PayrollProcessingService {
     });
 
     if (!salaryStructure) {
-      throw new NotFoundException(`No active salary structure found for employee`);
+      throw new NotFoundException(
+        `No active salary structure found for employee`,
+      );
     }
 
     // Get attendance data for the month
-    const attendanceData = await this.getAttendanceImpact(employeeId, month, year);
-    
+    const attendanceData = await this.getAttendanceImpact(
+      employeeId,
+      month,
+      year,
+    );
+
     // Get leave impact
     const leaveImpact = await this.getLeaveImpact(employeeId, month, year);
 
     // Calculate components
     const workingDays = attendanceData.totalWorkingDays;
-    const presentDays = attendanceData.presentDays + attendanceData.paidLeaveDays;
+    const presentDays =
+      attendanceData.presentDays + attendanceData.paidLeaveDays;
     const absentDays = attendanceData.absentDays + attendanceData.lwpDays;
     const halfDays = attendanceData.halfDays;
 
@@ -73,7 +93,7 @@ export class PayrollProcessingService {
 
     // Final calculations
     const basicSalary = salaryStructure.basicSalary;
-    const allowances = 
+    const allowances =
       salaryStructure.hra +
       salaryStructure.conveyance +
       salaryStructure.medicalAllowance +
@@ -163,21 +183,34 @@ export class PayrollProcessingService {
       },
     });
 
-    const results: Array<{ employeeId: string; success: boolean; error?: string }> = [];
+    const results: Array<{
+      employeeId: string;
+      success: boolean;
+      error?: string;
+    }> = [];
 
     for (const employee of employees) {
       try {
-        await this.processForEmployee(employee.id, dto.month, dto.year, dto.processedBy);
+        await this.processForEmployee(
+          employee.id,
+          dto.month,
+          dto.year,
+          dto.processedBy,
+        );
         results.push({ employeeId: employee.employeeId, success: true });
       } catch (error: any) {
-        results.push({ employeeId: employee.employeeId, success: false, error: error.message });
+        results.push({
+          employeeId: employee.employeeId,
+          success: false,
+          error: error.message,
+        });
       }
     }
 
     return {
       totalEmployees: employees.length,
-      successCount: results.filter(r => r.success).length,
-      failureCount: results.filter(r => !r.success).length,
+      successCount: results.filter((r) => r.success).length,
+      failureCount: results.filter((r) => !r.success).length,
       results,
     };
   }
@@ -208,7 +241,11 @@ export class PayrollProcessingService {
   /**
    * GET ATTENDANCE IMPACT
    */
-  private async getAttendanceImpact(employeeId: string, month: number, year: number) {
+  private async getAttendanceImpact(
+    employeeId: string,
+    month: number,
+    year: number,
+  ) {
     // Get total working days in month
     const daysInMonth = new Date(year, month, 0).getDate();
     const firstDay = new Date(year, month - 1, 1);
@@ -243,12 +280,17 @@ export class PayrollProcessingService {
       },
     });
 
-    const presentDays = attendances.filter(a => a.status === 'PRESENT').length;
-    const absentDays = attendances.filter(a => a.status === 'ABSENT').length;
-    const lateDays = attendances.filter(a => a.status === 'LATE').length;
-    const halfDays = attendances.filter(a => a.status === 'HALF_DAY').length;
-    const leaveDays = attendances.filter(a => a.status === 'LEAVE').length;
-    const overtimeHours = attendances.reduce((sum, a) => sum + (a.overtime || 0), 0);
+    const presentDays = attendances.filter(
+      (a) => a.status === 'PRESENT',
+    ).length;
+    const absentDays = attendances.filter((a) => a.status === 'ABSENT').length;
+    const lateDays = attendances.filter((a) => a.status === 'LATE').length;
+    const halfDays = attendances.filter((a) => a.status === 'HALF_DAY').length;
+    const leaveDays = attendances.filter((a) => a.status === 'LEAVE').length;
+    const overtimeHours = attendances.reduce(
+      (sum, a) => sum + (a.overtime || 0),
+      0,
+    );
 
     return {
       totalWorkingDays: daysInMonth,
@@ -265,7 +307,11 @@ export class PayrollProcessingService {
   /**
    * GET LEAVE IMPACT
    */
-  private async getLeaveImpact(employeeId: string, month: number, year: number) {
+  private async getLeaveImpact(
+    employeeId: string,
+    month: number,
+    year: number,
+  ) {
     // This would integrate with Leave module when available
     // For now, returning zero impact
     return {
@@ -295,8 +341,10 @@ export class PayrollProcessingService {
 
     if (filters.departmentId || filters.designationId) {
       where.employee = {};
-      if (filters.departmentId) where.employee.departmentId = filters.departmentId;
-      if (filters.designationId) where.employee.designationId = filters.designationId;
+      if (filters.departmentId)
+        where.employee.departmentId = filters.departmentId;
+      if (filters.designationId)
+        where.employee.designationId = filters.designationId;
     }
 
     const page = filters.page || 1;
@@ -375,8 +423,12 @@ export class PayrollProcessingService {
       avgSalary,
     ] = await Promise.all([
       this.database.employee.count(),
-      this.database.payrollRun.count({ where: { ...where, status: 'PENDING' } }),
-      this.database.payrollRun.count({ where: { ...where, status: 'PROCESSED' } }),
+      this.database.payrollRun.count({
+        where: { ...where, status: 'PENDING' },
+      }),
+      this.database.payrollRun.count({
+        where: { ...where, status: 'PROCESSED' },
+      }),
       this.database.payrollRun.count({ where: { ...where, status: 'PAID' } }),
       this.database.payrollRun.aggregate({
         where,

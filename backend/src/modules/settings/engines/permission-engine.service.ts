@@ -1,8 +1,8 @@
 /**
  * PERMISSION ENGINE SERVICE
- * 
+ *
  * Advanced permission management engine
- * 
+ *
  * FEATURES:
  * - Hierarchical role-based permissions
  * - Granular access control (Module, Resource, Action)
@@ -11,7 +11,7 @@
  * - Role inheritance support
  * - Field-level permissions (future)
  * - Row-level permissions (future)
- * 
+ *
  * PERMISSION STRUCTURE:
  * - Format: module:resource:action
  * - Examples:
@@ -19,14 +19,14 @@
  *   - attendance:view:read
  *   - payroll:salary:update
  *   - settings:system:manage
- * 
+ *
  * ACCESS LEVELS:
  * - SUPER_ADMIN: Full system access (level 100)
  * - ADMIN: Organization management (level 80)
  * - HR: HR operations (level 60)
  * - MANAGER: Team management (level 40)
  * - EMPLOYEE: Self-service (level 20)
- * 
+ *
  * USAGE:
  * const hasPermission = await permissionEngine.check(userId, 'employees:user:create');
  * const permissions = await permissionEngine.getUserPermissions(userId);
@@ -86,8 +86,8 @@ export class PermissionEngineService {
       return true;
     }
 
-    return permissionCodes.every(code => 
-      userPermissions.permissions.includes(code)
+    return permissionCodes.every((code) =>
+      userPermissions.permissions.includes(code),
     );
   }
 
@@ -101,8 +101,8 @@ export class PermissionEngineService {
       return true;
     }
 
-    return permissionCodes.some(code => 
-      userPermissions.permissions.includes(code)
+    return permissionCodes.some((code) =>
+      userPermissions.permissions.includes(code),
     );
   }
 
@@ -142,8 +142,8 @@ export class PermissionEngineService {
 
     // Extract permission codes
     const permissions = user.role.rolePermissions
-      .filter(rp => rp.granted) // Only granted permissions
-      .map(rp => rp.permission.code);
+      .filter((rp) => rp.granted) // Only granted permissions
+      .map((rp) => rp.permission.code);
 
     const userPermissions: UserPermissions = {
       userId: user.id,
@@ -163,7 +163,10 @@ export class PermissionEngineService {
   /**
    * Get permissions by module for a user
    */
-  async getModulePermissions(userId: string, module: string): Promise<string[]> {
+  async getModulePermissions(
+    userId: string,
+    module: string,
+  ): Promise<string[]> {
     const userPermissions = await this.getUserPermissions(userId);
 
     if (userPermissions.isSuperAdmin) {
@@ -171,10 +174,12 @@ export class PermissionEngineService {
       const allPermissions = await this.database.permission.findMany({
         where: { module },
       });
-      return allPermissions.map(p => p.code);
+      return allPermissions.map((p) => p.code);
     }
 
-    return userPermissions.permissions.filter(p => p.startsWith(`${module}:`));
+    return userPermissions.permissions.filter((p) =>
+      p.startsWith(`${module}:`),
+    );
   }
 
   /**
@@ -251,12 +256,12 @@ export class PermissionEngineService {
     });
 
     const granted = rolePermissions
-      .filter(rp => rp.granted)
-      .map(rp => rp.permission.code);
+      .filter((rp) => rp.granted)
+      .map((rp) => rp.permission.code);
 
     const denied = rolePermissions
-      .filter(rp => !rp.granted)
-      .map(rp => rp.permission.code);
+      .filter((rp) => !rp.granted)
+      .map((rp) => rp.permission.code);
 
     return { granted, denied };
   }
@@ -276,7 +281,7 @@ export class PermissionEngineService {
     // Create new permissions
     if (permissionIds.length > 0) {
       await this.database.rolePermission.createMany({
-        data: permissionIds.map(permissionId => ({
+        data: permissionIds.map((permissionId) => ({
           roleId,
           permissionId,
           granted: true,
@@ -364,7 +369,7 @@ export class PermissionEngineService {
         select: { module: true },
         distinct: ['module'],
       });
-      return allPermissions.map(p => p.module);
+      return allPermissions.map((p) => p.module);
     }
 
     // Extract unique modules from user permissions

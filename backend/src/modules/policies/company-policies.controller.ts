@@ -14,7 +14,12 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { Roles } from '../../common/guards/roles.guard.js';
 import { UserRole } from '../../common/constants/index.js';
@@ -72,14 +77,18 @@ export class CompanyPoliciesController {
 
   @Get('active')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get active company policy (All authenticated users)' })
+  @ApiOperation({
+    summary: 'Get active company policy (All authenticated users)',
+  })
   async getActivePolicy() {
     return this.companyPoliciesService.getActivePolicy();
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get company policy by ID (All authenticated users)' })
+  @ApiOperation({
+    summary: 'Get company policy by ID (All authenticated users)',
+  })
   async getPolicyById(@Param('id') id: string) {
     return this.companyPoliciesService.getPolicyById(id);
   }
@@ -92,16 +101,16 @@ export class CompanyPoliciesController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const policy = await this.companyPoliciesService.getPolicyById(id);
-    
+
     const filePath = join(process.cwd(), policy.fileUrl);
     const file = createReadStream(filePath);
-    
+
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline',
       'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
+      Pragma: 'no-cache',
+      Expires: '0',
     });
 
     return new StreamableFile(file);
@@ -116,10 +125,10 @@ export class CompanyPoliciesController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const policy = await this.companyPoliciesService.getPolicyById(id);
-    
+
     const filePath = join(process.cwd(), policy.fileUrl);
     const file = createReadStream(filePath);
-    
+
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${policy.fileName}"`,

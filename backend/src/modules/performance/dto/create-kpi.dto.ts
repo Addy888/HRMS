@@ -1,11 +1,18 @@
 /**
  * DTO for KPI Management (Key Performance Indicators)
- * 
+ *
  * KPIs are measurable metrics assigned to employees
  * Supports frequency-based tracking and threshold-based scoring
  */
 
-import { IsString, IsEnum, IsNumber, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum KPIMeasurementType {
@@ -38,7 +45,9 @@ export class CreateKPIDto {
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: 'Monthly sales target achievement percentage' })
+  @ApiPropertyOptional({
+    example: 'Monthly sales target achievement percentage',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -47,16 +56,25 @@ export class CreateKPIDto {
   @IsString()
   category: string;
 
-  @ApiProperty({ example: 'employee-uuid', description: 'Employee ID to assign KPI' })
+  @ApiProperty({
+    example: 'employee-uuid',
+    description: 'Employee ID to assign KPI',
+  })
   @IsString()
   assignedTo: string;
 
-  @ApiPropertyOptional({ example: 'manager-user-uuid', description: 'Assigned by user ID' })
+  @ApiPropertyOptional({
+    example: 'manager-user-uuid',
+    description: 'Assigned by user ID',
+  })
   @IsOptional()
   @IsString()
   assignedBy?: string;
 
-  @ApiProperty({ enum: KPIMeasurementType, example: KPIMeasurementType.PERCENTAGE })
+  @ApiProperty({
+    enum: KPIMeasurementType,
+    example: KPIMeasurementType.PERCENTAGE,
+  })
   @IsEnum(KPIMeasurementType)
   measurementType: KPIMeasurementType;
 
@@ -69,7 +87,12 @@ export class CreateKPIDto {
   @IsString()
   unit?: string;
 
-  @ApiProperty({ example: 20, description: 'KPI weightage (0-100)', minimum: 0, maximum: 100 })
+  @ApiProperty({
+    example: 20,
+    description: 'KPI weightage (0-100)',
+    minimum: 0,
+    maximum: 100,
+  })
   @IsNumber()
   @Min(0)
   @Max(100)
@@ -79,17 +102,26 @@ export class CreateKPIDto {
   @IsEnum(KPIFrequency)
   frequency: KPIFrequency;
 
-  @ApiPropertyOptional({ example: 120, description: 'Excellent threshold (>= 5 rating)' })
+  @ApiPropertyOptional({
+    example: 120,
+    description: 'Excellent threshold (>= 5 rating)',
+  })
   @IsOptional()
   @IsNumber()
   excellentThreshold?: number;
 
-  @ApiPropertyOptional({ example: 100, description: 'Good threshold (>= 4 rating)' })
+  @ApiPropertyOptional({
+    example: 100,
+    description: 'Good threshold (>= 4 rating)',
+  })
   @IsOptional()
   @IsNumber()
   goodThreshold?: number;
 
-  @ApiPropertyOptional({ example: 80, description: 'Satisfactory threshold (>= 3 rating)' })
+  @ApiPropertyOptional({
+    example: 80,
+    description: 'Satisfactory threshold (>= 3 rating)',
+  })
   @IsOptional()
   @IsNumber()
   satisfactoryThreshold?: number;

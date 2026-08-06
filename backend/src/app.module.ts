@@ -33,4 +33,3 @@ import { AttendanceModule } from './modules/attendance/attendance.module.js';
   controllers: [HealthController],
 })
 export class AppModule {}
-

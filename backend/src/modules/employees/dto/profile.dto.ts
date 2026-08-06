@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsEmail, Matches, Length, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  Matches,
+  Length,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -50,12 +58,18 @@ export class UpdateProfileDto {
 
   // Contact Info
   @ApiPropertyOptional()
-  @Matches(/^[6-9]\d{9}$/, { message: 'Primary mobile number must be a valid 10-digit Indian mobile number' })
+  @Matches(/^[6-9]\d{9}$/, {
+    message:
+      'Primary mobile number must be a valid 10-digit Indian mobile number',
+  })
   @IsOptional()
   phone?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^[6-9]\d{9}$/, { message: 'Alternate mobile number must be a valid 10-digit Indian mobile number' })
+  @Matches(/^[6-9]\d{9}$/, {
+    message:
+      'Alternate mobile number must be a valid 10-digit Indian mobile number',
+  })
   @IsOptional()
   alternatePhone?: string;
 
@@ -80,7 +94,10 @@ export class UpdateProfileDto {
   emergencyContactName?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^[6-9]\d{9}$/, { message: 'Emergency contact number must be a valid 10-digit Indian mobile number' })
+  @Matches(/^[6-9]\d{9}$/, {
+    message:
+      'Emergency contact number must be a valid 10-digit Indian mobile number',
+  })
   @IsOptional()
   emergencyContactPhone?: string;
 
@@ -117,17 +134,23 @@ export class UpdateProfileDto {
   bankBranch?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^\d{9,18}$/, { message: 'Bank account number must be between 9 and 18 digits' })
+  @Matches(/^\d{9,18}$/, {
+    message: 'Bank account number must be between 9 and 18 digits',
+  })
   @IsOptional()
   bankAccountNumber?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, { message: 'IFSC code must be a valid Indian bank IFSC (e.g. SBIN0001234)' })
+  @Matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, {
+    message: 'IFSC code must be a valid Indian bank IFSC (e.g. SBIN0001234)',
+  })
   @IsOptional()
   bankIfsc?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^[\w.-]+@[\w.-]+$/, { message: 'UPI ID must be a valid format (e.g. user@bank)' })
+  @Matches(/^[\w.-]+@[\w.-]+$/, {
+    message: 'UPI ID must be a valid format (e.g. user@bank)',
+  })
   @IsOptional()
   upiId?: string;
 
@@ -138,12 +161,18 @@ export class UpdateProfileDto {
   aadhaarNumber?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^[A-Z]{5}\d{4}[A-Z]$/, { message: 'PAN Card number must be a valid Indian PAN format (e.g. ABCDE1234F)' })
+  @Matches(/^[A-Z]{5}\d{4}[A-Z]$/, {
+    message:
+      'PAN Card number must be a valid Indian PAN format (e.g. ABCDE1234F)',
+  })
   @IsOptional()
   panNumber?: string;
 
   @ApiPropertyOptional()
-  @Matches(/^[A-Z]{1}\d{7}$/, { message: 'Passport number must be a valid Indian Passport format (e.g. Z1234567)' })
+  @Matches(/^[A-Z]{1}\d{7}$/, {
+    message:
+      'Passport number must be a valid Indian Passport format (e.g. Z1234567)',
+  })
   @IsOptional()
   passportNumber?: string;
 

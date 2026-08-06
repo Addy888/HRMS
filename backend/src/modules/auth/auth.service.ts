@@ -34,13 +34,16 @@ export class AuthService implements OnModuleInit {
   private async ensureDefaultHRUser() {
     try {
       const defaultEmail = 'adityashastri76@gmail.com';
-      const defaultCode  = 'FCS-HR-001';
+      const defaultCode = 'FCS-HR-001';
 
       // 1. Ensure HR role exists
       const hrRole = await this.prisma.role.upsert({
         where: { name: 'HR' },
         update: {},
-        create: { name: 'HR', description: 'Human Resource Management & Administrator' },
+        create: {
+          name: 'HR',
+          description: 'Human Resource Management & Administrator',
+        },
       });
 
       // 2. Ensure EMPLOYEE role exists
@@ -54,14 +57,20 @@ export class AuthService implements OnModuleInit {
       const adminDept = await this.prisma.department.upsert({
         where: { name: 'Administration' },
         update: {},
-        create: { name: 'Administration', description: 'Core Executive & Administrative Operations' },
+        create: {
+          name: 'Administration',
+          description: 'Core Executive & Administrative Operations',
+        },
       });
 
       // 4. Ensure HR Manager designation exists
       const hrManagerDesg = await this.prisma.designation.upsert({
         where: { name: 'HR Manager' },
         update: {},
-        create: { name: 'HR Manager', description: 'Human Resources Management Lead' },
+        create: {
+          name: 'HR Manager',
+          description: 'Human Resources Management Lead',
+        },
       });
 
       // 5. Check if user already exists
@@ -78,7 +87,9 @@ export class AuthService implements OnModuleInit {
             where: { email: defaultEmail },
             data: { roleId: hrRole.id },
           });
-          this.logger.log(`✔ Default HR Admin role corrected: ${defaultEmail} → HR`);
+          this.logger.log(
+            `✔ Default HR Admin role corrected: ${defaultEmail} → HR`,
+          );
         } else {
           this.logger.log(`✔ Default HR Admin already exists: ${defaultEmail}`);
         }
@@ -90,7 +101,9 @@ export class AuthService implements OnModuleInit {
         where: { employeeId: defaultCode },
       });
       if (existingEmployee) {
-        this.logger.log(`✔ Default HR Admin employee record already exists: ${defaultCode}`);
+        this.logger.log(
+          `✔ Default HR Admin employee record already exists: ${defaultCode}`,
+        );
         return;
       }
 
@@ -125,7 +138,9 @@ export class AuthService implements OnModuleInit {
         data: { userId: newUser.id },
       });
 
-      this.logger.log(`✔ Default HR Admin created automatically: ${defaultEmail} / FCS-HR-001`);
+      this.logger.log(
+        `✔ Default HR Admin created automatically: ${defaultEmail} / FCS-HR-001`,
+      );
     } catch (err: any) {
       // Non-fatal — log and continue. Auth still works for existing users.
       this.logger.error(`ensureDefaultHRUser failed: ${err.message}`);
@@ -162,7 +177,9 @@ export class AuthService implements OnModuleInit {
     }
 
     if (!user.isActive) {
-      throw new ForbiddenException('Your account has been deactivated. Please contact HR.');
+      throw new ForbiddenException(
+        'Your account has been deactivated. Please contact HR.',
+      );
     }
 
     // 2. Verify password using bcrypt
@@ -182,15 +199,17 @@ export class AuthService implements OnModuleInit {
     const accessToken = this.jwtService.sign(payload);
 
     // 4. Fire login notification (non-blocking — never breaks auth)
-    this.notificationService.createNotification([user.id], {
-      title: 'New Login Detected',
-      description: `Your account was accessed at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}.`,
-      type: 'auth.login',
-      module: 'AUTH',
-      priority: 'LOW',
-      icon: 'log-in',
-      actionUrl: undefined,
-    }).catch(() => {});
+    this.notificationService
+      .createNotification([user.id], {
+        title: 'New Login Detected',
+        description: `Your account was accessed at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}.`,
+        type: 'auth.login',
+        module: 'AUTH',
+        priority: 'LOW',
+        icon: 'log-in',
+        actionUrl: undefined,
+      })
+      .catch(() => {});
 
     // 5. Return token + user profile
     return {
@@ -227,7 +246,9 @@ export class AuthService implements OnModuleInit {
     }
 
     if (dto.currentPassword === dto.newPassword) {
-      throw new BadRequestException('New password must be different from the current password');
+      throw new BadRequestException(
+        'New password must be different from the current password',
+      );
     }
 
     const hashed = await bcrypt.hash(dto.newPassword, 10);
@@ -236,15 +257,18 @@ export class AuthService implements OnModuleInit {
       data: { password: hashed, isFirstLogin: false },
     });
 
-    this.notificationService.createNotification([userId], {
-      title: 'Password Changed',
-      description: 'Your account password was changed successfully. If this was not you, contact HR immediately.',
-      type: 'auth.password_changed',
-      module: 'AUTH',
-      priority: 'HIGH',
-      icon: 'shield-alert',
-      actionUrl: undefined,
-    }).catch(() => {});
+    this.notificationService
+      .createNotification([userId], {
+        title: 'Password Changed',
+        description:
+          'Your account password was changed successfully. If this was not you, contact HR immediately.',
+        type: 'auth.password_changed',
+        module: 'AUTH',
+        priority: 'HIGH',
+        icon: 'shield-alert',
+        actionUrl: undefined,
+      })
+      .catch(() => {});
 
     return { message: 'Password changed successfully' };
   }
@@ -295,10 +319,15 @@ export class AuthService implements OnModuleInit {
         data: { userId: user.id, token, expiresAt },
       });
 
-      this.logger.log(`[EMAIL] Password reset requested for: ${email}. Token: ${token}`);
+      this.logger.log(
+        `[EMAIL] Password reset requested for: ${email}. Token: ${token}`,
+      );
     }
 
-    return { message: 'If the email matches a registered account, a password reset link has been generated.' };
+    return {
+      message:
+        'If the email matches a registered account, a password reset link has been generated.',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -307,8 +336,14 @@ export class AuthService implements OnModuleInit {
       include: { user: true },
     });
 
-    if (!resetRequest || resetRequest.used || resetRequest.expiresAt < new Date()) {
-      throw new BadRequestException('Reset token is invalid, expired, or already used');
+    if (
+      !resetRequest ||
+      resetRequest.used ||
+      resetRequest.expiresAt < new Date()
+    ) {
+      throw new BadRequestException(
+        'Reset token is invalid, expired, or already used',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -331,15 +366,18 @@ export class AuthService implements OnModuleInit {
       });
     });
 
-    this.notificationService.createNotification([resetRequest.userId], {
-      title: 'Password Reset',
-      description: 'Your account password was reset via the password reset link.',
-      type: 'auth.password_reset',
-      module: 'AUTH',
-      priority: 'HIGH',
-      icon: 'key',
-      actionUrl: undefined,
-    }).catch(() => {});
+    this.notificationService
+      .createNotification([resetRequest.userId], {
+        title: 'Password Reset',
+        description:
+          'Your account password was reset via the password reset link.',
+        type: 'auth.password_reset',
+        module: 'AUTH',
+        priority: 'HIGH',
+        icon: 'key',
+        actionUrl: undefined,
+      })
+      .catch(() => {});
 
     return { message: 'Password reset successfully' };
   }

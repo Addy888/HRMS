@@ -1,8 +1,8 @@
 /**
  * LEAVE PROVIDER INTERFACE
- * 
+ *
  * Abstracts leave data access from Payroll Engine.
- * 
+ *
  * Future Implementations:
  * - InternalLeaveProvider (uses our Leave module - Phase 11)
  * - ExternalLeaveProvider (integrates with third-party leave systems)

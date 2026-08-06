@@ -11,7 +11,12 @@ import {
   UploadedFile,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -46,7 +51,8 @@ export class ComplaintsController {
       storage: diskStorage({
         destination: './uploads/complaints',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `attachment-${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
@@ -54,7 +60,9 @@ export class ComplaintsController {
     }),
   )
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Submit a new complaint with optional attachment (Employee Only)' })
+  @ApiOperation({
+    summary: 'Submit a new complaint with optional attachment (Employee Only)',
+  })
   createComplaint(
     @GetUser('id') userId: string,
     @Body() dto: CreateComplaintDto,
@@ -73,7 +81,7 @@ export class ComplaintsController {
   @Get('complaints/my')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
-  @ApiOperation({ summary: 'Get logged-in employee\'s raised complaints' })
+  @ApiOperation({ summary: "Get logged-in employee's raised complaints" })
   getMyComplaints(@GetUser('id') userId: string, @Query() query: any) {
     return this.complaintsService.getMyComplaints(userId, query);
   }
@@ -88,7 +96,9 @@ export class ComplaintsController {
 
   @Get('complaints/:id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get full details of a specific complaint (Employee & HR)' })
+  @ApiOperation({
+    summary: 'Get full details of a specific complaint (Employee & HR)',
+  })
   getComplaintById(
     @Param('id') id: string,
     @GetUser('id') userId: string,
@@ -106,7 +116,9 @@ export class ComplaintsController {
 
   @Post('complaints/:id/reply')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Add a message reply to a complaint (Employee & HR)' })
+  @ApiOperation({
+    summary: 'Add a message reply to a complaint (Employee & HR)',
+  })
   addReply(
     @Param('id') id: string,
     @GetUser('id') userId: string,
@@ -165,7 +177,9 @@ export class ComplaintsController {
   @Patch('admin/complaints/:id')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Update priority or status details of a complaint (HR Only)' })
+  @ApiOperation({
+    summary: 'Update priority or status details of a complaint (HR Only)',
+  })
   updateHRComplaint(
     @Param('id') id: string,
     @GetUser('id') hrUserId: string,
@@ -177,7 +191,9 @@ export class ComplaintsController {
   @Post('admin/complaints/:id/assign')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Assign/Reassign support ticket to an HR Agent (HR Only)' })
+  @ApiOperation({
+    summary: 'Assign/Reassign support ticket to an HR Agent (HR Only)',
+  })
   assignComplaint(
     @Param('id') id: string,
     @GetUser('id') hrUserId: string,
@@ -189,7 +205,9 @@ export class ComplaintsController {
   @Post('admin/complaints/:id/resolve')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Mark complaint support ticket as RESOLVED (HR Only)' })
+  @ApiOperation({
+    summary: 'Mark complaint support ticket as RESOLVED (HR Only)',
+  })
   resolveComplaint(
     @Param('id') id: string,
     @GetUser('id') hrUserId: string,
@@ -202,10 +220,7 @@ export class ComplaintsController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Reopen a previously resolved complaint (HR Only)' })
-  reopenComplaint(
-    @Param('id') id: string,
-    @GetUser('id') hrUserId: string,
-  ) {
+  reopenComplaint(@Param('id') id: string, @GetUser('id') hrUserId: string) {
     return this.complaintsService.reopenComplaint(id, hrUserId);
   }
 }

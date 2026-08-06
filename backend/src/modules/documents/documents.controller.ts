@@ -1,11 +1,29 @@
 import {
-  Controller, Get, Post, Body, Param, Delete, Query, UseGuards,
-  UseInterceptors, UploadedFile, BadRequestException, Req
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { DocumentsService } from './documents.service.js';
 import {
-  UploadDocumentDto, ReplaceDocumentDto, VerifyDocumentDto, QueryDocumentDto
+  UploadDocumentDto,
+  ReplaceDocumentDto,
+  VerifyDocumentDto,
+  QueryDocumentDto,
 } from './dto/document.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { Roles } from '../../common/guards/roles.guard.js';
@@ -23,7 +41,10 @@ export class DocumentsController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Employee uploads a new onboarding document (Max 10MB, PDF/PNG/JPG/JPEG)' })
+  @ApiOperation({
+    summary:
+      'Employee uploads a new onboarding document (Max 10MB, PDF/PNG/JPG/JPEG)',
+  })
   uploadDocument(
     @GetUser('id') userId: string,
     @Body() dto: UploadDocumentDto,
@@ -47,7 +68,9 @@ export class DocumentsController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Employee replaces/updates an existing document version' })
+  @ApiOperation({
+    summary: 'Employee replaces/updates an existing document version',
+  })
   replaceDocument(
     @GetUser('id') userId: string,
     @Body() dto: ReplaceDocumentDto,
@@ -76,7 +99,12 @@ export class DocumentsController {
     @Param('id') documentId: string,
     @Req() req: any,
   ) {
-    return this.documentsService.deleteDocument(userId, documentId, req.ip, req.headers['user-agent']);
+    return this.documentsService.deleteDocument(
+      userId,
+      documentId,
+      req.ip,
+      req.headers['user-agent'],
+    );
   }
 
   @Get('my')
@@ -90,7 +118,9 @@ export class DocumentsController {
   @Get('queue')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get global HR document verification queue (HR Only)' })
+  @ApiOperation({
+    summary: 'Get global HR document verification queue (HR Only)',
+  })
   getDocumentQueue(@Query() query: QueryDocumentDto) {
     return this.documentsService.getDocumentQueue(query);
   }
@@ -98,7 +128,9 @@ export class DocumentsController {
   @Post(':id/verify')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'HR approves/rejects/requests re-upload of a document (HR Only)' })
+  @ApiOperation({
+    summary: 'HR approves/rejects/requests re-upload of a document (HR Only)',
+  })
   verifyDocument(
     @GetUser('id') hrUserId: string,
     @Param('id') documentId: string,

@@ -16,9 +16,12 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'fcs-hrms-super-secret-key',
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'fcs-hrms-super-secret-key',
         signOptions: {
-          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '8h') as any,
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            '8h') as any,
         },
       }),
       inject: [ConfigService],

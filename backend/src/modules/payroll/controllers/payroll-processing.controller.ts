@@ -19,7 +19,9 @@ import { ProcessPayrollDto } from '../dto/process-payroll.dto';
 @Controller('payroll-processing')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PayrollProcessingController {
-  constructor(private readonly payrollProcessingService: PayrollProcessingService) {}
+  constructor(
+    private readonly payrollProcessingService: PayrollProcessingService,
+  ) {}
 
   @Post('bulk')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
@@ -65,7 +67,10 @@ export class PayrollProcessingController {
 
   @Put(':id/mark-paid')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
-  async markPaid(@Param('id') id: string, @Body() dto: { paymentDate?: string }) {
+  async markPaid(
+    @Param('id') id: string,
+    @Body() dto: { paymentDate?: string },
+  ) {
     return this.payrollProcessingService.markAsPaid(
       id,
       dto.paymentDate ? new Date(dto.paymentDate) : undefined,

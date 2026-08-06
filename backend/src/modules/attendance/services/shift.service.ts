@@ -3,7 +3,12 @@
  * Manages employee shift scheduling
  */
 
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { CreateShiftDto, UpdateShiftDto, AssignShiftDto } from '../dto';
 import { parseISO } from 'date-fns';
@@ -26,7 +31,9 @@ export class ShiftService {
     });
 
     if (existing) {
-      throw new BadRequestException(`Shift with code '${dto.code}' already exists`);
+      throw new BadRequestException(
+        `Shift with code '${dto.code}' already exists`,
+      );
     }
 
     return await this.prisma.shift.create({
@@ -55,7 +62,7 @@ export class ShiftService {
    */
   async getAllShifts(status?: string) {
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -138,7 +145,9 @@ export class ShiftService {
     }
 
     if (shift._count.assignments > 0) {
-      throw new BadRequestException('Cannot delete shift with active assignments');
+      throw new BadRequestException(
+        'Cannot delete shift with active assignments',
+      );
     }
 
     await this.prisma.shift.delete({ where: { id } });
@@ -150,7 +159,9 @@ export class ShiftService {
    * ASSIGN SHIFT TO EMPLOYEE
    */
   async assignShift(dto: AssignShiftDto, assignedBy: string) {
-    this.logger.log(`Assigning shift ${dto.shiftId} to employee ${dto.employeeId}`);
+    this.logger.log(
+      `Assigning shift ${dto.shiftId} to employee ${dto.employeeId}`,
+    );
 
     // Verify employee exists
     const employee = await this.prisma.employee.findUnique({
@@ -226,16 +237,13 @@ export class ShiftService {
    */
   async getEmployeeCurrentShift(employeeId: string) {
     const now = new Date();
-    
+
     return await this.prisma.shiftAssignment.findFirst({
       where: {
         employeeId,
         isActive: true,
         effectiveFrom: { lte: now },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: now } },
-        ],
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
       },
       include: {
         shift: true,

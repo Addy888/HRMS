@@ -1,8 +1,8 @@
 /**
  * ROLE & PERMISSION SERVICE
- * 
+ *
  * Manages roles and permissions
- * 
+ *
  * RESPONSIBILITIES:
  * - Role CRUD operations
  * - Permission CRUD operations
@@ -11,7 +11,12 @@
  * - Role hierarchy management
  */
 
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { PermissionEngineService } from '../engines/permission-engine.service';
 import { AuditEngineService } from '../engines/audit-engine.service';
@@ -347,7 +352,9 @@ export class RolePermissionService {
     }
 
     if (permission._count.rolePermissions > 0) {
-      throw new BadRequestException('Cannot delete permission assigned to roles');
+      throw new BadRequestException(
+        'Cannot delete permission assigned to roles',
+      );
     }
 
     await this.database.permission.delete({
@@ -478,8 +485,11 @@ export class RolePermissionService {
    * Check if user has permission
    */
   async checkUserPermission(userId: string, permissionCode: string) {
-    const hasPermission = await this.permissionEngine.check(userId, permissionCode);
-    
+    const hasPermission = await this.permissionEngine.check(
+      userId,
+      permissionCode,
+    );
+
     return {
       userId,
       permissionCode,
@@ -495,10 +505,11 @@ export class RolePermissionService {
     permissionCodes: string[],
     mode: 'ALL' | 'ANY' = 'ALL',
   ) {
-    const hasPermission = mode === 'ALL'
-      ? await this.permissionEngine.checkAll(userId, permissionCodes)
-      : await this.permissionEngine.checkAny(userId, permissionCodes);
-    
+    const hasPermission =
+      mode === 'ALL'
+        ? await this.permissionEngine.checkAll(userId, permissionCodes)
+        : await this.permissionEngine.checkAny(userId, permissionCodes);
+
     return {
       userId,
       permissionCodes,
@@ -519,7 +530,7 @@ export class RolePermissionService {
    */
   async getUserModules(userId: string) {
     const modules = await this.permissionEngine.getUserModules(userId);
-    
+
     return {
       userId,
       modules,

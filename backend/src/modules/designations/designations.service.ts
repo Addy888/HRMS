@@ -1,6 +1,13 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { CreateDesignationDto, UpdateDesignationDto } from './dto/designation.dto.js';
+import {
+  CreateDesignationDto,
+  UpdateDesignationDto,
+} from './dto/designation.dto.js';
 
 @Injectable()
 export class DesignationsService {
@@ -59,7 +66,9 @@ export class DesignationsService {
         },
       });
       if (existing) {
-        throw new ConflictException('Another designation with this name already exists');
+        throw new ConflictException(
+          'Another designation with this name already exists',
+        );
       }
     }
     return this.prisma.designation.update({
@@ -71,7 +80,9 @@ export class DesignationsService {
   async remove(id: string) {
     const desig = await this.findOne(id);
     if (desig.employees.length > 0) {
-      throw new ConflictException('Cannot delete designation with active employees. Please re-assign them first.');
+      throw new ConflictException(
+        'Cannot delete designation with active employees. Please re-assign them first.',
+      );
     }
     return this.prisma.designation.delete({
       where: { id },

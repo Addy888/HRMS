@@ -1,10 +1,18 @@
 /**
  * DTOs for Role and Permission Management
- * 
+ *
  * Granular access control configuration
  */
 
-import { IsString, IsBoolean, IsInt, IsOptional, IsArray, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsArray,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoleDto {
@@ -17,12 +25,17 @@ export class CreateRoleDto {
   @IsString()
   displayName?: string;
 
-  @ApiPropertyOptional({ example: 'Can manage team members and approve requests' })
+  @ApiPropertyOptional({
+    example: 'Can manage team members and approve requests',
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: 40, description: 'Role level (0-100), higher = more privileges' })
+  @ApiProperty({
+    example: 40,
+    description: 'Role level (0-100), higher = more privileges',
+  })
   @IsInt()
   @Min(0)
   @Max(100)
@@ -81,7 +94,10 @@ export class CreatePermissionDto {
   @IsString()
   action: string;
 
-  @ApiProperty({ example: 'Create Employee', description: 'Human-readable name' })
+  @ApiProperty({
+    example: 'Create Employee',
+    description: 'Human-readable name',
+  })
   @IsString()
   name: string;
 
@@ -90,7 +106,10 @@ export class CreatePermissionDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 'UI', description: 'Permission category (UI, API, BUTTON, FIELD)' })
+  @ApiPropertyOptional({
+    example: 'UI',
+    description: 'Permission category (UI, API, BUTTON, FIELD)',
+  })
   @IsOptional()
   @IsString()
   category?: string;
@@ -177,7 +196,8 @@ export class CheckMultiplePermissionsDto {
   @ApiProperty({
     example: 'ALL',
     enum: ['ALL', 'ANY'],
-    description: 'ALL = user needs all permissions, ANY = user needs at least one',
+    description:
+      'ALL = user needs all permissions, ANY = user needs at least one',
   })
   @IsString()
   mode: 'ALL' | 'ANY';

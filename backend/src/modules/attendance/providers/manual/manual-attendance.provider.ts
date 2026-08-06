@@ -1,16 +1,16 @@
 /**
  * MANUAL ATTENDANCE PROVIDER
- * 
+ *
  * Implementation of IAttendanceProvider for manual attendance entry.
  * This is the DEFAULT provider for the system.
- * 
+ *
  * FEATURES:
  * - Web-based check-in/check-out
  * - Mobile app attendance
  * - HR manual entry
  * - No device dependency
  * - Real-time processing
- * 
+ *
  * FUTURE PROVIDERS (examples):
  * - BiometricAttendanceProvider (fingerprint devices)
  * - FaceRecognitionProvider (face recognition systems)
@@ -19,19 +19,27 @@
  * - GPSAttendanceProvider (GPS-based mobile attendance)
  * - APIAttendanceProvider (third-party API integration)
  * - WebhookAttendanceProvider (webhook-based data push)
- * 
+ *
  * All future providers will implement the SAME interface (IAttendanceProvider).
  * The AttendanceService doesn't need to know which provider is being used.
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { IAttendanceProvider, IProviderMetadata } from '../base/attendance.provider.interface';
-import { IAttendanceEvent, IProviderConfiguration } from '../../interfaces/attendance-event.interface';
+import {
+  IAttendanceProvider,
+  IProviderMetadata,
+} from '../base/attendance.provider.interface';
+import {
+  IAttendanceEvent,
+  IProviderConfiguration,
+} from '../../interfaces/attendance-event.interface';
 import { AttendanceSource, AttendanceEventType } from '../../enums';
 import { AttendanceProviderRegistry } from '../provider.registry';
 
 @Injectable()
-export class ManualAttendanceProvider implements IAttendanceProvider, OnModuleInit {
+export class ManualAttendanceProvider
+  implements IAttendanceProvider, OnModuleInit
+{
   private readonly logger = new Logger(ManualAttendanceProvider.name);
   private configuration: IProviderConfiguration = {
     isEnabled: true,
@@ -103,7 +111,9 @@ export class ManualAttendanceProvider implements IAttendanceProvider, OnModuleIn
    * RECORD ATTENDANCE EVENT
    * This is the CORE method - called by AttendanceService
    */
-  async recordAttendance(event: Partial<IAttendanceEvent>): Promise<IAttendanceEvent> {
+  async recordAttendance(
+    event: Partial<IAttendanceEvent>,
+  ): Promise<IAttendanceEvent> {
     this.logger.debug(`Recording manual attendance: ${JSON.stringify(event)}`);
 
     // Validate the event
@@ -162,7 +172,9 @@ export class ManualAttendanceProvider implements IAttendanceProvider, OnModuleIn
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     if (timestamp < thirtyDaysAgo) {
-      throw new Error('Manual attendance cannot be recorded for dates older than 30 days');
+      throw new Error(
+        'Manual attendance cannot be recorded for dates older than 30 days',
+      );
     }
 
     return true;
@@ -191,7 +203,9 @@ export class ManualAttendanceProvider implements IAttendanceProvider, OnModuleIn
   /**
    * UPDATE CONFIGURATION
    */
-  async updateConfiguration(config: Partial<IProviderConfiguration>): Promise<void> {
+  async updateConfiguration(
+    config: Partial<IProviderConfiguration>,
+  ): Promise<void> {
     this.logger.log(`Updating configuration: ${JSON.stringify(config)}`);
     this.configuration = { ...this.configuration, ...config };
     this.logger.log('Configuration updated successfully');
@@ -201,7 +215,10 @@ export class ManualAttendanceProvider implements IAttendanceProvider, OnModuleIn
    * SYNC ATTENDANCE
    * Not applicable for manual provider, but implementing for interface compliance
    */
-  async syncAttendance(startDate: Date, endDate: Date): Promise<IAttendanceEvent[]> {
+  async syncAttendance(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<IAttendanceEvent[]> {
     this.logger.warn('Sync not supported for manual attendance provider');
     return [];
   }
