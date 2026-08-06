@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import Link from 'next/link';
 import {
   FileText, Plus, Search, Filter, MoreVertical, Eye, Edit2, Trash2,
   CheckCircle2, Archive, Send, Globe, Loader2, BarChart2, Users,
-  BookOpen, AlertCircle, ChevronRight, Copy
+  BookOpen, AlertCircle, ChevronRight, Copy, Upload, Download, X
 } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -43,12 +43,24 @@ export default function HRPoliciesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadData, setUploadData] = useState({ policyName: '', version: '1.0', file: null as File | null });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: dashboard } = useQuery({
     queryKey: ['hr-policy-dashboard'],
     queryFn: async () => {
       const res = await api.get('/policies/dashboard');
       return res.data?.data ?? res.data;
+    },
+  });
+
+  const { data: companyPolicies = [], refetch: refetchCompanyPolicies } = useQuery({
+    queryKey: ['company-policies'],
+    queryFn: async () => {
+      const res = await api.get('/company-policies');
+      return res.data?.data ?? [];
     },
   });
 
@@ -75,6 +87,80 @@ export default function HRPoliciesPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['hr-policy-dashboard'] }); },
   });
 
+  const deleteCompanyPolicyMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/company-policies/${id}`);
+    },
+    onSuccess: () => {
+      refetchCompanyPolicies();
+      alert('Company policy deleted successfully');
+    },
+  });
+
+  const handleUploadClick = () => {
+    setShowUploadModal(true);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Only PDF files are allowed');
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        alert('File size must be less than 20 MB');
+        return;
+      }
+      setUploadData({ ...uploadData, file });
+    }
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!uploadData.policyName || !uploadData.file) {
+      alert('Please provide policy name and select a PDF file');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadData.file);
+      formData.append('policyName', uploadData.policyName);
+      formData.append('version', uploadData.version);
+
+      await api.post('/company-policies/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      alert('Company policy uploaded successfully!');
+      setShowUploadModal(false);
+      setUploadData({ policyName: '', version: '1.0', file: null });
+      refetchCompanyPolicies();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to upload policy');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownloadPolicy = async (id: string, fileName: string) => {
+    try {
+      const response = await api.get(`/company-policies/${id}/download`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      alert('Failed to download policy');
+    }
+  };
+
   const metrics = dashboard?.metrics || {};
 
   return (
@@ -86,6 +172,12 @@ export default function HRPoliciesPage() {
           <p className="text-sm text-neutral-500 mt-0.5">Manage company policies and track employee acceptance</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleUploadClick}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-purple-950/30"
+          >
+            <Upload className="w-4 h-4" /> Upload Company Policy
+          </button>
           <Link href="/hr/policies/tracking" className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-xl text-xs font-semibold text-neutral-300 transition-colors">
             <BarChart2 className="w-4 h-4" /> Tracking
           </Link>
@@ -171,6 +263,166 @@ export default function HRPoliciesPage() {
           </div>
         </div>
       </div>
+
+      {/* Company Policies Section */}
+      {companyPolicies.length > 0 && (
+        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+          <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-purple-400" /> Company Policy Documents
+          </h2>
+          <div className="space-y-2">
+            {companyPolicies.map((policy: any) => (
+              <div key={policy.id} className="flex items-center justify-between p-4 bg-neutral-950 border border-neutral-800 rounded-xl">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <FileText className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-white truncate">{policy.policyName}</p>
+                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1">
+                      <span>v{policy.version}</span>
+                      <span>•</span>
+                      <span>{(policy.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
+                      <span>•</span>
+                      <span>{new Date(policy.createdAt).toLocaleDateString()}</span>
+                      <span>•</span>
+                      <span className={policy.status === 'ACTIVE' ? 'text-emerald-400' : 'text-neutral-500'}>
+                        {policy.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleDownloadPolicy(policy.id, policy.fileName)}
+                    className="p-2 hover:bg-neutral-800 rounded-lg transition-colors text-blue-400"
+                    title="Download"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Delete this company policy?')) {
+                        deleteCompanyPolicyMutation.mutate(policy.id);
+                      }
+                    }}
+                    className="p-2 hover:bg-neutral-800 rounded-lg transition-colors text-red-400"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Upload Company Policy</h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="p-1 hover:bg-neutral-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-neutral-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  Policy Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={uploadData.policyName}
+                  onChange={(e) => setUploadData({ ...uploadData, policyName: e.target.value })}
+                  placeholder="Company Handbook 2026"
+                  className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  Version
+                </label>
+                <input
+                  type="text"
+                  value={uploadData.version}
+                  onChange={(e) => setUploadData({ ...uploadData, version: e.target.value })}
+                  placeholder="1.0"
+                  className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  PDF File <span className="text-red-400">*</span>
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full px-4 py-3 bg-neutral-950 border-2 border-dashed border-neutral-700 hover:border-purple-500 rounded-lg text-neutral-400 hover:text-purple-400 transition-colors flex flex-col items-center gap-2"
+                >
+                  <Upload className="w-6 h-6" />
+                  <span className="text-sm font-medium">
+                    {uploadData.file ? uploadData.file.name : 'Click to select PDF file'}
+                  </span>
+                  {uploadData.file && (
+                    <span className="text-xs text-neutral-500">
+                      {(uploadData.file.size / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  )}
+                </button>
+                <p className="text-xs text-neutral-500 mt-2">
+                  Maximum file size: 20 MB. Only PDF files allowed.
+                </p>
+              </div>
+
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3">
+                <p className="text-xs text-blue-400">
+                  <strong>Note:</strong> Uploading a new policy will automatically make it active. 
+                  The previous active policy will be archived to version history.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="flex-1 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUploadSubmit}
+                  disabled={uploading || !uploadData.policyName || !uploadData.file}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-neutral-700 disabled:to-neutral-700 rounded-lg text-white font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

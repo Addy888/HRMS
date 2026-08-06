@@ -34,6 +34,18 @@ export default function EmployeePoliciesPage() {
     },
   });
 
+  const { data: companyPolicy } = useQuery({
+    queryKey: ['active-company-policy'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/company-policies/active');
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
+  });
+
   const filtered = policies.filter((p: any) => {
     const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.category.includes(search.toUpperCase());
     const matchFilter = filter === 'ALL' || (filter === 'ACCEPTED' ? p.accepted : !p.accepted);
@@ -89,6 +101,34 @@ export default function EmployeePoliciesPage() {
           </div>
         )}
       </div>
+
+      {/* Company Policy Card */}
+      {companyPolicy && (
+        <Link href="/employee/policies/company-policy" className="block bg-gradient-to-br from-purple-950 to-pink-950 border border-purple-800 rounded-2xl p-6 hover:border-purple-600 transition-all group">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <FileText className="w-6 h-6 text-purple-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-bold text-white">{companyPolicy.policyName}</h3>
+                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-xs font-bold">
+                  COMPANY POLICY
+                </span>
+              </div>
+              <p className="text-xs text-purple-300/80 mb-3">
+                Official company policy document. Click to view in secure viewer.
+              </p>
+              <div className="flex items-center gap-3 text-xs text-purple-400">
+                <span>Version {companyPolicy.version}</span>
+                <span>•</span>
+                <span>{new Date(companyPolicy.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-purple-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+          </div>
+        </Link>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-3">

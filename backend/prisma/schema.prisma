@@ -2204,3 +2204,23 @@ model FeatureFlag {
   @@index([name])
   @@index([isEnabled])
 }
+
+
+// Company Policy Documents (PDF Upload Feature)
+model CompanyPolicy {
+  id            String   @id @default(uuid())
+  policyName    String
+  fileName      String   // Original filename
+  fileUrl       String   // Stored file path/URL
+  fileSize      Int      // File size in bytes
+  version       String   @default("1.0")
+  status        String   @default("ACTIVE") // ACTIVE, ARCHIVED
+  uploadedBy    String   // HR User ID
+  uploadedByName String? // HR User Name
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([status])
+  @@index([createdAt])
+}
