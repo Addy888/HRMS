@@ -128,13 +128,16 @@ export class CompanyPoliciesController {
   @ApiOperation({ summary: 'View/stream company policy PDF securely' })
   async viewPolicy(
     @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
+    @Res() res: Response, // Take full control - no passthrough
   ) {
     try {
+      console.log('\n=== PDF VIEW REQUEST ===');
+      console.log('Policy ID:', id);
+      
       const policy = await this.companyPoliciesService.getPolicyById(id);
 
       if (!policy.fileUrl) {
-        throw new NotFoundException('Policy file URL not found in database');
+        return res.status(404).json({ message: 'Policy file URL not found in database' });
       }
 
       // Normalize the file path - remove leading ./ or .\ and ensure forward slashes
@@ -143,8 +146,6 @@ export class CompanyPoliciesController {
       // Construct the file path
       const filePath = join(process.cwd(), normalizedPath);
       
-      console.log('=== PDF View Request ===');
-      console.log('Policy ID:', id);
       console.log('Policy fileUrl from DB:', policy.fileUrl);
       console.log('Normalized path:', normalizedPath);
       console.log('Full file path:', filePath);
@@ -154,42 +155,91 @@ export class CompanyPoliciesController {
       const fs = await import('fs');
       if (!fs.existsSync(filePath)) {
         console.error('❌ File not found at path:', filePath);
-        
-        // Try alternate paths
-        const alternatePath1 = join(process.cwd(), 'uploads', 'company-policies', policy.fileUrl.split(/[\\/]/).pop() || '');
-        const alternatePath2 = join(process.cwd(), policy.fileUrl);
-        
-        console.log('Trying alternate path 1:', alternatePath1, '- exists:', fs.existsSync(alternatePath1));
-        console.log('Trying alternate path 2:', alternatePath2, '- exists:', fs.existsSync(alternatePath2));
-        
-        throw new NotFoundException(
-          `Policy file not found. Path in DB: ${policy.fileUrl}`,
-        );
+        return res.status(404).json({ message: 'Policy file not found' });
       }
 
-      console.log('✅ File found, creating stream...');
-      const file = createReadStream(filePath);
+      // Get file stats
+      const stats = fs.statSync(filePath);
+      console.log('✅ File found');
+      console.log('✓ File Size:', stats.size, 'bytes');
+      
+      if (stats.size === 0) {
+        console.error('❌ File is empty (0 bytes)');
+        return res.status(404).json({ message: 'Policy file is empty' });
+      }
 
-      // Handle stream errors
-      file.on('error', (error) => {
+      // Read first 5 bytes to verify PDF header
+      const buffer = Buffer.alloc(5);
+      const fd = fs.openSync(filePath, 'r');
+      fs.readSync(fd, buffer, 0, 5, 0);
+      fs.closeSync(fd);
+      
+      const header = buffer.toString('utf-8');
+      console.log('✓ PDF Header:', JSON.stringify(header));
+      
+      if (header !== '%PDF-') {
+        console.error('❌ Invalid PDF header:', JSON.stringify(header));
+        console.error('Expected: %PDF-');
+        console.error('This is not a valid PDF file!');
+        return res.status(400).json({ message: 'File is not a valid PDF' });
+      }
+      
+      console.log('✅ Valid PDF file confirmed');
+
+      // Set headers BEFORE piping
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Length', stats.size);
+      res.setHeader('Content-Disposition', `inline; filename="${policy.fileName}"`);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Accept-Ranges', 'bytes');
+      
+      console.log('✓ Headers Set:');
+      console.log('  Content-Type: application/pdf');
+      console.log('  Content-Length:', stats.size);
+      console.log('  Content-Disposition: inline');
+
+      console.log('✅ Starting direct pipe to response...');
+
+      // Create read stream and pipe DIRECTLY to response - no wrapper
+      const fileStream = createReadStream(filePath);
+      
+      let bytesStreamed = 0;
+      
+      fileStream.on('data', (chunk) => {
+        bytesStreamed += chunk.length;
+      });
+      
+      fileStream.on('error', (error) => {
         console.error('❌ Stream error:', error);
-        throw new NotFoundException('Failed to read policy file');
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Stream error' });
+        }
       });
 
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'inline',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-        'X-Content-Type-Options': 'nosniff',
+      fileStream.on('end', () => {
+        console.log('✓ Stream Finished');
+        console.log('✓ Bytes Streamed:', bytesStreamed);
+        console.log('✓ Expected:', stats.size);
+        console.log('✓ Match:', bytesStreamed === stats.size ? 'YES ✅' : 'NO ❌');
       });
 
-      console.log('✅ Streaming PDF to client');
-      return new StreamableFile(file);
+      fileStream.on('close', () => {
+        console.log('✅ Stream Closed');
+        console.log('✅ Response Status: 200 OK');
+        console.log('=== PDF STREAM COMPLETE ===\n');
+      });
+
+      // Direct pipe - no transformation, no wrapping
+      fileStream.pipe(res);
+      
     } catch (error) {
       console.error('❌ Error in viewPolicy:', error);
-      throw error;
+      if (!res.headersSent) {
+        res.status(500).json({ message: 'Internal server error' });
+      }
     }
   }
 

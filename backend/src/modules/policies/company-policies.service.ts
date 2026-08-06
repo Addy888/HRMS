@@ -18,7 +18,7 @@ export class CompanyPoliciesService {
     file: Express.Multer.File,
     dto: UploadCompanyPolicyDto,
   ) {
-    console.log('=== Uploading Company Policy ===');
+    console.log('\n=== Uploading Company Policy ===');
     console.log('File details:', {
       originalname: file.originalname,
       filename: file.filename,
@@ -26,6 +26,29 @@ export class CompanyPoliciesService {
       size: file.size,
       mimetype: file.mimetype,
     });
+    
+    // Validate file is actually a PDF by reading header
+    const fs = await import('fs');
+    const buffer = Buffer.alloc(5);
+    const fd = fs.openSync(file.path, 'r');
+    fs.readSync(fd, buffer, 0, 5, 0);
+    fs.closeSync(fd);
+    
+    const header = buffer.toString('utf-8');
+    console.log('File header:', header);
+    
+    if (header !== '%PDF-') {
+      console.error('❌ Invalid PDF file! Header:', header);
+      // Delete the invalid file
+      try {
+        fs.unlinkSync(file.path);
+      } catch (err) {
+        console.error('Failed to delete invalid file:', err);
+      }
+      throw new BadRequestException('Uploaded file is not a valid PDF. PDF files must begin with %PDF-');
+    }
+    
+    console.log('✅ Valid PDF file confirmed');
     console.log('DTO:', dto);
     
     // When uploading a new policy, automatically make it ACTIVE
@@ -55,6 +78,7 @@ export class CompanyPoliciesService {
       console.log('Created policy in DB:', {
         id: newPolicy.id,
         fileUrl: newPolicy.fileUrl,
+        fileSize: newPolicy.fileSize,
       });
 
       // Auto-assign to ALL ACTIVE employees
@@ -79,6 +103,8 @@ export class CompanyPoliciesService {
           skipDuplicates: true,
         });
       }
+
+      console.log('✅ Auto-assigned to', activeEmployees.length, 'employees');
 
       return {
         policy: newPolicy,
