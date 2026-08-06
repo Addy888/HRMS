@@ -1,48 +1,53 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import api from '@/lib/api';
-import { AlertCircle, Loader2, FileText, Shield } from 'lucide-react';
-
-// Dynamically import PDF viewer to prevent SSR issues
-const PolicyPdfViewer = dynamic(() => import('@/components/PolicyPdfViewer'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-    </div>
-  ),
-});
+import { AlertCircle, Loader2, FileText, Shield, ExternalLink } from 'lucide-react';
+import useAuthStore from '@/store/authStore';
 
 export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const { token } = useAuthStore();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [policy, setPolicy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pdfData, setPdfData] = useState<string | null>(null);
-  const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(true);
+  const [pdfError, setPdfError] = useState(false);
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
   useEffect(() => {
-    const loadPolicy = async () => {
+    const loadPolicyAndPdf = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Validate ID
         if (!resolvedParams.id || resolvedParams.id === 'undefined' || resolvedParams.id === 'null') {
           setError('Invalid policy ID');
           setLoading(false);
           return;
         }
 
-        // Fetch policy details
-        const res = await api.get(`/company-policies/${resolvedParams.id}`);
-        const policyData = res.data?.data || res.data;
+        if (!token) {
+          setError('Not authenticated');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch policy metadata
+        const policyResponse = await fetch(`${baseUrl}/company-policies/${resolvedParams.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!policyResponse.ok) {
+          throw new Error('Failed to load policy');
+        }
+
+        const data = await policyResponse.json();
+        const policyData = data?.data || data;
         
         if (!policyData) {
           setError('Policy not found');
@@ -50,49 +55,61 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
           return;
         }
 
+        console.log('✅ Policy loaded');
         setPolicy(policyData);
-        
-        // Fetch PDF as blob
-        try {
-          const pdfResponse = await api.get(`/company-policies/${resolvedParams.id}/view`, {
-            responseType: 'blob',
-          });
-          
-          if (pdfResponse.data.size === 0) {
-            setError('Policy document not found');
-            setLoading(false);
-            return;
-          }
+        setLoading(false);
 
-          const blob = new Blob([pdfResponse.data], { type: 'application/pdf' });
-          const pdfUrl = URL.createObjectURL(blob);
-          setPdfData(pdfUrl);
-        } catch (err) {
-          console.error('Error loading PDF:', err);
-          setError('Failed to load policy document');
+        // Fetch PDF with authentication and create blob URL
+        console.log('📄 Fetching PDF from backend...');
+        const pdfResponse = await fetch(`${baseUrl}/company-policies/${resolvedParams.id}/view`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!pdfResponse.ok) {
+          console.error('❌ PDF fetch failed:', pdfResponse.status);
+          throw new Error('Failed to load PDF');
         }
+
+        console.log('✅ PDF response received, converting to blob...');
+        const blob = await pdfResponse.blob();
+        console.log('✅ Blob created:', blob.size, 'bytes, type:', blob.type);
         
-        setLoading(false);
-      } catch (err: any) {
-        console.error('Error loading policy:', err);
-        if (err.response?.status === 404) {
-          setError('Policy not found');
-        } else {
-          setError('Failed to load policy. Please try again.');
+        if (blob.size === 0) {
+          throw new Error('Empty PDF received');
         }
+
+        // Create blob URL for viewing
+        const blobUrl = URL.createObjectURL(blob);
+        console.log('✅ Blob URL created');
+        setPdfBlobUrl(blobUrl);
+        
+        // Remove loading after a short delay to ensure iframe has time to load
+        setTimeout(() => {
+          setPdfLoading(false);
+          console.log('✅ PDF ready to display');
+        }, 500);
+
+      } catch (err: any) {
+        console.error('❌ Error:', err);
+        setError(err.message || 'Failed to load policy');
         setLoading(false);
+        setPdfLoading(false);
+        setPdfError(true);
       }
     };
 
-    loadPolicy();
+    if (token) {
+      loadPolicyAndPdf();
+    }
 
     // Cleanup blob URL on unmount
     return () => {
-      if (pdfData) {
-        URL.revokeObjectURL(pdfData);
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+        console.log('🧹 Blob URL cleaned up');
       }
     };
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, token, baseUrl]);
 
   // Prevent right-click and text selection
   useEffect(() => {
@@ -117,28 +134,17 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
     };
   }, []);
 
-  // Prevent keyboard shortcuts for printing
+  // Prevent keyboard shortcuts
   useEffect(() => {
-    const preventPrint = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+    const preventShortcuts = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && ['p', 's', 'c', 'a'].includes(e.key)) {
         e.preventDefault();
         return false;
       }
     };
-    document.addEventListener('keydown', preventPrint);
-    return () => document.removeEventListener('keydown', preventPrint);
+    document.addEventListener('keydown', preventShortcuts);
+    return () => document.removeEventListener('keydown', preventShortcuts);
   }, []);
-
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    setNumPages(numPages);
-    setPdfLoading(false);
-  }
-
-  function onDocumentLoadError(error: Error) {
-    console.error('Error loading PDF document:', error);
-    setError('Failed to load policy document');
-    setPdfLoading(false);
-  }
 
   if (loading) {
     return (
@@ -204,28 +210,49 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
       </div>
 
       {/* PDF Viewer */}
-      <div className="flex-1 bg-neutral-900 p-6 overflow-auto">
-        <div className="max-w-5xl mx-auto">
-          {pdfLoading && (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="flex-1 bg-neutral-900 p-6 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto h-full">
+          {pdfLoading && !pdfError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-neutral-900 z-20">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
               <p className="text-sm text-neutral-400">Loading document...</p>
             </div>
           )}
           
-          {pdfData && !pdfLoading && (
-            <PolicyPdfViewer
-              pdfData={pdfData}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={onDocumentLoadError}
-              numPages={numPages}
+          {pdfError && (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-amber-400" />
+              </div>
+              <p className="text-sm text-neutral-400 mb-2">Unable to display PDF</p>
+              <p className="text-xs text-neutral-500 mb-4">{error || 'Your browser may not support inline PDF viewing'}</p>
+              {pdfBlobUrl && (
+                <a
+                  href={pdfBlobUrl}
+                  download={policy?.fileName || 'policy.pdf'}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Download PDF
+                </a>
+              )}
+            </div>
+          )}
+          
+          {pdfBlobUrl && !pdfError && (
+            <iframe
+              ref={iframeRef}
+              src={pdfBlobUrl}
+              className="w-full h-full border border-neutral-800 rounded-lg"
+              title={policy?.policyName || 'Policy Document'}
+              style={{ minHeight: '700px' }}
             />
           )}
         </div>
       </div>
 
       {/* Watermark Overlay */}
-      <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-5">
+      <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-5 z-10">
         <div className="transform -rotate-45 text-white text-6xl font-bold whitespace-nowrap">
           CONFIDENTIAL
         </div>
@@ -243,6 +270,9 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
           -webkit-user-select: none !important;
           -moz-user-select: none !important;
           -ms-user-select: none !important;
+        }
+        object, embed {
+          pointer-events: auto !important;
         }
       `}</style>
     </div>

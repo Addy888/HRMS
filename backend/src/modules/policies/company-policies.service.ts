@@ -18,6 +18,16 @@ export class CompanyPoliciesService {
     file: Express.Multer.File,
     dto: UploadCompanyPolicyDto,
   ) {
+    console.log('=== Uploading Company Policy ===');
+    console.log('File details:', {
+      originalname: file.originalname,
+      filename: file.filename,
+      path: file.path,
+      size: file.size,
+      mimetype: file.mimetype,
+    });
+    console.log('DTO:', dto);
+    
     // When uploading a new policy, automatically make it ACTIVE
     // and archive all previous ACTIVE policies
     // AND auto-assign to ALL ACTIVE employees
@@ -40,6 +50,11 @@ export class CompanyPoliciesService {
           uploadedBy: userId,
           uploadedByName: uploaderName,
         },
+      });
+      
+      console.log('Created policy in DB:', {
+        id: newPolicy.id,
+        fileUrl: newPolicy.fileUrl,
       });
 
       // Auto-assign to ALL ACTIVE employees

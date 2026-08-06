@@ -130,20 +130,67 @@ export class CompanyPoliciesController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const policy = await this.companyPoliciesService.getPolicyById(id);
+    try {
+      const policy = await this.companyPoliciesService.getPolicyById(id);
 
-    const filePath = join(process.cwd(), policy.fileUrl);
-    const file = createReadStream(filePath);
+      if (!policy.fileUrl) {
+        throw new NotFoundException('Policy file URL not found in database');
+      }
 
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'inline',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      Pragma: 'no-cache',
-      Expires: '0',
-    });
+      // Normalize the file path - remove leading ./ or .\ and ensure forward slashes
+      let normalizedPath = policy.fileUrl.replace(/^\.[\\/]/, '').replace(/\\/g, '/');
+      
+      // Construct the file path
+      const filePath = join(process.cwd(), normalizedPath);
+      
+      console.log('=== PDF View Request ===');
+      console.log('Policy ID:', id);
+      console.log('Policy fileUrl from DB:', policy.fileUrl);
+      console.log('Normalized path:', normalizedPath);
+      console.log('Full file path:', filePath);
+      console.log('Process cwd:', process.cwd());
 
-    return new StreamableFile(file);
+      // Check if file exists
+      const fs = await import('fs');
+      if (!fs.existsSync(filePath)) {
+        console.error('❌ File not found at path:', filePath);
+        
+        // Try alternate paths
+        const alternatePath1 = join(process.cwd(), 'uploads', 'company-policies', policy.fileUrl.split(/[\\/]/).pop() || '');
+        const alternatePath2 = join(process.cwd(), policy.fileUrl);
+        
+        console.log('Trying alternate path 1:', alternatePath1, '- exists:', fs.existsSync(alternatePath1));
+        console.log('Trying alternate path 2:', alternatePath2, '- exists:', fs.existsSync(alternatePath2));
+        
+        throw new NotFoundException(
+          `Policy file not found. Path in DB: ${policy.fileUrl}`,
+        );
+      }
+
+      console.log('✅ File found, creating stream...');
+      const file = createReadStream(filePath);
+
+      // Handle stream errors
+      file.on('error', (error) => {
+        console.error('❌ Stream error:', error);
+        throw new NotFoundException('Failed to read policy file');
+      });
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+        'X-Content-Type-Options': 'nosniff',
+      });
+
+      console.log('✅ Streaming PDF to client');
+      return new StreamableFile(file);
+    } catch (error) {
+      console.error('❌ Error in viewPolicy:', error);
+      throw error;
+    }
   }
 
   @Get(':id/download')
