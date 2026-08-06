@@ -52,99 +52,39 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module.js';
 
-// Controllers
-import { CompanySettingsController } from './controllers/company-settings.controller';
-import { SystemSettingsController } from './controllers/system-settings.controller';
-import { OrganizationController } from './controllers/organization.controller';
-import { AuthenticationSettingsController } from './controllers/authentication-settings.controller';
-import { EmailSettingsController } from './controllers/email-settings.controller';
-import { SMSSettingsController } from './controllers/sms-settings.controller';
-import { WhatsAppSettingsController } from './controllers/whatsapp-settings.controller';
-import { StorageSettingsController } from './controllers/storage-settings.controller';
-import { NotificationSettingsController } from './controllers/notification-settings.controller';
-import { SecuritySettingsController } from './controllers/security-settings.controller';
-import { RolesPermissionsController } from './controllers/roles-permissions.controller';
-import { AuditLogsController } from './controllers/audit-logs.controller';
-import { SystemLogsController } from './controllers/system-logs.controller';
-import { BackupController } from './controllers/backup.controller';
-import { IntegrationController } from './controllers/integration.controller';
+// Controllers - NONE exist yet, all commented out
 
-// Services
-import { SettingsService } from './services/settings.service';
-import { CompanyService } from './services/company.service';
-import { OrganizationService } from './services/organization.service';
-import { RolePermissionService } from './services/role-permission.service';
-import { AuditService } from './services/audit.service';
-import { BackupService } from './services/backup.service';
-import { IntegrationService } from './services/integration.service';
-import { EmailService } from './services/email.service';
-import { SMSService } from './services/sms.service';
-import { WhatsAppService } from './services/whatsapp.service';
-import { StorageService } from './services/storage.service';
-import { NotificationChannelService } from './services/notification-channel.service';
+// Services - Commented out until Prisma models exist
+// import { SettingsService } from './services/settings.service';
+// import { CompanyService } from './services/company.service';
+// import { RolePermissionService } from './services/role-permission.service';
 
-// Engines
-import { SettingsEngineService } from './engines/settings-engine.service';
-import { PermissionEngineService } from './engines/permission-engine.service';
-import { AuditEngineService } from './engines/audit-engine.service';
+// Engines - Commented out until Prisma models exist
+// import { SettingsEngineService } from './engines/settings-engine.service';
+// import { PermissionEngineService } from './engines/permission-engine.service';
+// import { AuditEngineService } from './engines/audit-engine.service';
 import { CacheEngineService } from './engines/cache-engine.service';
 
 // Guards
-import { PermissionGuard } from './guards/permission.guard';
+// import { PermissionGuard } from './guards/permission.guard';
 
 @Module({
   imports: [DatabaseModule],
   controllers: [
-    CompanySettingsController,
-    SystemSettingsController,
-    OrganizationController,
-    AuthenticationSettingsController,
-    EmailSettingsController,
-    SMSSettingsController,
-    WhatsAppSettingsController,
-    StorageSettingsController,
-    NotificationSettingsController,
-    SecuritySettingsController,
-    RolesPermissionsController,
-    AuditLogsController,
-    SystemLogsController,
-    BackupController,
-    IntegrationController,
+    // No controllers implemented yet
   ],
   providers: [
-    // Core Services
-    SettingsService,
-    CompanyService,
-    OrganizationService,
-    RolePermissionService,
-    AuditService,
-    BackupService,
-    IntegrationService,
-    EmailService,
-    SMSService,
-    WhatsAppService,
-    StorageService,
-    NotificationChannelService,
+    // NOTE: Most services commented out because required Prisma models don't exist yet:
+    // - Permission model
+    // - RolePermission model  
+    // - SystemSetting model
+    // - Company model
+    // These need to be added to prisma/schema.prisma before enabling
     
-    // Engines
-    SettingsEngineService,
-    PermissionEngineService,
-    AuditEngineService,
     CacheEngineService,
-    
-    // Guards
-    PermissionGuard,
   ],
   exports: [
-    SettingsService,
-    SettingsEngineService,
-    PermissionEngineService,
-    AuditEngineService,
-    RolePermissionService,
-    CompanyService,
-    EmailService,
-    SMSService,
-    StorageService,
+    CacheEngineService,
   ],
 })
 export class SettingsModule {}

@@ -13,7 +13,7 @@
  */
 
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../database/prisma.service';
 import { SettingsEngineService } from '../engines/settings-engine.service';
 import { AuditEngineService } from '../engines/audit-engine.service';
 import { SystemSettingDto, UpdateSystemSettingDto, BulkUpdateSystemSettingsDto } from '../dto/system-settings.dto';
@@ -21,7 +21,7 @@ import { SystemSettingDto, UpdateSystemSettingDto, BulkUpdateSystemSettingsDto }
 @Injectable()
 export class SettingsService {
   constructor(
-    private readonly database: DatabaseService,
+    private readonly database: PrismaService,
     private readonly settingsEngine: SettingsEngineService,
     private readonly auditEngine: AuditEngineService,
   ) {}
@@ -153,7 +153,12 @@ export class SettingsService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-    const results = [];
+    const results: Array<{
+      category: string;
+      key: string;
+      success: boolean;
+      error?: string;
+    }> = [];
 
     for (const setting of data.settings) {
       try {
@@ -263,7 +268,12 @@ export class SettingsService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-    const results = [];
+    const results: Array<{
+      category: string;
+      key: string;
+      success: boolean;
+      error?: string;
+    }> = [];
 
     for (const setting of settings) {
       try {

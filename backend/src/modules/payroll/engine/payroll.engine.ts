@@ -26,9 +26,9 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { IAttendanceProvider } from '../providers/base/attendance-provider.interface.js';
-import { ILeaveProvider } from '../providers/base/leave-provider.interface.js';
-import { ITaxProvider } from '../providers/base/tax-provider.interface.js';
+import type { IAttendanceProvider } from '../providers/base/attendance-provider.interface.js';
+import type { ILeaveProvider } from '../providers/base/leave-provider.interface.js';
+import type { ITaxProvider } from '../providers/base/tax-provider.interface.js';
 import {
   IPayrollCalculationInput,
   IPayrollCalculationOutput,
@@ -246,7 +246,13 @@ export class PayrollEngine {
     attendance: any,
     leave: any,
   ): any[] {
-    const breakdown = [];
+    const breakdown: Array<{
+      component: string;
+      type: string;
+      amount: number;
+      calculationMethod: string;
+      remarks?: string;
+    }> = [];
 
     // Earnings
     if (components.basicSalary > 0) {

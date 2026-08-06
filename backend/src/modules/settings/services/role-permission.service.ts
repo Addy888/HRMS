@@ -12,7 +12,7 @@
  */
 
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../database/prisma.service';
 import { PermissionEngineService } from '../engines/permission-engine.service';
 import { AuditEngineService } from '../engines/audit-engine.service';
 import {
@@ -26,7 +26,7 @@ import {
 @Injectable()
 export class RolePermissionService {
   constructor(
-    private readonly database: DatabaseService,
+    private readonly database: PrismaService,
     private readonly permissionEngine: PermissionEngineService,
     private readonly auditEngine: AuditEngineService,
   ) {}

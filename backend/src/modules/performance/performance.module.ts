@@ -55,33 +55,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module.js';
 
-// Controllers
-import { PerformanceCycleController } from './controllers/performance-cycle.controller';
-import { GoalController } from './controllers/goal.controller';
-import { KPIController } from './controllers/kpi.controller';
-import { KRAController } from './controllers/kra.controller';
-import { SelfAppraisalController } from './controllers/self-appraisal.controller';
-import { ManagerReviewController } from './controllers/manager-review.controller';
-import { HRReviewController } from './controllers/hr-review.controller';
-import { Feedback360Controller } from './controllers/feedback360.controller';
-import { PromotionController } from './controllers/promotion.controller';
-import { TrainingRecommendationController } from './controllers/training-recommendation.controller';
-import { PerformanceDashboardController } from './controllers/performance-dashboard.controller';
-import { PerformanceReportController } from './controllers/performance-report.controller';
-
-// Services
-import { PerformanceCycleService } from './services/performance-cycle.service';
-import { GoalService } from './services/goal.service';
-import { KPIService } from './services/kpi.service';
-import { KRAService } from './services/kra.service';
-import { AppraisalService } from './services/appraisal.service';
-import { FeedbackService } from './services/feedback.service';
-import { PromotionService } from './services/promotion.service';
-import { TrainingRecommendationService } from './services/training-recommendation.service';
-import { PerformanceDashboardService } from './services/performance-dashboard.service';
-import { PerformanceReportService } from './services/performance-report.service';
-import { PerformanceAuditService } from './services/performance-audit.service';
-
 // Engines
 import { PerformanceEngineService } from './engines/performance-engine.service';
 import { ScoringEngineService } from './engines/scoring-engine.service';
@@ -91,33 +64,9 @@ import { AIInterfaceService } from './engines/ai-interface.service';
 @Module({
   imports: [DatabaseModule],
   controllers: [
-    PerformanceCycleController,
-    GoalController,
-    KPIController,
-    KRAController,
-    SelfAppraisalController,
-    ManagerReviewController,
-    HRReviewController,
-    Feedback360Controller,
-    PromotionController,
-    TrainingRecommendationController,
-    PerformanceDashboardController,
-    PerformanceReportController,
+    // Controllers will be added when implemented
   ],
   providers: [
-    // Core Services
-    PerformanceCycleService,
-    GoalService,
-    KPIService,
-    KRAService,
-    AppraisalService,
-    FeedbackService,
-    PromotionService,
-    TrainingRecommendationService,
-    PerformanceDashboardService,
-    PerformanceReportService,
-    PerformanceAuditService,
-    
     // Engines
     PerformanceEngineService,
     ScoringEngineService,
@@ -125,13 +74,10 @@ import { AIInterfaceService } from './engines/ai-interface.service';
     AIInterfaceService,
   ],
   exports: [
-    PerformanceCycleService,
-    GoalService,
-    KPIService,
-    KRAService,
-    AppraisalService,
     PerformanceEngineService,
     ScoringEngineService,
+    GoalEngineService,
+    AIInterfaceService,
   ],
 })
 export class PerformanceModule {}

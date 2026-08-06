@@ -158,7 +158,7 @@ export class ScoringEngineService {
   /**
    * Calculate average competency score
    */
-  calculateCompetencyScore(competencies: CompetencyScore): number {
+  calculateCompetencyScore(competencies: Omit<CompetencyScore, 'average'>): number {
     const ratings = [
       competencies.technicalSkills,
       competencies.communication,

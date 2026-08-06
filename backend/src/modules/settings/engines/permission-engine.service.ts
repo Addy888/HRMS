@@ -33,7 +33,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../database/prisma.service';
 import { CacheEngineService } from './cache-engine.service';
 
 export interface PermissionCheck {
@@ -58,7 +58,7 @@ export class PermissionEngineService {
   private readonly SUPER_ADMIN_ROLE = 'SUPER_ADMIN';
 
   constructor(
-    private readonly database: DatabaseService,
+    private readonly database: PrismaService,
     private readonly cache: CacheEngineService,
   ) {}
 

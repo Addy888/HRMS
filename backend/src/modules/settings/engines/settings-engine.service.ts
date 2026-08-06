@@ -24,7 +24,7 @@
  */
 
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../database/prisma.service';
 import { CacheEngineService } from './cache-engine.service';
 
 export interface SettingDefinition {
@@ -43,7 +43,7 @@ export class SettingsEngineService implements OnModuleInit {
   private readonly CACHE_TTL = 300; // 5 minutes
 
   constructor(
-    private readonly database: DatabaseService,
+    private readonly database: PrismaService,
     private readonly cache: CacheEngineService,
   ) {}
 
@@ -93,7 +93,7 @@ export class SettingsEngineService implements OnModuleInit {
     category: string,
     key: string,
     value: any,
-    updatedBy?: string,
+    updatedBy: string | undefined,
     description?: string,
   ): Promise<void> {
     const dataType = this.detectDataType(value);
@@ -172,7 +172,7 @@ export class SettingsEngineService implements OnModuleInit {
    */
   async bulkSet(
     settings: Array<{ category: string; key: string; value: any }>,
-    updatedBy?: string,
+    updatedBy: string | undefined,
   ): Promise<void> {
     for (const setting of settings) {
       await this.set(setting.category, setting.key, setting.value, updatedBy);

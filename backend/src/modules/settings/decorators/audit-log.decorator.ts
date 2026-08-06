@@ -28,7 +28,7 @@ export interface AuditLogMetadata {
  * @param details - Optional details template (can use {{param}} placeholders)
  */
 export const AuditLog = (action: string, details?: string) => {
-  return (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => {
+  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(AUDIT_LOG_KEY, true)(target, propertyKey, descriptor);
     SetMetadata(AUDIT_ACTION_KEY, action)(target, propertyKey, descriptor);
     if (details) {

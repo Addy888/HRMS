@@ -33,7 +33,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../database/prisma.service';
 
 export interface AuditLogEntry {
   userId?: string;
@@ -62,7 +62,7 @@ export class AuditEngineService {
   private readonly BATCH_SIZE = 100;
   private readonly FLUSH_INTERVAL = 5000; // 5 seconds
 
-  constructor(private readonly database: DatabaseService) {
+  constructor(private readonly database: PrismaService) {
     // Start periodic flush
     this.startPeriodicFlush();
   }
@@ -103,7 +103,7 @@ export class AuditEngineService {
    * Log data change with before/after values
    */
   async logChange(
-    userId: string,
+    userId: string | undefined,
     action: string,
     entityType: string,
     entityId: string,
@@ -135,7 +135,7 @@ export class AuditEngineService {
    * Log permission change
    */
   async logPermissionChange(
-    userId: string,
+    userId: string | undefined,
     action: string,
     targetRoleId: string,
     permissionId: string,
@@ -162,7 +162,7 @@ export class AuditEngineService {
    * Log settings change
    */
   async logSettingsChange(
-    userId: string,
+    userId: string | undefined,
     category: string,
     key: string,
     oldValue: any,

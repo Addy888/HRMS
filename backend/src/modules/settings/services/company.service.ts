@@ -11,14 +11,14 @@
  */
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../database/prisma.service';
 import { AuditEngineService } from '../engines/audit-engine.service';
 import { CreateCompanyDto, UpdateCompanyDto } from '../dto/company-settings.dto';
 
 @Injectable()
 export class CompanyService {
   constructor(
-    private readonly database: DatabaseService,
+    private readonly database: PrismaService,
     private readonly auditEngine: AuditEngineService,
   ) {}
 

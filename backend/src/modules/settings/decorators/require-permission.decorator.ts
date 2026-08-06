@@ -39,7 +39,7 @@ export const RequirePermissions = (
   permissions: string[],
   mode: 'ALL' | 'ANY' = 'ALL',
 ) => {
-  return (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => {
+  return (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
     SetMetadata(PERMISSIONS_KEY, permissions)(target, propertyKey, descriptor);
     SetMetadata(PERMISSIONS_MODE_KEY, mode)(target, propertyKey, descriptor);
   };
