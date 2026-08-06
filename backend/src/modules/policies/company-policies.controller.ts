@@ -12,6 +12,7 @@ import {
   BadRequestException,
   NotFoundException,
   StreamableFile,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -84,6 +85,35 @@ export class CompanyPoliciesController {
     return this.companyPoliciesService.getActivePolicy();
   }
 
+  @Get('employee/active')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.EMPLOYEE)
+  @ApiOperation({
+    summary: 'Get active company policy for employee with acceptance status',
+  })
+  async getActivePolicyForEmployee(@GetUser('employeeId') employeeId: string) {
+    return this.companyPoliciesService.getActivePolicyForEmployee(employeeId);
+  }
+
+  @Post(':id/accept')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Accept company policy (Employee only)' })
+  async acceptCompanyPolicy(
+    @Param('id') id: string,
+    @GetUser('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
+    const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    return this.companyPoliciesService.acceptCompanyPolicy(
+      employeeId,
+      id,
+      ipAddress,
+      userAgent,
+    );
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
@@ -143,5 +173,15 @@ export class CompanyPoliciesController {
   @ApiOperation({ summary: 'Delete company policy (HR Only)' })
   async deletePolicy(@Param('id') id: string) {
     return this.companyPoliciesService.deletePolicy(id);
+  }
+
+  @Get('tracking/acceptance')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.HR)
+  @ApiOperation({
+    summary: 'Get company policy acceptance tracking (HR Only)',
+  })
+  async getAcceptanceTracking() {
+    return this.companyPoliciesService.getAcceptanceTracking();
   }
 }

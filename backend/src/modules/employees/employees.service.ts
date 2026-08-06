@@ -92,6 +92,22 @@ export class EmployeesService {
         },
       });
 
+      // Auto-assign current ACTIVE company policy if exists
+      const activeCompanyPolicy = await tx.companyPolicy.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (activeCompanyPolicy) {
+        await tx.companyPolicyAcceptance.create({
+          data: {
+            companyPolicyId: activeCompanyPolicy.id,
+            employeeId: employee.id,
+            status: 'PENDING',
+          },
+        });
+      }
+
       // Create initial audit log
       await tx.auditLog.create({
         data: {

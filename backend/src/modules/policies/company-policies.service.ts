@@ -20,7 +20,8 @@ export class CompanyPoliciesService {
   ) {
     // When uploading a new policy, automatically make it ACTIVE
     // and archive all previous ACTIVE policies
-    await this.prisma.$transaction(async (tx) => {
+    // AND auto-assign to ALL ACTIVE employees
+    const result = await this.prisma.$transaction(async (tx) => {
       // Archive all currently active policies
       await tx.companyPolicy.updateMany({
         where: { status: 'ACTIVE' },
@@ -28,7 +29,7 @@ export class CompanyPoliciesService {
       });
 
       // Create new policy as ACTIVE
-      await tx.companyPolicy.create({
+      const newPolicy = await tx.companyPolicy.create({
         data: {
           policyName: dto.policyName,
           fileName: file.originalname,
@@ -40,11 +41,50 @@ export class CompanyPoliciesService {
           uploadedByName: uploaderName,
         },
       });
+
+      // Auto-assign to ALL ACTIVE employees
+      const activeEmployees = await tx.employee.findMany({
+        where: {
+          user: {
+            isActive: true,
+            role: { name: 'EMPLOYEE' },
+          },
+        },
+        select: { id: true },
+      });
+
+      // Create company policy acceptances for all active employees
+      if (activeEmployees.length > 0) {
+        await tx.companyPolicyAcceptance.createMany({
+          data: activeEmployees.map((emp) => ({
+            companyPolicyId: newPolicy.id,
+            employeeId: emp.id,
+            status: 'PENDING',
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return {
+        policy: newPolicy,
+        assignedCount: activeEmployees.length,
+      };
     });
 
     return {
+      success: true,
       message:
-        'Company policy uploaded successfully. Previous policies archived.',
+        'Company policy uploaded successfully and assigned to all active employees.',
+      data: {
+        id: result.policy.id,
+        policyName: result.policy.policyName,
+        fileName: result.policy.fileName,
+        version: result.policy.version,
+        status: result.policy.status,
+        uploadedAt: result.policy.createdAt,
+        uploadedBy: result.policy.uploadedByName,
+        assignedEmployees: result.assignedCount,
+      },
     };
   }
 
@@ -70,6 +110,81 @@ export class CompanyPoliciesService {
     }
 
     return policy;
+  }
+
+  async getActivePolicyForEmployee(employeeId: string) {
+    const policy = await this.prisma.companyPolicy.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        acceptances: {
+          where: { employeeId },
+        },
+      },
+    });
+
+    if (!policy) {
+      return null;
+    }
+
+    const acceptance = policy.acceptances[0];
+
+    return {
+      id: policy.id,
+      policyName: policy.policyName,
+      fileName: policy.fileName,
+      version: policy.version,
+      uploadedBy: policy.uploadedByName,
+      uploadedAt: policy.createdAt,
+      status: acceptance?.status || 'PENDING',
+      accepted: acceptance?.status === 'ACCEPTED',
+      acceptedAt: acceptance?.acceptedAt || null,
+    };
+  }
+
+  async acceptCompanyPolicy(
+    employeeId: string,
+    policyId: string,
+    ipAddress: string,
+    userAgent: string,
+  ) {
+    const policy = await this.prisma.companyPolicy.findUnique({
+      where: { id: policyId },
+    });
+
+    if (!policy) {
+      throw new NotFoundException('Company policy not found');
+    }
+
+    // Update or create acceptance
+    const acceptance = await this.prisma.companyPolicyAcceptance.upsert({
+      where: {
+        companyPolicyId_employeeId: {
+          companyPolicyId: policyId,
+          employeeId,
+        },
+      },
+      create: {
+        companyPolicyId: policyId,
+        employeeId,
+        status: 'ACCEPTED',
+        acceptedAt: new Date(),
+        ipAddress,
+        userAgent,
+      },
+      update: {
+        status: 'ACCEPTED',
+        acceptedAt: new Date(),
+        ipAddress,
+        userAgent,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Company policy accepted successfully',
+      acceptance,
+    };
   }
 
   async getPolicyById(id: string) {
@@ -116,5 +231,68 @@ export class CompanyPoliciesService {
       where: { status: 'ARCHIVED' },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async getAcceptanceTracking() {
+    const activePolicy = await this.prisma.companyPolicy.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        acceptances: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                employeeId: true,
+                firstName: true,
+                lastName: true,
+                department: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!activePolicy) {
+      return {
+        policy: null,
+        totalEmployees: 0,
+        pending: 0,
+        completed: 0,
+        percentage: 0,
+        employees: [],
+      };
+    }
+
+    const totalEmployees = activePolicy.acceptances.length;
+    const completed = activePolicy.acceptances.filter(
+      (a) => a.status === 'ACCEPTED',
+    ).length;
+    const pending = totalEmployees - completed;
+    const percentage =
+      totalEmployees > 0 ? Math.round((completed / totalEmployees) * 100) : 0;
+
+    return {
+      policy: {
+        id: activePolicy.id,
+        policyName: activePolicy.policyName,
+        version: activePolicy.version,
+        uploadedAt: activePolicy.createdAt,
+        uploadedBy: activePolicy.uploadedByName,
+      },
+      totalEmployees,
+      pending,
+      completed,
+      percentage,
+      employees: activePolicy.acceptances.map((acceptance) => ({
+        id: acceptance.employee.id,
+        employeeId: acceptance.employee.employeeId,
+        name: `${acceptance.employee.firstName} ${acceptance.employee.lastName}`,
+        department: acceptance.employee.department?.name || 'N/A',
+        status: acceptance.status,
+        acceptedAt: acceptance.acceptedAt,
+      })),
+    };
   }
 }

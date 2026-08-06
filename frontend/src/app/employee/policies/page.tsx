@@ -35,12 +35,16 @@ export default function EmployeePoliciesPage() {
   });
 
   const { data: companyPolicy } = useQuery({
-    queryKey: ['active-company-policy'],
+    queryKey: ['active-company-policy-employee'],
     queryFn: async () => {
       try {
-        const res = await api.get('/company-policies/active');
-        return res.data;
-      } catch {
+        const res = await api.get('/company-policies/employee/active');
+        // Ensure we return the data correctly, handle nested structure
+        const data = res.data?.data || res.data;
+        console.log('Company Policy Data:', data); // Debug log
+        return data;
+      } catch (error) {
+        console.error('Failed to load company policy:', error);
         return null;
       }
     },
@@ -104,30 +108,72 @@ export default function EmployeePoliciesPage() {
 
       {/* Company Policy Card */}
       {companyPolicy && (
-        <Link href="/employee/policies/company-policy" className="block bg-gradient-to-br from-purple-950 to-pink-950 border border-purple-800 rounded-2xl p-6 hover:border-purple-600 transition-all group">
+        <div className="block bg-gradient-to-br from-purple-950 to-pink-950 border border-purple-800 rounded-2xl p-6 relative">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
               <FileText className="w-6 h-6 text-purple-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h3 className="text-sm font-bold text-white">{companyPolicy.policyName}</h3>
                 <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-xs font-bold">
                   COMPANY POLICY
                 </span>
+                {companyPolicy.accepted && (
+                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-xs font-bold">
+                    ✓ ACCEPTED
+                  </span>
+                )}
+                {!companyPolicy.accepted && (
+                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-xs font-bold">
+                    PENDING
+                  </span>
+                )}
               </div>
               <p className="text-xs text-purple-300/80 mb-3">
-                Official company policy document. Click to view in secure viewer.
+                Official company policy document. Please review and accept.
               </p>
-              <div className="flex items-center gap-3 text-xs text-purple-400">
-                <span>Version {companyPolicy.version}</span>
+              <div className="flex items-center gap-3 text-xs text-purple-400 flex-wrap">
+                <span>Version {companyPolicy.version || '1.0'}</span>
                 <span>•</span>
-                <span>{new Date(companyPolicy.createdAt).toLocaleDateString()}</span>
+                <span>
+                  Uploaded: {companyPolicy.uploadedAt 
+                    ? new Date(companyPolicy.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    : 'N/A'}
+                </span>
+                {companyPolicy.accepted && companyPolicy.acceptedAt && (
+                  <>
+                    <span>•</span>
+                    <span className="text-emerald-400">
+                      Accepted: {new Date(companyPolicy.acceptedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <Link href={`/company-policies/${companyPolicy.id}/view`} target="_blank" className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-xs font-bold transition-colors">
+                  View Policy
+                </Link>
+                {!companyPolicy.accepted && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.post(`/company-policies/${companyPolicy.id}/accept`);
+                        alert('Company policy accepted successfully!');
+                        window.location.reload();
+                      } catch (err: any) {
+                        alert(err.response?.data?.message || 'Failed to accept policy');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors"
+                  >
+                    Accept Policy
+                  </button>
+                )}
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-purple-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
           </div>
-        </Link>
+        </div>
       )}
 
       {/* Filters */}

@@ -142,6 +142,9 @@ model Employee {
   payslips         Payslip[]
   loans            Loan[]
   advanceSalaries  AdvanceSalary[]
+  
+  // Company Policy Acceptances
+  companyPolicyAcceptances CompanyPolicyAcceptance[]
 
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
@@ -2219,9 +2222,31 @@ model CompanyPolicy {
   uploadedBy    String   // HR User ID
   uploadedByName String? // HR User Name
   
+  acceptances   CompanyPolicyAcceptance[]
+  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
   @@index([status])
   @@index([createdAt])
+}
+
+// Company Policy Acceptance Tracking
+model CompanyPolicyAcceptance {
+  id               String   @id @default(uuid())
+  companyPolicyId  String
+  companyPolicy    CompanyPolicy @relation(fields: [companyPolicyId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  status           String   @default("PENDING") // PENDING, ACCEPTED
+  acceptedAt       DateTime?
+  ipAddress        String?
+  userAgent        String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@unique([companyPolicyId, employeeId])
+  @@index([employeeId])
+  @@index([status])
 }
