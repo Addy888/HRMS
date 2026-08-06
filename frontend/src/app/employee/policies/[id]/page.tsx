@@ -76,6 +76,7 @@ export default function PolicyReaderPage() {
     },
     onSuccess: async () => {
       setAccepted(true);
+      // Invalidate queries to update the main list immediately
       await qc.invalidateQueries({ queryKey: ['employee-policies'] });
 
       // Navigate to next pending policy or back to list

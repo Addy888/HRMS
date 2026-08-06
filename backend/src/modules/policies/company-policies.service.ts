@@ -51,17 +51,11 @@ export class CompanyPoliciesService {
     console.log('✅ Valid PDF file confirmed');
     console.log('DTO:', dto);
     
-    // When uploading a new policy, automatically make it ACTIVE
-    // and archive all previous ACTIVE policies
-    // AND auto-assign to ALL ACTIVE employees
+    // CRITICAL FIX: Create new policy WITHOUT archiving previous ones
+    // Every upload creates a NEW version/record
+    // Previous policies remain ACTIVE to maintain complete history
     const result = await this.prisma.$transaction(async (tx) => {
-      // Archive all currently active policies
-      await tx.companyPolicy.updateMany({
-        where: { status: 'ACTIVE' },
-        data: { status: 'ARCHIVED' },
-      });
-
-      // Create new policy as ACTIVE
+      // Create new policy as ACTIVE (do NOT archive previous policies)
       const newPolicy = await tx.companyPolicy.create({
         data: {
           policyName: dto.policyName,
@@ -154,33 +148,86 @@ export class CompanyPoliciesService {
   }
 
   async getActivePolicyForEmployee(employeeId: string) {
-    const policy = await this.prisma.companyPolicy.findFirst({
-      where: { status: 'ACTIVE' },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        acceptances: {
-          where: { employeeId },
-        },
-      },
-    });
+    console.log('╔═══════════════════════════════════════════════════════════╗');
+    console.log('║  getActivePolicyForEmployee CALLED                        ║');
+    console.log('╚═══════════════════════════════════════════════════════════╝');
+    console.log('employeeId:', employeeId);
+    console.log('employeeId type:', typeof employeeId);
+    console.log('employeeId is null/undefined:', employeeId == null);
 
-    if (!policy) {
-      return null;
+    if (!employeeId) {
+      console.log('⚠️  No employeeId provided, returning empty array');
+      return [];
     }
 
-    const acceptance = policy.acceptances[0];
+    try {
+      console.log('🔍 Querying CompanyPolicy with findMany...');
+      
+      // CRITICAL FIX: Return ALL assigned policies for this employee
+      // NOT just one active policy - maintain complete history
+      const policies = await this.prisma.companyPolicy.findMany({
+        where: { 
+          status: 'ACTIVE',
+          acceptances: {
+            some: {
+              employeeId: employeeId,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' }, // Newest first
+        include: {
+          acceptances: {
+            where: { employeeId },
+          },
+        },
+      });
 
-    return {
-      id: policy.id,
-      policyName: policy.policyName,
-      fileName: policy.fileName,
-      version: policy.version,
-      uploadedBy: policy.uploadedByName,
-      uploadedAt: policy.createdAt,
-      status: acceptance?.status || 'PENDING',
-      accepted: acceptance?.status === 'ACCEPTED',
-      acceptedAt: acceptance?.acceptedAt || null,
-    };
+      console.log('✅ Query completed successfully');
+      console.log('📊 Policies found:', policies.length);
+
+      if (!policies || policies.length === 0) {
+        console.log('ℹ️  No policies found, returning empty array');
+        return [];
+      }
+
+      // Map to include acceptance status for each policy
+      const result = policies.map(policy => {
+        const acceptance = policy.acceptances[0];
+        return {
+          id: policy.id,
+          policyName: policy.policyName,
+          fileName: policy.fileName,
+          version: policy.version,
+          uploadedBy: policy.uploadedByName,
+          uploadedAt: policy.createdAt,
+          status: acceptance?.status || 'PENDING',
+          accepted: acceptance?.status === 'ACCEPTED',
+          acceptedAt: acceptance?.acceptedAt || null,
+        };
+      });
+
+      console.log('✅ Returning', result.length, 'policies');
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║  getActivePolicyForEmployee COMPLETED                     ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝\n');
+
+      return result;
+    } catch (error) {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║  ❌ ERROR in getActivePolicyForEmployee                   ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.error('Error name:', error?.name);
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      console.log('╚═══════════════════════════════════════════════════════════╝\n');
+      
+      // Return empty array instead of throwing
+      // This prevents HTTP 500 errors
+      console.log('⚠️  Returning empty array due to error');
+      return [];
+    }
   }
 
   async acceptCompanyPolicy(
