@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, User, FileText, CheckSquare, ShieldCheck,
-  Settings, LogOut, Menu, X, ShieldAlert, LifeBuoy
+  Settings, LogOut, Menu, X, ShieldAlert, LifeBuoy, Wallet
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -67,6 +67,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   const links = [
     { href: '/employee', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/employee/profile', label: 'My Profile', icon: <User className="w-5 h-5" /> },
+    { href: '/employee/my-salary', label: 'My Salary', icon: <Wallet className="w-5 h-5" /> },
     { href: '/employee/documents', label: 'Documents', icon: <FileText className="w-5 h-5" /> },
     { href: '/employee/policies', label: 'Policies', icon: <ShieldCheck className="w-5 h-5" /> },
     { href: '/employee/acknowledge', label: 'Acknowledgement', icon: <CheckSquare className="w-5 h-5" /> },

@@ -14,7 +14,10 @@ import {
   Sparkles,
   FolderOpen,
   BookOpen,
-  LifeBuoy
+  LifeBuoy,
+  DollarSign,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -25,12 +28,14 @@ interface SidebarLinkProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   active: boolean;
+  onClick?: () => void;
 }
 
-const SidebarLink = ({ href, icon, children, active }: SidebarLinkProps) => {
+const SidebarLink = ({ href, icon, children, active, onClick }: SidebarLinkProps) => {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
         active
           ? 'bg-neutral-800 text-white shadow-md border border-neutral-700'
@@ -40,6 +45,57 @@ const SidebarLink = ({ href, icon, children, active }: SidebarLinkProps) => {
       {icon}
       {children}
     </Link>
+  );
+};
+
+interface SidebarMenuProps {
+  label: string;
+  icon: React.ReactNode;
+  subItems: Array<{ href: string; label: string }>;
+  pathname: string;
+}
+
+const SidebarMenu = ({ label, icon, subItems, pathname }: SidebarMenuProps) => {
+  const [isOpen, setIsOpen] = React.useState(() => {
+    return subItems.some(item => pathname.startsWith(item.href));
+  });
+
+  const isActive = subItems.some(item => pathname.startsWith(item.href));
+
+  return (
+    <div>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-between w-full gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+          isActive
+            ? 'bg-neutral-800 text-white shadow-md border border-neutral-700'
+            : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          {icon}
+          {label}
+        </div>
+        {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+      </button>
+      {isOpen && (
+        <div className="ml-6 mt-1 space-y-1">
+          {subItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center px-4 py-2 rounded-lg text-sm transition-all ${
+                pathname === item.href
+                  ? 'bg-neutral-800/50 text-white border-l-2 border-blue-500'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/30'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -80,6 +136,20 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
     { href: '/hr/complaints', label: 'Helpdesk', icon: <LifeBuoy className="w-5 h-5" /> },
   ];
 
+  const payrollMenu = {
+    label: 'Payroll',
+    icon: <DollarSign className="w-5 h-5" />,
+    subItems: [
+      { href: '/hr/payroll', label: 'Payroll Dashboard' },
+      { href: '/hr/payroll/employees', label: 'Employee Salary' },
+      { href: '/hr/payroll/salary-structure', label: 'Salary Structure' },
+      { href: '/hr/payroll/processing', label: 'Payroll Processing' },
+      { href: '/hr/payroll/payslips', label: 'Salary Slip Generator' },
+      { href: '/hr/payroll/history', label: 'Salary History' },
+      { href: '/hr/payroll/reports', label: 'Payroll Reports' },
+    ],
+  };
+
   return (
     <NotificationToastProvider>
       <div className="flex min-h-screen bg-black text-white antialiased">
@@ -116,6 +186,14 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
                 {link.label}
               </SidebarLink>
             ))}
+            
+            {/* Payroll Menu with Submenu */}
+            <SidebarMenu
+              label={payrollMenu.label}
+              icon={payrollMenu.icon}
+              subItems={payrollMenu.subItems}
+              pathname={pathname}
+            />
           </nav>
 
           {/* Footer actions */}
@@ -177,6 +255,16 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
                       </SidebarLink>
                     </div>
                   ))}
+                  
+                  {/* Payroll Menu with Submenu for Mobile */}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <SidebarMenu
+                      label={payrollMenu.label}
+                      icon={payrollMenu.icon}
+                      subItems={payrollMenu.subItems}
+                      pathname={pathname}
+                    />
+                  </div>
                 </nav>
                 <div className="border-t border-neutral-800 pt-6 mt-auto">
                   <button
