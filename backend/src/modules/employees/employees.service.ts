@@ -79,6 +79,7 @@ export class EmployeesService {
             : new Date(),
           departmentId: createEmployeeDto.departmentId || null,
           designationId: createEmployeeDto.designationId || null,
+          monthlySalary: createEmployeeDto.monthlySalary || null,
           onboardingStatus: OnboardingStatus.PENDING,
         },
       });

@@ -103,6 +103,14 @@ export class CreateEmployeeDto {
   @IsString()
   @IsOptional()
   designationId?: string;
+
+  @ApiProperty({
+    description: 'Monthly salary in INR',
+    example: 50000,
+    required: false,
+  })
+  @IsOptional()
+  monthlySalary?: number;
 }
 
 export class UpdateEmployeeDto {
@@ -196,6 +204,14 @@ export class UpdateEmployeeDto {
   @IsString()
   @IsOptional()
   designationId?: string;
+
+  @ApiProperty({
+    description: 'Monthly salary in INR',
+    example: 50000,
+    required: false,
+  })
+  @IsOptional()
+  monthlySalary?: number;
 }
 
 export class QueryEmployeeDto {

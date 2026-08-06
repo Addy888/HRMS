@@ -14,45 +14,79 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
   const queryClient = useQueryClient();
   const [form, setForm] = React.useState({
     firstName: '', lastName: '', email: '', phone: '',
-    gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '',
+    gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '',
   });
 
-  const { data: departments = [] } = useQuery({
-    queryKey: ['departments-list'],
-    queryFn: async () => {
-      try { const r = await api.get('/departments'); return Array.isArray(r.data) ? r.data : r.data?.data || []; }
-      catch { return [{ id: '1', name: 'Engineering' }, { id: '2', name: 'Human Resources' }]; }
-    }
-  });
+  // Hardcoded departments - IT and Sales only
+  const departments = [
+    { id: 'IT', name: 'IT' },
+    { id: 'SALES', name: 'Sales' },
+  ];
 
-  const { data: designations = [] } = useQuery({
-    queryKey: ['designations-list'],
-    queryFn: async () => {
-      try { const r = await api.get('/designations'); return Array.isArray(r.data) ? r.data : r.data?.data || []; }
-      catch { return [{ id: '1', name: 'Software Engineer' }, { id: '2', name: 'HR Manager' }]; }
-    }
-  });
+  // Designation mapping based on department
+  const designationsByDepartment: Record<string, Array<{ id: string; name: string }>> = {
+    IT: [
+      { id: 'SOFTWARE_DEVELOPER', name: 'Software Developer' },
+      { id: 'FRONTEND_DEVELOPER', name: 'Frontend Developer' },
+      { id: 'BACKEND_DEVELOPER', name: 'Backend Developer' },
+      { id: 'FULLSTACK_DEVELOPER', name: 'Full Stack Developer' },
+      { id: 'UI_UX_DESIGNER', name: 'UI/UX Designer' },
+      { id: 'QA_ENGINEER', name: 'QA Engineer' },
+      { id: 'DEVOPS_ENGINEER', name: 'DevOps Engineer' },
+      { id: 'AI_ENGINEER', name: 'AI Engineer' },
+    ],
+    SALES: [
+      { id: 'SALES_EXECUTIVE', name: 'Sales Executive' },
+      { id: 'SENIOR_SALES_EXECUTIVE', name: 'Senior Sales Executive' },
+      { id: 'SALES_MANAGER', name: 'Sales Manager' },
+      { id: 'BDE', name: 'Business Development Executive' },
+      { id: 'BDM', name: 'Business Development Manager' },
+      { id: 'TEAM_LEADER', name: 'Team Leader' },
+    ],
+  };
+
+  // Get filtered designations based on selected department
+  const availableDesignations = form.departmentId ? designationsByDepartment[form.departmentId] || [] : [];
 
   const createMutation = useMutation({
-    mutationFn: async (payload: typeof form) => {
-      await api.post('/employees', payload);
+    mutationFn: async (payload: any) => {
+      // Convert monthlySalary to number if provided
+      const dataToSend = {
+        ...payload,
+        monthlySalary: payload.monthlySalary ? parseFloat(payload.monthlySalary) : undefined,
+      };
+      await api.post('/employees', dataToSend);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees-list'] });
       queryClient.invalidateQueries({ queryKey: ['hr-dashboard-stats'] });
-      setForm({ firstName: '', lastName: '', email: '', phone: '', gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '' });
+      setForm({ firstName: '', lastName: '', email: '', phone: '', gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '' });
       onClose();
     },
     onError: (err: any) => alert(err.message || 'Failed to create employee'),
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    
+    // Reset designation when department changes
+    if (name === 'departmentId') {
+      setForm(prev => ({ ...prev, departmentId: value, designationId: '' }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.firstName || !form.lastName || !form.email) return;
+    if (!form.firstName || !form.lastName || !form.email) {
+      alert('Please fill in all required fields (First Name, Last Name, Email)');
+      return;
+    }
+    if (!form.monthlySalary || parseFloat(form.monthlySalary) <= 0) {
+      alert('Please enter a valid monthly salary greater than zero');
+      return;
+    }
     createMutation.mutate(form);
   };
 
@@ -122,26 +156,43 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
               >
                 <option value="">Select Department</option>
-                {(departments as any[]).map((d: any) => (
+                {departments.map((d: any) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </div>
 
             {/* Designation Select */}
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="space-y-1.5">
               <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Designation</label>
               <select
                 name="designationId"
                 value={form.designationId}
                 onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                disabled={!form.departmentId}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Select Designation</option>
-                {(designations as any[]).map((d: any) => (
+                {availableDesignations.map((d: any) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Monthly Salary */}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Monthly Salary (₹ INR) *</label>
+              <input
+                type="number"
+                name="monthlySalary"
+                value={form.monthlySalary}
+                onChange={handleChange}
+                placeholder="25000"
+                min="1"
+                step="1"
+                required
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+              />
             </div>
           </div>
 
