@@ -129,6 +129,8 @@ model Employee {
   acceptances   PolicyAcceptance[]
   complaintsRaised Complaint[] @relation("EmployeeComplaintsRaised")
   complaintsAssigned Complaint[] @relation("HRComplaintsAssigned")
+  complaintsAccepted Complaint[] @relation("HRComplaintsAccepted")
+  complaintsRejected Complaint[] @relation("HRComplaintsRejected")
   complaintAssignmentsHistory ComplaintAssignment[] @relation("HRComplaintsAssignmentHistory")
   complaintAssignmentsBy ComplaintAssignment[] @relation("HRComplaintsAssignedBy")
   
@@ -339,6 +341,15 @@ model Complaint {
   
   assignedToId    String?               // Employee ID of Assigned HR
   assignedTo      Employee?             @relation("HRComplaintsAssigned", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  acceptedById    String?               // HR who accepted the complaint
+  acceptedBy      Employee?             @relation("HRComplaintsAccepted", fields: [acceptedById], references: [id], onDelete: SetNull)
+  acceptedAt      DateTime?
+  
+  rejectedById    String?               // HR who rejected the complaint
+  rejectedBy      Employee?             @relation("HRComplaintsRejected", fields: [rejectedById], references: [id], onDelete: SetNull)
+  rejectedAt      DateTime?
+  rejectReason    String?               @db.Text
   
   replies         ComplaintReply[]
   attachments     ComplaintAttachment[]

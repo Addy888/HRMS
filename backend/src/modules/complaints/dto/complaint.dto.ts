@@ -172,3 +172,12 @@ export class ResolveComplaintDto {
   @IsNotEmpty()
   resolutionDetails: string;
 }
+
+export class RejectComplaintDto {
+  @ApiProperty({
+    example: 'This complaint does not fall under HR jurisdiction. Please contact IT support directly.',
+  })
+  @IsString()
+  @IsNotEmpty()
+  rejectReason: string;
+}

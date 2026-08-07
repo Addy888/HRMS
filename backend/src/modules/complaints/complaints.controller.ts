@@ -31,6 +31,7 @@ import {
   CreateReplyDto,
   AssignComplaintDto,
   ResolveComplaintDto,
+  RejectComplaintDto,
   QueryComplaintsDto,
 } from './dto/complaint.dto.js';
 
@@ -226,5 +227,25 @@ export class ComplaintsController {
   @ApiOperation({ summary: 'Reopen a previously resolved complaint (HR Only)' })
   reopenComplaint(@Param('id') id: string, @GetUser('id') hrUserId: string) {
     return this.complaintsService.reopenComplaint(id, hrUserId);
+  }
+
+  @Post('admin/complaints/:id/accept')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.HR)
+  @ApiOperation({ summary: 'Accept an OPEN complaint and move to IN_PROGRESS (HR Only)' })
+  acceptComplaint(@Param('id') id: string, @GetUser('id') hrUserId: string) {
+    return this.complaintsService.acceptComplaint(id, hrUserId);
+  }
+
+  @Post('admin/complaints/:id/reject')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.HR)
+  @ApiOperation({ summary: 'Reject an OPEN complaint with a reason (HR Only)' })
+  rejectComplaint(
+    @Param('id') id: string,
+    @GetUser('id') hrUserId: string,
+    @Body() dto: RejectComplaintDto,
+  ) {
+    return this.complaintsService.rejectComplaint(id, hrUserId, dto.rejectReason);
   }
 }

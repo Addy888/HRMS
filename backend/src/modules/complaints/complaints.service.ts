@@ -859,6 +859,125 @@ export class ComplaintsService {
     });
   }
 
+  // Admin: Accept Complaint (NEW)
+  async acceptComplaint(id: string, hrUserId: string) {
+    const complaint = await this.prisma.complaint.findUnique({
+      where: { id },
+      include: { raisedBy: true },
+    });
+    if (!complaint) {
+      throw new NotFoundException('Complaint not found');
+    }
+
+    if (complaint.status !== ComplaintStatus.OPEN) {
+      throw new BadRequestException(
+        'Only OPEN complaints can be accepted',
+      );
+    }
+
+    const hrEmployee = await this.prisma.employee.findUnique({
+      where: { userId: hrUserId },
+    });
+    if (!hrEmployee) {
+      throw new NotFoundException('HR employee profile not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.complaint.update({
+        where: { id },
+        data: {
+          status: ComplaintStatus.IN_PROGRESS,
+          acceptedById: hrEmployee.id,
+          acceptedAt: new Date(),
+        },
+      });
+
+      await tx.complaintTimeline.create({
+        data: {
+          complaintId: id,
+          action: 'ACCEPTED',
+          details: `Ticket accepted by HR and moved to IN_PROGRESS`,
+          actorId: hrUserId,
+        },
+      });
+
+      // Notify employee (fire-and-forget)
+      this.notificationService
+        .createNotification([complaint.raisedBy.userId], {
+          title: 'Complaint Accepted',
+          description: `Your complaint ${complaint.complaintNumber} has been accepted by HR and is now under review.`,
+          type: 'complaint.accepted',
+          module: 'COMPLAINT',
+          priority: 'MEDIUM',
+          icon: 'check-circle',
+          actionUrl: '/employee/complaints',
+        })
+        .catch(() => {});
+
+      return updated;
+    });
+  }
+
+  // Admin: Reject Complaint (NEW)
+  async rejectComplaint(id: string, hrUserId: string, rejectReason: string) {
+    const complaint = await this.prisma.complaint.findUnique({
+      where: { id },
+      include: { raisedBy: true },
+    });
+    if (!complaint) {
+      throw new NotFoundException('Complaint not found');
+    }
+
+    if (complaint.status !== ComplaintStatus.OPEN) {
+      throw new BadRequestException(
+        'Only OPEN complaints can be rejected',
+      );
+    }
+
+    const hrEmployee = await this.prisma.employee.findUnique({
+      where: { userId: hrUserId },
+    });
+    if (!hrEmployee) {
+      throw new NotFoundException('HR employee profile not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.complaint.update({
+        where: { id },
+        data: {
+          status: ComplaintStatus.REJECTED,
+          rejectedById: hrEmployee.id,
+          rejectedAt: new Date(),
+          rejectReason,
+        },
+      });
+
+      await tx.complaintTimeline.create({
+        data: {
+          complaintId: id,
+          action: 'REJECTED',
+          details: `Ticket rejected by HR. Reason: ${rejectReason}`,
+          actorId: hrUserId,
+        },
+      });
+
+      // Notify employee (fire-and-forget)
+      this.notificationService
+        .createNotification([complaint.raisedBy.userId], {
+          title: 'Complaint Rejected',
+          description: `Your complaint ${complaint.complaintNumber} has been rejected by HR. Reason: ${rejectReason}`,
+          type: 'complaint.rejected',
+          module: 'COMPLAINT',
+          priority: 'HIGH',
+          icon: 'x-circle',
+          actionUrl: '/employee/complaints',
+        })
+        .catch(() => {});
+
+      return updated;
+    });
+  }
+
   // Admin: Get HR Dashboard stats
   async getHRDashboardStats() {
     console.log('=== HR DASHBOARD STATS DEBUG ===');

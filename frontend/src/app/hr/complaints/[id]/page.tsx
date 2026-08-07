@@ -72,6 +72,8 @@ export default function HRComplaintDetailsPage() {
   const [newStatus, setNewStatus] = useState('');
   const [newPriority, setNewPriority] = useState('');
   const [error, setError] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   // Fetch Ticket Detail
   const { data: ticket, isLoading } = useQuery({
@@ -158,6 +160,38 @@ export default function HRComplaintDetailsPage() {
     },
   });
 
+  // Accept Complaint Mutation
+  const acceptMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/admin/complaints/${id}/accept`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hr-complaint-detail', id] });
+      qc.invalidateQueries({ queryKey: ['hr-complaint-stats'] });
+      qc.invalidateQueries({ queryKey: ['hr-complaints'] });
+    },
+    onError: (err: any) => {
+      setError(err?.response?.data?.message || err?.message || 'Failed to accept complaint');
+    },
+  });
+
+  // Reject Complaint Mutation
+  const rejectMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/admin/complaints/${id}/reject`, { rejectReason: rejectReason.trim() });
+    },
+    onSuccess: () => {
+      setShowRejectModal(false);
+      setRejectReason('');
+      qc.invalidateQueries({ queryKey: ['hr-complaint-detail', id] });
+      qc.invalidateQueries({ queryKey: ['hr-complaint-stats'] });
+      qc.invalidateQueries({ queryKey: ['hr-complaints'] });
+    },
+    onError: (err: any) => {
+      setError(err?.response?.data?.message || err?.message || 'Failed to reject complaint');
+    },
+  });
+
   const handleReplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyMessage.trim()) return;
@@ -199,6 +233,8 @@ export default function HRComplaintDetailsPage() {
 
   const isClosed = ticket.status === 'CLOSED';
   const isResolved = ticket.status === 'RESOLVED';
+  const isOpen = ticket.status === 'OPEN';
+  const isRejected = ticket.status === 'REJECTED';
 
   return (
     <HRLayout>
@@ -257,6 +293,46 @@ export default function HRComplaintDetailsPage() {
               </div>
             )}
           </div>
+
+          {/* Accept / Reject Actions - Only for OPEN tickets */}
+          {isOpen && (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-3">
+              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Quick Actions</h3>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    if (window.confirm('Accept this complaint and move it to IN_PROGRESS?')) {
+                      acceptMutation.mutate();
+                    }
+                  }}
+                  disabled={acceptMutation.isPending}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  {acceptMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  🟢 Accept
+                </button>
+                <button
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={rejectMutation.isPending}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  {rejectMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4" />
+                  )}
+                  🔴 Reject
+                </button>
+              </div>
+              {error && (
+                <p className="text-xs text-red-400 font-semibold">{error}</p>
+              )}
+            </div>
+          )}
 
           {/* Conversation Thread */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
@@ -528,6 +604,76 @@ export default function HRComplaintDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Reject Complaint</h3>
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectReason('');
+                  setError('');
+                }}
+                className="w-8 h-8 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                  Reason for Rejection <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Provide a clear reason why this complaint is being rejected..."
+                  rows={4}
+                  className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-red-500 transition-colors resize-none"
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs text-red-400 font-semibold">{error}</p>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false);
+                    setRejectReason('');
+                    setError('');
+                  }}
+                  className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-750 rounded-xl text-xs font-bold text-neutral-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!rejectReason.trim()) {
+                      setError('Please provide a reason for rejection');
+                      return;
+                    }
+                    setError('');
+                    rejectMutation.mutate();
+                  }}
+                  disabled={!rejectReason.trim() || rejectMutation.isPending}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  {rejectMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  Reject Complaint
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </HRLayout>
   );
 }
