@@ -115,6 +115,16 @@ export class DocumentsController {
     return this.documentsService.getEmployeeDocuments(userId);
   }
 
+  @Get('employee/:employeeId')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.HR)
+  @ApiOperation({ summary: 'HR: Get all documents of a specific employee' })
+  @ApiResponse({ status: 200, description: 'Returns all documents for the employee' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
+  getEmployeeDocumentsByEmployeeId(@Param('employeeId') employeeId: string) {
+    return this.documentsService.getDocumentsByEmployeeId(employeeId);
+  }
+
   @Get('queue')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)

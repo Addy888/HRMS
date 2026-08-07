@@ -289,10 +289,14 @@ export class DocumentsService {
   async getEmployeeDocuments(userId: string) {
     const employee = await this.prisma.employee.findUnique({
       where: { userId },
+      include: {
+        department: { select: { id: true, name: true } },
+        designation: { select: { id: true, name: true } },
+      },
     });
     if (!employee) throw new NotFoundException('Employee not found');
 
-    return this.prisma.document.findMany({
+    const documents = await this.prisma.document.findMany({
       where: { employeeId: employee.id },
       include: {
         category: true,
@@ -301,6 +305,68 @@ export class DocumentsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Enrich documents with employee information
+    return documents.map((doc) => ({
+      ...doc,
+      employeeName: `${employee.firstName} ${employee.lastName}`,
+      employeeCode: employee.employeeId,
+      departmentId: employee.department?.id || null,
+      departmentName: employee.department?.name || null,
+      designationId: employee.designation?.id || null,
+      designationName: employee.designation?.name || null,
+    }));
+  }
+
+  // NEW: Get documents for a specific employee (HR use case)
+  async getDocumentsByEmployeeId(employeeId: string) {
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: {
+        department: { select: { id: true, name: true } },
+        designation: { select: { id: true, name: true } },
+      },
+    });
+    
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const documents = await this.prisma.document.findMany({
+      where: { employeeId: employee.id },
+      include: {
+        category: true,
+        verification: true,
+        versions: { orderBy: { version: 'desc' }, take: 5 }, // Latest 5 versions
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Return enriched documents with complete employee info
+    return documents.map((doc) => ({
+      ...doc,
+      employeeName: `${employee.firstName} ${employee.lastName}`,
+      employeeCode: employee.employeeId,
+      departmentId: employee.department?.id || null,
+      departmentName: employee.department?.name || null,
+      designationId: employee.designation?.id || null,
+      designationName: employee.designation?.name || null,
+      mimeType: this.getMimeTypeFromUrl(doc.fileUrl),
+      size: null, // Can be added if we store file size
+    }));
+  }
+
+  private getMimeTypeFromUrl(fileUrl: string): string {
+    const ext = fileUrl.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      pdf: 'application/pdf',
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+    return mimeTypes[ext || ''] || 'application/octet-stream';
   }
 
   async getDocumentQueue(query: QueryDocumentDto) {
@@ -327,23 +393,30 @@ export class DocumentsService {
 
       if (query.search) {
         whereClause.employee.OR = [
-          { firstName: { contains: query.search } },
-          { lastName: { contains: query.search } },
-          { employeeId: { contains: query.search } },
+          { firstName: { contains: query.search, mode: 'insensitive' } },
+          { lastName: { contains: query.search, mode: 'insensitive' } },
+          { employeeId: { contains: query.search, mode: 'insensitive' } },
         ];
       }
     }
 
-    const [data, total] = await Promise.all([
+    const [documents, total] = await Promise.all([
       this.prisma.document.findMany({
         where: whereClause,
         include: {
           employee: {
-            include: { department: true, designation: true },
+            select: {
+              id: true,
+              employeeId: true,
+              firstName: true,
+              lastName: true,
+              department: { select: { id: true, name: true } },
+              designation: { select: { id: true, name: true } },
+            },
           },
           category: true,
           verification: true,
-          versions: { orderBy: { version: 'desc' } },
+          versions: { orderBy: { version: 'desc' }, take: 3 },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -352,8 +425,20 @@ export class DocumentsService {
       this.prisma.document.count({ where: whereClause }),
     ]);
 
+    // Enrich the response with flattened employee data
+    const enrichedData = documents.map((doc) => ({
+      ...doc,
+      employeeName: `${doc.employee.firstName} ${doc.employee.lastName}`,
+      employeeCode: doc.employee.employeeId,
+      departmentId: doc.employee.department?.id || null,
+      departmentName: doc.employee.department?.name || null,
+      designationId: doc.employee.designation?.id || null,
+      designationName: doc.employee.designation?.name || null,
+      mimeType: this.getMimeTypeFromUrl(doc.fileUrl),
+    }));
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         total,
         page,

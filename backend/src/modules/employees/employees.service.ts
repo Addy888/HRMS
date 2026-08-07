@@ -148,10 +148,10 @@ export class EmployeesService {
 
     if (query.search) {
       whereClause.OR = [
-        { firstName: { contains: query.search } },
-        { lastName: { contains: query.search } },
-        { employeeId: { contains: query.search } },
-        { user: { email: { contains: query.search } } },
+        { firstName: { contains: query.search, mode: 'insensitive' } },
+        { lastName: { contains: query.search, mode: 'insensitive' } },
+        { employeeId: { contains: query.search, mode: 'insensitive' } },
+        { user: { email: { contains: query.search, mode: 'insensitive' } } },
       ];
     }
 
@@ -174,7 +174,7 @@ export class EmployeesService {
       };
     }
 
-    const [total, data] = await Promise.all([
+    const [total, employees] = await Promise.all([
       this.prisma.employee.count({ where: whereClause }),
       this.prisma.employee.findMany({
         where: whereClause,
@@ -184,20 +184,59 @@ export class EmployeesService {
         include: {
           user: {
             select: {
+              id: true,
               email: true,
               isActive: true,
               isFirstLogin: true,
+              role: {
+                select: {
+                  name: true,
+                },
+              },
             },
           },
-          department: true,
-          designation: true,
-          profile: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          designation: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          profile: {
+            select: {
+              profileCompletion: true,
+            },
+          },
+          documents: {
+            select: {
+              id: true,
+              type: true,
+              status: true,
+            },
+          },
         },
       }),
     ]);
 
+    // Enrich the employee data with computed fields for easier frontend consumption
+    const enrichedData = employees.map(emp => ({
+      ...emp,
+      fullName: `${emp.firstName} ${emp.lastName}`,
+      email: emp.user?.email,
+      isActive: emp.user?.isActive,
+      departmentName: emp.department?.name || null,
+      designationTitle: emp.designation?.name || null,
+      profileCompletion: emp.profile?.profileCompletion || 0,
+      documentsCount: emp.documents?.length || 0,
+    }));
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         total,
         page,
@@ -208,6 +247,13 @@ export class EmployeesService {
   }
 
   async findOne(id: string) {
+    console.log('╔══════════════════════════════════════════════════════════╗');
+    console.log('║  findOne() called for Employee Details                   ║');
+    console.log('╚══════════════════════════════════════════════════════════╝');
+    console.log('📋 Employee ID received:', id);
+    console.log('📋 Employee ID type:', typeof id);
+    console.log('📋 Employee ID length:', id?.length);
+    
     const employee = await this.prisma.employee.findUnique({
       where: { id },
       include: {
@@ -217,26 +263,150 @@ export class EmployeesService {
             email: true,
             isActive: true,
             createdAt: true,
-            role: true,
+            role: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
-        department: true,
-        designation: true,
-        profile: true,
-        education: true,
-        experience: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+          },
+        },
+        designation: {
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+          },
+        },
+        profile: {
+          select: {
+            id: true,
+            profileCompletion: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        education: {
+          orderBy: { createdAt: 'desc' },
+        },
+        experience: {
+          orderBy: { createdAt: 'desc' },
+        },
         documents: {
           include: {
+            category: true,
             verification: true,
+            versions: {
+              orderBy: { version: 'desc' },
+              take: 3,
+            },
           },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
 
     if (!employee) {
+      console.log('❌ Employee NOT FOUND in database');
+      console.log('╚══════════════════════════════════════════════════════════╝\n');
       throw new NotFoundException('Employee not found');
     }
-    return employee;
+
+    console.log('✅ Employee FOUND in database');
+    console.log('📊 Employee Data Summary:');
+    console.log('   - Employee ID (Code):', employee.employeeId);
+    console.log('   - First Name:', employee.firstName);
+    console.log('   - Last Name:', employee.lastName);
+    console.log('   - Email:', employee.user?.email);
+    console.log('   - Phone:', employee.phone);
+    console.log('   - Department:', employee.department?.name || 'Not Assigned');
+    console.log('   - Designation:', employee.designation?.name || 'Not Assigned');
+    console.log('   - Joining Date:', employee.joiningDate);
+    console.log('   - Documents Count:', employee.documents?.length || 0);
+    console.log('   - Profile Completion:', employee.profile?.profileCompletion || 0, '%');
+    console.log('   - Is Active:', employee.user?.isActive);
+    console.log('   - Created At:', employee.user?.createdAt);
+
+    if (employee.documents && employee.documents.length > 0) {
+      console.log('\n📁 Documents Found:');
+      employee.documents.forEach((doc, index) => {
+        console.log(`   ${index + 1}. Type: ${doc.type}, Status: ${doc.status}, File: ${doc.fileName}`);
+      });
+    } else {
+      console.log('\n📁 No documents found for this employee');
+    }
+
+    console.log('╚══════════════════════════════════════════════════════════╝\n');
+
+    // Return enriched employee data with flattened structure for easier frontend consumption
+    return {
+      ...employee,
+      // Flatten user data
+      email: employee.user?.email,
+      isActive: employee.user?.isActive,
+      userCreatedAt: employee.user?.createdAt,
+      roleName: employee.user?.role?.name,
+      
+      // Flatten department data
+      departmentName: employee.department?.name || null,
+      
+      // Flatten designation data
+      designationTitle: employee.designation?.name || null,
+      
+      // Flatten profile data
+      profileCompletion: employee.profile?.profileCompletion || 0,
+      
+      // Add computed fields
+      fullName: `${employee.firstName} ${employee.lastName}`,
+      documentsCount: employee.documents?.length || 0,
+      
+      // Group documents by category for easier display
+      documentsByCategory: this.groupDocumentsByCategory(employee.documents || []),
+    };
+  }
+
+  // Helper method to group documents by category
+  private groupDocumentsByCategory(documents: any[]) {
+    const personalDocs = documents.filter(d => 
+      ['PHOTO', 'RESUME', 'CV'].includes(d.type)
+    );
+    
+    const governmentDocs = documents.filter(d => 
+      ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE'].includes(d.type)
+    );
+    
+    const educationDocs = documents.filter(d => 
+      d.type.includes('MARKSHEET') || 
+      d.type.includes('DEGREE') || 
+      d.type.includes('DIPLOMA') ||
+      d.type.includes('CERTIFI')
+    );
+    
+    const professionalDocs = documents.filter(d => 
+      ['OFFER_LETTER', 'EXPERIENCE_LETTER', 'RELIEVING_LETTER', 'SALARY_SLIP', 'INTERNSHIP_CERTIFICATE'].includes(d.type)
+    );
+    
+    const otherDocs = documents.filter(d => 
+      !personalDocs.includes(d) && 
+      !governmentDocs.includes(d) && 
+      !educationDocs.includes(d) && 
+      !professionalDocs.includes(d)
+    );
+
+    return {
+      personal: personalDocs,
+      government: governmentDocs,
+      education: educationDocs,
+      professional: professionalDocs,
+      other: otherDocs,
+    };
   }
 
   async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
