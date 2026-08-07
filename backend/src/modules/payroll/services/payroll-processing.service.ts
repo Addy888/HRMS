@@ -408,48 +408,155 @@ export class PayrollProcessingService {
    * GET PAYROLL DASHBOARD STATS
    */
   async getDashboardStats(month?: number, year?: number) {
+    console.log('╔════════════════════════════════════════════════════════════╗');
+    console.log('║  PAYROLL DASHBOARD STATS - SERVICE                         ║');
+    console.log('╚════════════════════════════════════════════════════════════╝');
+    console.log('📥 Service Input:');
+    console.log('   month (parameter):', month);
+    console.log('   year (parameter):', year);
+    
     const currentDate = new Date();
     const currentMonth = month || currentDate.getMonth() + 1;
     const currentYear = year || currentDate.getFullYear();
+    
+    console.log('📅 Calculated Values:');
+    console.log('   currentMonth:', currentMonth);
+    console.log('   currentYear:', currentYear);
 
     const where = { month: currentMonth, year: currentYear };
+    console.log('🔍 Prisma where clause:', where);
 
-    const [
-      totalEmployees,
-      pendingPayroll,
-      processedPayroll,
-      paidPayroll,
-      monthlySalary,
-      avgSalary,
-    ] = await Promise.all([
-      this.database.employee.count(),
-      this.database.payrollRun.count({
-        where: { ...where, status: 'PENDING' },
-      }),
-      this.database.payrollRun.count({
-        where: { ...where, status: 'PROCESSED' },
-      }),
-      this.database.payrollRun.count({ where: { ...where, status: 'PAID' } }),
-      this.database.payrollRun.aggregate({
-        where,
-        _sum: { netSalary: true },
-      }),
-      this.database.payrollRun.aggregate({
-        where,
-        _avg: { netSalary: true },
-      }),
-    ]);
+    try {
+      console.log('\n🔄 Starting Prisma queries...\n');
 
-    return {
-      totalEmployees,
-      pendingPayroll,
-      processedPayroll,
-      paidEmployees: paidPayroll,
-      pendingPayments: processedPayroll,
-      monthlySalaryExpense: monthlySalary._sum.netSalary || 0,
-      averageSalary: avgSalary._avg.netSalary || 0,
-      month: currentMonth,
-      year: currentYear,
-    };
+      // Query 1: Total Employees
+      console.log('1️⃣  QUERY: database.employee.count()');
+      let totalEmployees = 0;
+      try {
+        totalEmployees = await this.database.employee.count();
+        console.log('   ✅ Result:', totalEmployees);
+      } catch (err) {
+        console.error('   ❌ ERROR in employee.count():');
+        console.error('      Error:', err);
+        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
+        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
+        throw err;
+      }
+
+      // Query 2: Pending Payroll
+      console.log('\n2️⃣  QUERY: database.payrollRun.count({ where: { ...where, status: PENDING } })');
+      console.log('   Where:', { ...where, status: 'PENDING' });
+      let pendingPayroll = 0;
+      try {
+        pendingPayroll = await this.database.payrollRun.count({
+          where: { ...where, status: 'PENDING' },
+        });
+        console.log('   ✅ Result:', pendingPayroll);
+      } catch (err) {
+        console.error('   ❌ ERROR in payrollRun.count(PENDING):');
+        console.error('      Error:', err);
+        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
+        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
+        throw err;
+      }
+
+      // Query 3: Processed Payroll
+      console.log('\n3️⃣  QUERY: database.payrollRun.count({ where: { ...where, status: PROCESSED } })');
+      console.log('   Where:', { ...where, status: 'PROCESSED' });
+      let processedPayroll = 0;
+      try {
+        processedPayroll = await this.database.payrollRun.count({
+          where: { ...where, status: 'PROCESSED' },
+        });
+        console.log('   ✅ Result:', processedPayroll);
+      } catch (err) {
+        console.error('   ❌ ERROR in payrollRun.count(PROCESSED):');
+        console.error('      Error:', err);
+        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
+        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
+        throw err;
+      }
+
+      // Query 4: Paid Payroll
+      console.log('\n4️⃣  QUERY: database.payrollRun.count({ where: { ...where, status: PAID } })');
+      console.log('   Where:', { ...where, status: 'PAID' });
+      let paidPayroll = 0;
+      try {
+        paidPayroll = await this.database.payrollRun.count({
+          where: { ...where, status: 'PAID' },
+        });
+        console.log('   ✅ Result:', paidPayroll);
+      } catch (err) {
+        console.error('   ❌ ERROR in payrollRun.count(PAID):');
+        console.error('      Error:', err);
+        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
+        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
+        throw err;
+      }
+
+      // Query 5: Monthly Salary Sum
+      console.log('\n5️⃣  QUERY: database.payrollRun.aggregate({ where, _sum: { netSalary: true } })');
+      console.log('   Where:', where);
+      let monthlySalary: any = { _sum: { netSalary: 0 } };
+      try {
+        monthlySalary = await this.database.payrollRun.aggregate({
+          where,
+          _sum: { netSalary: true },
+        });
+        console.log('   ✅ Result:', monthlySalary);
+      } catch (err) {
+        console.error('   ❌ ERROR in payrollRun.aggregate(_sum):');
+        console.error('      Error:', err);
+        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
+        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
+        throw err;
+      }
+
+      // Query 6: Average Salary
+      console.log('\n6️⃣  QUERY: database.payrollRun.aggregate({ where, _avg: { netSalary: true } })');
+      console.log('   Where:', where);
+      let avgSalary: any = { _avg: { netSalary: 0 } };
+      try {
+        avgSalary = await this.database.payrollRun.aggregate({
+          where,
+          _avg: { netSalary: true },
+        });
+        console.log('   ✅ Result:', avgSalary);
+      } catch (err) {
+        console.error('   ❌ ERROR in payrollRun.aggregate(_avg):');
+        console.error('      Error:', err);
+        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
+        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
+        throw err;
+      }
+
+      console.log('\n✅ ALL QUERIES COMPLETED SUCCESSFULLY\n');
+
+      const result = {
+        totalEmployees,
+        pendingPayroll,
+        processedPayroll,
+        paidEmployees: paidPayroll,
+        pendingPayments: processedPayroll,
+        monthlySalaryExpense: monthlySalary._sum.netSalary || 0,
+        averageSalary: avgSalary._avg.netSalary || 0,
+        month: currentMonth,
+        year: currentYear,
+      };
+
+      console.log('📊 Final Result Object:');
+      console.log(result);
+      console.log('╚════════════════════════════════════════════════════════════╝\n');
+
+      return result;
+    } catch (error) {
+      console.error('\n❌ FATAL ERROR IN getDashboardStats():');
+      console.error('   Error:', error);
+      console.error('   Error name:', error instanceof Error ? error.name : 'Unknown');
+      console.error('   Error message:', error instanceof Error ? error.message : 'Unknown');
+      console.error('   Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('╚════════════════════════════════════════════════════════════╝\n');
+      throw error;
+    }
   }
 }

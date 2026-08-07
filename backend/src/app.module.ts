@@ -12,6 +12,7 @@ import { PoliciesModule } from './modules/policies/policies.module.js';
 import { ComplaintsModule } from './modules/complaints/complaints.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
+import { PayrollModule } from './modules/payroll/payroll.module.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module.js';
     ComplaintsModule,
     NotificationsModule,
     AttendanceModule,
+    PayrollModule,
   ],
   controllers: [HealthController],
 })

@@ -21,15 +21,44 @@ export default function PayrollDashboard() {
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
 
-  const { data: stats, isLoading, isError } = useQuery({
+  const { data: stats, isLoading, isError, error } = useQuery({
     queryKey: ['payroll-dashboard-stats', currentMonth, currentYear],
     queryFn: async () => {
-      const response = await api.get('/payroll-processing/dashboard/stats', {
-        params: { month: currentMonth, year: currentYear }
-      });
-      return response.data?.data ?? response.data;
+      console.log("========== PAYROLL DASHBOARD API CALL ==========");
+      console.log("Payroll API URL:", '/payroll-processing/dashboard/stats');
+      console.log("Payroll API Params:", { month: currentMonth, year: currentYear });
+      
+      try {
+        const response = await api.get('/payroll-processing/dashboard/stats', {
+          params: { month: currentMonth, year: currentYear }
+        });
+        
+        console.log("✅ Payroll Response Received:");
+        console.log("   Status:", response.status);
+        console.log("   Response:", response);
+        console.log("   Response.data:", response.data);
+        console.log("   Response.data.data:", response.data?.data);
+        console.log("================================================");
+        
+        return response.data?.data ?? response.data;
+      } catch (err) {
+        console.error("❌ PAYROLL API ERROR:");
+        console.error("   Error:", err);
+        console.error("   Error Message:", err instanceof Error ? err.message : 'Unknown error');
+        console.error("   Error Response:", (err as any)?.response);
+        console.error("   Error Response Data:", (err as any)?.response?.data);
+        console.error("================================================");
+        throw err;
+      }
     },
   });
+
+  console.log("========== PAYROLL QUERY STATE ==========");
+  console.log("isLoading:", isLoading);
+  console.log("isError:", isError);
+  console.log("error:", error);
+  console.log("stats:", stats);
+  console.log("==========================================");
 
   const cardsData = [
     {

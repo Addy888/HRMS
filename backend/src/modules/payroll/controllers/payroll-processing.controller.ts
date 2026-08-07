@@ -53,10 +53,35 @@ export class PayrollProcessingController {
   @Get('dashboard/stats')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   async getDashboardStats(@Query() query: { month?: string; year?: string }) {
-    return this.payrollProcessingService.getDashboardStats(
-      query.month ? parseInt(query.month) : undefined,
-      query.year ? parseInt(query.year) : undefined,
-    );
+    console.log('╔════════════════════════════════════════════════════════════╗');
+    console.log('║  PAYROLL DASHBOARD STATS - CONTROLLER                      ║');
+    console.log('╚════════════════════════════════════════════════════════════╝');
+    console.log('📥 Controller Input:');
+    console.log('   month:', query.month);
+    console.log('   year:', query.year);
+    console.log('   month (parsed):', query.month ? parseInt(query.month) : undefined);
+    console.log('   year (parsed):', query.year ? parseInt(query.year) : undefined);
+    
+    try {
+      console.log('🔄 Calling payrollProcessingService.getDashboardStats()...');
+      const result = await this.payrollProcessingService.getDashboardStats(
+        query.month ? parseInt(query.month) : undefined,
+        query.year ? parseInt(query.year) : undefined,
+      );
+      
+      console.log('✅ Controller received result from service:');
+      console.log('   result:', result);
+      console.log('╚════════════════════════════════════════════════════════════╝\n');
+      
+      return result;
+    } catch (error) {
+      console.error('❌ CONTROLLER ERROR:');
+      console.error('   Error:', error);
+      console.error('   Error message:', error instanceof Error ? error.message : 'Unknown');
+      console.error('   Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('╚════════════════════════════════════════════════════════════╝\n');
+      throw error;
+    }
   }
 
   @Put(':id/approve')
