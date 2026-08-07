@@ -232,14 +232,17 @@ model DocumentAuditLog {
 }
 
 model DocumentVerification {
-  id         String   @id @default(uuid())
-  documentId String   @unique
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  verifiedBy String?  // HR User Id or Name
-  comment    String?
-  verifiedAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String    @id @default(uuid())
+  documentId      String    @unique
+  document        Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  verifiedBy      String?   // HR User Id who approved
+  verifiedAt      DateTime?
+  rejectedBy      String?   // HR User Id who rejected
+  rejectedAt      DateTime?
+  rejectionReason String?   @db.Text
+  comment         String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model Policy {

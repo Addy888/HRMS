@@ -11,7 +11,8 @@ import { EditEmployeeModal } from '@/components/EditEmployeeModal';
 import {
   ArrowLeft, User, Mail, Phone, Briefcase, Building2,
   CalendarDays, FileText, Shield, AlertCircle, Edit2,
-  UserX, UserCheck, KeyRound, CheckCircle2, Clock
+  UserX, UserCheck, KeyRound, CheckCircle2, Clock, Eye,
+  Check, X, Download
 } from 'lucide-react';
 
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) => (
@@ -23,6 +24,167 @@ const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string;
     </div>
   </div>
 );
+
+// Document Card Component with Verification Actions
+function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
+  const [showRejectModal, setShowRejectModal] = React.useState(false);
+  const [rejectionReason, setRejectionReason] = React.useState('');
+
+  const docStatusColor: Record<string, string> = {
+    APPROVED: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    REJECTED: 'text-red-400 bg-red-500/10 border-red-500/20',
+    PENDING: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  };
+
+  const approveMutation = useMutation({
+    mutationFn: async (docId: string) => {
+      await api.post(`/documents/${docId}/verify`, {
+        action: 'APPROVE',
+        comment: 'Approved by HR',
+      });
+    },
+    onSuccess: () => {
+      onRefresh();
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ docId, reason }: { docId: string; reason: string }) => {
+      await api.post(`/documents/${docId}/verify`, {
+        action: 'REJECT',
+        comment: reason,
+      });
+    },
+    onSuccess: () => {
+      setShowRejectModal(false);
+      setRejectionReason('');
+      onRefresh();
+    },
+  });
+
+  const handleView = () => {
+    if (doc.fileUrl) {
+      window.open(doc.fileUrl, '_blank');
+    }
+  };
+
+  const handleApprove = () => {
+    if (confirm(`Approve ${doc.type.replace(/_/g, ' ')} document?`)) {
+      approveMutation.mutate(doc.id);
+    }
+  };
+
+  const handleReject = () => {
+    if (!rejectionReason.trim()) {
+      alert('Rejection reason is required');
+      return;
+    }
+    rejectMutation.mutate({ docId: doc.id, reason: rejectionReason });
+  };
+
+  return (
+    <>
+      <div className="flex flex-col p-3 bg-neutral-900 border border-neutral-800 rounded-xl space-y-2">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold text-white">{doc.type.replace(/_/g, ' ')}</div>
+            <div className="text-[10px] text-neutral-500 mt-0.5 truncate">{doc.fileName}</div>
+            {doc.verification?.rejectionReason && (
+              <div className="text-[10px] text-red-400 mt-1 italic">Reason: {doc.verification.rejectionReason}</div>
+            )}
+          </div>
+          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border shrink-0 ${docStatusColor[doc.status] || 'text-neutral-400 bg-neutral-800 border-neutral-700'}`}>
+            {doc.status}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 pt-2 border-t border-neutral-800">
+          <button
+            onClick={handleView}
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-[11px] font-semibold transition-colors"
+            title="View Document"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            View
+          </button>
+
+          {doc.status !== 'APPROVED' && (
+            <button
+              onClick={handleApprove}
+              disabled={approveMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 border border-emerald-500/20"
+              title="Approve Document"
+            >
+              <Check className="w-3.5 h-3.5" />
+              Approve
+            </button>
+          )}
+
+          {doc.status !== 'REJECTED' && (
+            <button
+              onClick={() => setShowRejectModal(true)}
+              disabled={rejectMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 border border-red-500/20"
+              title="Reject Document"
+            >
+              <X className="w-3.5 h-3.5" />
+              Reject
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-white">Reject Document</h3>
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-sm text-neutral-400">
+              Document: <span className="font-semibold text-white">{doc.type.replace(/_/g, ' ')}</span>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+                Rejection Reason <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g., Image is blurred, Document is expired, etc."
+                className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-sm min-h-[100px]"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="flex-1 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={rejectMutation.isPending || !rejectionReason.trim()}
+                className="flex-1 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 border border-red-500/20"
+              >
+                {rejectMutation.isPending ? 'Rejecting...' : 'Reject Document'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -252,21 +414,39 @@ export default function EmployeeDetailPage() {
 
         {/* Documents Section */}
         <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4">
-          <h3 className="font-heading text-base font-bold text-white flex items-center gap-2">
-            <FileText className="w-4 h-4 text-indigo-400" /> Uploaded Documents ({emp.documentsCount || 0})
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading text-base font-bold text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-indigo-400" /> Uploaded Documents
+            </h3>
+            {emp.documents?.length > 0 && (
+              <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-white">{emp.documents.length}</span>
+                  <span className="text-neutral-500">Total</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-emerald-400">{emp.documents.filter((d: any) => d.status === 'APPROVED').length}</span>
+                  <span className="text-neutral-500">Approved</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-amber-400">{emp.documents.filter((d: any) => d.status === 'PENDING').length}</span>
+                  <span className="text-neutral-500">Pending</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-red-400">{emp.documents.filter((d: any) => d.status === 'REJECTED').length}</span>
+                  <span className="text-neutral-500">Rejected</span>
+                </div>
+              </div>
+            )}
+          </div>
           {emp.documents?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {emp.documents.map((doc: any) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-xl">
-                  <div>
-                    <div className="text-xs font-semibold text-white">{doc.type.replace(/_/g, ' ')}</div>
-                    <div className="text-[10px] text-neutral-500 mt-0.5 truncate max-w-[140px]">{doc.fileName}</div>
-                  </div>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${docStatusColor[doc.status] || 'text-neutral-400 bg-neutral-800 border-neutral-700'}`}>
-                    {doc.status}
-                  </span>
-                </div>
+                <DocumentCard
+                  key={doc.id}
+                  doc={doc}
+                  onRefresh={() => queryClient.invalidateQueries({ queryKey: ['employee', employeeId] })}
+                />
               ))}
             </div>
           ) : (

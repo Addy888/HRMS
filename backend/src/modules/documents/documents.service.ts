@@ -478,6 +478,9 @@ export class DocumentsService {
       : 'HR Administrator';
 
     return this.prisma.$transaction(async (tx) => {
+      const isApproval = dto.action === DocumentVerificationAction.APPROVE;
+      const isRejection = dto.action === DocumentVerificationAction.REJECT;
+
       // 1. Update Document status
       await tx.document.update({
         where: { id: documentId },
@@ -489,14 +492,20 @@ export class DocumentsService {
         where: { documentId },
         create: {
           documentId,
-          verifiedBy: verifierName,
+          verifiedBy: isApproval ? hrUserId : null,
+          verifiedAt: isApproval ? new Date() : null,
+          rejectedBy: isRejection ? hrUserId : null,
+          rejectedAt: isRejection ? new Date() : null,
+          rejectionReason: isRejection ? (dto.comment || 'No reason provided') : null,
           comment: dto.comment || null,
-          verifiedAt: new Date(),
         },
         update: {
-          verifiedBy: verifierName,
+          verifiedBy: isApproval ? hrUserId : undefined,
+          verifiedAt: isApproval ? new Date() : undefined,
+          rejectedBy: isRejection ? hrUserId : undefined,
+          rejectedAt: isRejection ? new Date() : undefined,
+          rejectionReason: isRejection ? (dto.comment || 'No reason provided') : undefined,
           comment: dto.comment || null,
-          verifiedAt: new Date(),
         },
       });
 
@@ -506,7 +515,7 @@ export class DocumentsService {
           documentId,
           userId: hrUserId,
           action: dto.action,
-          details: `HR set verification status to ${mappedStatus}. Comment: ${dto.comment || 'None'}`,
+          details: `HR ${verifierName} set verification status to ${mappedStatus}. Comment: ${dto.comment || 'None'}`,
           ipAddress,
           userAgent,
         },
@@ -556,7 +565,7 @@ export class DocumentsService {
         });
       }
 
-      return { status: mappedStatus };
+      return { status: mappedStatus, documentId, hrVerifier: verifierName };
     });
   }
 }
