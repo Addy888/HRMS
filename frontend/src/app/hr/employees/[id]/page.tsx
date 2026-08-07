@@ -12,7 +12,7 @@ import {
   ArrowLeft, User, Mail, Phone, Briefcase, Building2,
   CalendarDays, FileText, Shield, AlertCircle, Edit2,
   UserX, UserCheck, KeyRound, CheckCircle2, Clock, Eye,
-  Check, X, Download
+  Check, X, Download, Wallet, CreditCard, Building
 } from 'lucide-react';
 
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) => (
@@ -24,6 +24,16 @@ const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string;
     </div>
   </div>
 );
+
+// Helper function to mask account number
+const maskAccountNumber = (accountNumber: string | null | undefined): string => {
+  if (!accountNumber) return '—';
+  const str = accountNumber.toString();
+  if (str.length <= 4) return str;
+  const lastFour = str.slice(-4);
+  const masked = 'X'.repeat(Math.max(0, str.length - 4));
+  return masked + lastFour;
+};
 
 // Document Card Component with Verification Actions
 function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
@@ -404,7 +414,7 @@ export default function EmployeeDetailPage() {
         </div>
 
         {/* Detail Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {/* Basic Information */}
           <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
             <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><User className="w-4 h-4 text-blue-400" /> Basic Information</h3>
@@ -430,6 +440,17 @@ export default function EmployeeDetailPage() {
             <InfoRow icon={<Briefcase className="w-4 h-4" />} label="Designation" value={emp.designationTitle} />
             <InfoRow icon={<CalendarDays className="w-4 h-4" />} label="Date of Joining" value={emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : null} />
             <InfoRow icon={<Clock className="w-4 h-4" />} label="Account Created" value={emp.user?.createdAt ? new Date(emp.user.createdAt).toLocaleDateString() : null} />
+          </div>
+
+          {/* Bank Details */}
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
+            <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><Wallet className="w-4 h-4 text-emerald-400" /> Bank Details</h3>
+            <InfoRow icon={<User className="w-4 h-4" />} label="Account Holder" value={emp.bankAccountHolder} />
+            <InfoRow icon={<Building className="w-4 h-4" />} label="Bank Name" value={emp.bankName} />
+            <InfoRow icon={<Building2 className="w-4 h-4" />} label="Branch" value={emp.bankBranch} />
+            <InfoRow icon={<CreditCard className="w-4 h-4" />} label="Account Number" value={maskAccountNumber(emp.bankAccountNumber)} />
+            <InfoRow icon={<Shield className="w-4 h-4" />} label="IFSC Code" value={emp.bankIfsc} />
+            <InfoRow icon={<Wallet className="w-4 h-4" />} label="UPI ID" value={emp.upiId} />
           </div>
         </div>
 
