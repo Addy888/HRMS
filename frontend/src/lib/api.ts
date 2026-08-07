@@ -9,6 +9,11 @@ const api = axios.create({
 
 // Attach token from Zustand-persisted localStorage on every request
 api.interceptors.request.use((config) => {
+  console.log("🟡 REQUEST INTERCEPTOR - START");
+  console.log("   URL:", config.url);
+  console.log("   baseURL:", config.baseURL);
+  console.log("   Full URL:", `${config.baseURL}${config.url}`);
+  
   if (typeof window !== 'undefined') {
     try {
       // Zustand persist stores under 'fcs-auth-storage'
@@ -18,25 +23,38 @@ api.interceptors.request.use((config) => {
         const token = parsed?.state?.token;
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log("   Token attached:", token.substring(0, 20) + "...");
         }
       }
     } catch {
       // ignore parse errors
     }
   }
+  
+  console.log("🟢 REQUEST INTERCEPTOR - RETURNING CONFIG");
   return config;
 });
 
 // Response interceptor — unwrap transform envelope + normalize errors
 api.interceptors.response.use(
   (response) => {
+    console.log("🟢 RESPONSE INTERCEPTOR - SUCCESS");
+    console.log("   Status:", response.status);
+    console.log("   Data keys:", Object.keys(response.data || {}));
+    
     // If backend returns { success, statusCode, data, message } envelope
     if (response.data && typeof response.data.success === 'boolean') {
+      console.log("   Returning full response (envelope detected)");
       return response; // return full response; callers use .data
     }
+    console.log("   Returning response as-is");
     return response;
   },
   (error) => {
+    console.log("🔴 RESPONSE INTERCEPTOR - ERROR");
+    console.log("   Error:", error.message);
+    console.log("   Status:", error.response?.status);
+    
     const message =
       error.response?.data?.message || error.message || 'An unexpected error occurred';
 
@@ -44,6 +62,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       const isLoginPage = window.location.pathname === '/login';
       if (!isLoginPage) {
+        console.log("🔴 401 ERROR - REDIRECTING TO LOGIN");
         localStorage.removeItem('fcs-auth-storage');
         window.location.href = '/login';
       }

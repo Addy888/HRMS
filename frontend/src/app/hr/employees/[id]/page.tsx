@@ -1,5 +1,7 @@
 'use client';
 
+console.log("🔴 PAGE FILE EXECUTED - MODULE LEVEL");
+
 import React from 'react';
 import HRLayout from '@/layouts/HRLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -22,47 +24,92 @@ const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string;
   </div>
 );
 
-const MOCK_EMPLOYEE = {
-  id: 'e1',
-  employeeId: 'FCS-2026-0001',
-  firstName: 'Rahul',
-  lastName: 'Sharma',
-  phone: '9876543210',
-  gender: 'MALE',
-  dob: '1995-08-15T00:00:00.000Z',
-  address: '123 Tech Park Suite, Bengaluru, KA 560001',
-  emergencyContact: 'Amit Sharma: 9988776655',
-  joiningDate: '2026-08-01T00:00:00.000Z',
-  onboardingStatus: 'PENDING',
-  department: { name: 'Engineering' },
-  designation: { name: 'Software Engineer' },
-  user: { email: 'rahul@fcs.com', isActive: true, createdAt: '2026-08-01T08:00:00.000Z' },
-  profile: { profileCompletion: 30 },
-  education: [],
-  experience: [],
-  documents: [
-    { id: 'd1', type: 'RESUME', fileName: 'resume.pdf', status: 'PENDING' },
-    { id: 'd2', type: 'AADHAAR', fileName: 'aadhaar.pdf', status: 'APPROVED' },
-  ],
-};
-
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showEdit, setShowEdit] = React.useState(false);
 
-  const { data: empResponse, isLoading } = useQuery({
-    queryKey: [`employee-${params.id}`],
+  console.log("========== COMPONENT RENDER ==========");
+  console.log("params:", params);
+  console.log("params.id:", params.id);
+  console.log("typeof params.id:", typeof params.id);
+  console.log("!!params.id:", !!params.id);
+  console.log("params.id is string?", typeof params.id === 'string');
+  console.log("params.id is array?", Array.isArray(params.id));
+  console.log("======================================");
+
+  const employeeId = Array.isArray(params.id) ? params.id[0] : params.id;
+  console.log("employeeId after processing:", employeeId);
+
+  const { data: empResponse, isLoading, error, status, fetchStatus } = useQuery({
+    queryKey: [`employee`, employeeId],
     queryFn: async () => {
-      try {
-        const r = await api.get(`/employees/${params.id}`);
-        return r.data;
-      } catch { return MOCK_EMPLOYEE; }
-    }
+      console.log("🟢 QUERY FN STARTED - INSIDE FUNCTION");
+      console.log("========== QUERY FUNCTION STARTED ==========");
+      console.log("Query is executing with ID:", employeeId);
+      
+      console.log("Making axios request...");
+      console.log("🔵 ABOUT TO CALL api.get");
+      const response = await api.get(`/employees/${employeeId}`);
+      console.log("🟢 api.get RETURNED");
+      console.log("Axios request completed!");
+      
+      console.log("========== RAW RESPONSE ==========");
+      console.log("response:", response);
+      console.log("response.data:", response.data);
+      console.log("response.data.data (employee):", response.data.data);
+      console.log("JSON.stringify(response.data):", JSON.stringify(response.data, null, 2));
+      console.log("typeof response.data:", typeof response.data);
+      console.log("Object.keys(response.data):", Object.keys(response.data || {}));
+      console.log("response.data.data.firstName:", response.data?.data?.firstName);
+      console.log("==================================");
+      
+      return response.data.data;
+    },
+    enabled: !!employeeId && typeof employeeId === 'string',
   });
 
+  console.log("========== REACT QUERY STATE ==========");
+  console.log("status:", status);
+  console.log("fetchStatus:", fetchStatus);
+  console.log("isLoading:", isLoading);
+  console.log("error:", error);
+  console.log("empResponse:", empResponse);
+  console.log("typeof empResponse:", typeof empResponse);
+  console.log("=======================================");
+
   const emp = empResponse;
+  
+  console.log("========== AFTER ASSIGNMENT ==========");
+  console.log("EMP =", emp);
+  console.log("typeof emp:", typeof emp);
+  console.log("emp === undefined?", emp === undefined);
+  console.log("emp === null?", emp === null);
+  console.log("emp?.firstName:", emp?.firstName);
+  console.log("======================================");
+
+  if (error) {
+    return (
+      <HRLayout>
+        <div className="max-w-2xl mx-auto mt-12 text-center">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h2 className="font-heading text-xl font-bold text-white mb-2">Failed to Load Employee</h2>
+            <p className="text-sm text-neutral-400 mb-4">
+              {error instanceof Error ? error.message : 'Unable to fetch employee details. Please try again.'}
+            </p>
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-sm font-semibold transition-colors"
+            >
+              Back to Employees
+            </button>
+          </div>
+        </div>
+      </HRLayout>
+    );
+  }
 
   const activationMutation = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
@@ -82,6 +129,7 @@ export default function EmployeeDetailPage() {
   };
 
   if (isLoading) {
+    console.log('⏳ Page is LOADING, empResponse is:', empResponse);
     return (
       <HRLayout>
         <div className="space-y-6 animate-pulse">
@@ -94,7 +142,15 @@ export default function EmployeeDetailPage() {
     );
   }
 
-  if (!emp) return null;
+  if (!emp) {
+    console.log('❌ emp is null/undefined, empResponse was:', empResponse);
+    console.log('❌ This should not happen if API returned data');
+    return null;
+  }
+
+  console.log('✅ RENDERING PAGE with emp:', emp);
+  console.log('✅ emp.firstName:', emp.firstName);
+  console.log('✅ emp.fullName:', emp.fullName);
 
   return (
     <HRLayout>
@@ -113,11 +169,11 @@ export default function EmployeeDetailPage() {
                 {emp.firstName?.charAt(0)}{emp.lastName?.charAt(0)}
               </div>
               <div>
-                <h1 className="font-heading text-2xl font-extrabold text-white">{emp.firstName} {emp.lastName}</h1>
+                <h1 className="font-heading text-2xl font-extrabold text-white">{emp.fullName || `${emp.firstName} ${emp.lastName}`}</h1>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="font-mono text-xs text-neutral-400 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded">{emp.employeeId}</span>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${emp.user?.isActive ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
-                    {emp.user?.isActive ? 'Active' : 'Inactive'}
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${emp.isActive ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
+                    {emp.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
               </div>
@@ -139,10 +195,10 @@ export default function EmployeeDetailPage() {
               <KeyRound className="w-4 h-4" /> Reset Password
             </button>
             <button
-              onClick={() => activationMutation.mutate({ id: emp.id, active: !emp.user?.isActive })}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${emp.user?.isActive ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'}`}
+              onClick={() => activationMutation.mutate({ id: emp.id, active: !emp.isActive })}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${emp.isActive ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'}`}
             >
-              {emp.user?.isActive ? <><UserX className="w-4 h-4" /> Deactivate</> : <><UserCheck className="w-4 h-4" /> Activate</>}
+              {emp.isActive ? <><UserX className="w-4 h-4" /> Deactivate</> : <><UserCheck className="w-4 h-4" /> Activate</>}
             </button>
           </div>
         </div>
@@ -151,14 +207,14 @@ export default function EmployeeDetailPage() {
         <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-neutral-300">Profile Completion</span>
-            <span className="font-mono text-sm font-bold text-white">{emp.profile?.profileCompletion || 0}%</span>
+            <span className="font-mono text-sm font-bold text-white">{emp.profileCompletion || 0}%</span>
           </div>
           <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
-                width: `${emp.profile?.profileCompletion || 0}%`,
-                background: (emp.profile?.profileCompletion || 0) === 100 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                width: `${emp.profileCompletion || 0}%`,
+                background: (emp.profileCompletion || 0) === 100 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : 'linear-gradient(90deg, #3b82f6, #6366f1)',
               }}
             />
           </div>
@@ -178,7 +234,7 @@ export default function EmployeeDetailPage() {
           {/* Contact Information */}
           <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
             <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><Phone className="w-4 h-4 text-teal-400" /> Contact Details</h3>
-            <InfoRow icon={<Mail className="w-4 h-4" />} label="Email Address" value={emp.user?.email} />
+            <InfoRow icon={<Mail className="w-4 h-4" />} label="Email Address" value={emp.email} />
             <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone Number" value={emp.phone} />
             <InfoRow icon={<Building2 className="w-4 h-4" />} label="Address" value={emp.address} />
             <InfoRow icon={<AlertCircle className="w-4 h-4" />} label="Emergency Contact" value={emp.emergencyContact} />
@@ -187,8 +243,8 @@ export default function EmployeeDetailPage() {
           {/* Employment Details */}
           <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
             <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><Briefcase className="w-4 h-4 text-purple-400" /> Employment Details</h3>
-            <InfoRow icon={<Building2 className="w-4 h-4" />} label="Department" value={emp.department?.name} />
-            <InfoRow icon={<Briefcase className="w-4 h-4" />} label="Designation" value={emp.designation?.name} />
+            <InfoRow icon={<Building2 className="w-4 h-4" />} label="Department" value={emp.departmentName} />
+            <InfoRow icon={<Briefcase className="w-4 h-4" />} label="Designation" value={emp.designationTitle} />
             <InfoRow icon={<CalendarDays className="w-4 h-4" />} label="Date of Joining" value={emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : null} />
             <InfoRow icon={<Clock className="w-4 h-4" />} label="Account Created" value={emp.user?.createdAt ? new Date(emp.user.createdAt).toLocaleDateString() : null} />
           </div>
@@ -197,7 +253,7 @@ export default function EmployeeDetailPage() {
         {/* Documents Section */}
         <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4">
           <h3 className="font-heading text-base font-bold text-white flex items-center gap-2">
-            <FileText className="w-4 h-4 text-indigo-400" /> Uploaded Documents ({emp.documents?.length || 0})
+            <FileText className="w-4 h-4 text-indigo-400" /> Uploaded Documents ({emp.documentsCount || 0})
           </h3>
           {emp.documents?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">

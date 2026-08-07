@@ -250,10 +250,11 @@ export class EmployeesService {
     console.log('╔══════════════════════════════════════════════════════════╗');
     console.log('║  findOne() called for Employee Details                   ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
-    console.log('📋 Employee ID received:', id);
-    console.log('📋 Employee ID type:', typeof id);
-    console.log('📋 Employee ID length:', id?.length);
+    console.log('📋 BACKEND STEP 1: Employee ID received:', id);
+    console.log('📋 BACKEND STEP 2: Employee ID type:', typeof id);
+    console.log('📋 BACKEND STEP 3: Employee ID length:', id?.length);
     
+    console.log('\n🔍 BACKEND STEP 4: Executing Prisma Query...');
     const employee = await this.prisma.employee.findUnique({
       where: { id },
       include: {
@@ -313,40 +314,45 @@ export class EmployeesService {
       },
     });
 
+    console.log('📊 BACKEND STEP 5: Prisma Query Completed');
+    console.log('📊 BACKEND STEP 6: Employee object exists?', !!employee);
+
     if (!employee) {
-      console.log('❌ Employee NOT FOUND in database');
+      console.log('❌ BACKEND STEP 7: Employee NOT FOUND in database');
       console.log('╚══════════════════════════════════════════════════════════╝\n');
       throw new NotFoundException('Employee not found');
     }
 
-    console.log('✅ Employee FOUND in database');
-    console.log('📊 Employee Data Summary:');
-    console.log('   - Employee ID (Code):', employee.employeeId);
-    console.log('   - First Name:', employee.firstName);
-    console.log('   - Last Name:', employee.lastName);
-    console.log('   - Email:', employee.user?.email);
-    console.log('   - Phone:', employee.phone);
-    console.log('   - Department:', employee.department?.name || 'Not Assigned');
-    console.log('   - Designation:', employee.designation?.name || 'Not Assigned');
-    console.log('   - Joining Date:', employee.joiningDate);
-    console.log('   - Documents Count:', employee.documents?.length || 0);
-    console.log('   - Profile Completion:', employee.profile?.profileCompletion || 0, '%');
-    console.log('   - Is Active:', employee.user?.isActive);
-    console.log('   - Created At:', employee.user?.createdAt);
+    console.log('✅ BACKEND STEP 8: Employee FOUND in database');
+    console.log('📊 BACKEND STEP 9: Raw Employee Object Keys:', Object.keys(employee));
+    console.log('📊 BACKEND STEP 10: Employee Data from Prisma:');
+    console.log('   - id:', employee.id);
+    console.log('   - employeeId:', employee.employeeId);
+    console.log('   - firstName:', employee.firstName);
+    console.log('   - lastName:', employee.lastName);
+    console.log('   - phone:', employee.phone);
+    console.log('   - email from user:', employee.user?.email);
+    console.log('   - department object:', employee.department);
+    console.log('   - department name:', employee.department?.name);
+    console.log('   - designation object:', employee.designation);
+    console.log('   - designation name:', employee.designation?.name);
+    console.log('   - profile object:', employee.profile);
+    console.log('   - profile completion:', employee.profile?.profileCompletion);
+    console.log('   - documents array exists?', !!employee.documents);
+    console.log('   - documents array length:', employee.documents?.length || 0);
+    console.log('   - isActive:', employee.user?.isActive);
 
     if (employee.documents && employee.documents.length > 0) {
-      console.log('\n📁 Documents Found:');
+      console.log('\n📁 BACKEND STEP 11: Documents Found:', employee.documents.length);
       employee.documents.forEach((doc, index) => {
         console.log(`   ${index + 1}. Type: ${doc.type}, Status: ${doc.status}, File: ${doc.fileName}`);
       });
     } else {
-      console.log('\n📁 No documents found for this employee');
+      console.log('\n📁 BACKEND STEP 11: No documents found for this employee');
     }
 
-    console.log('╚══════════════════════════════════════════════════════════╝\n');
-
-    // Return enriched employee data with flattened structure for easier frontend consumption
-    return {
+    console.log('\n🔧 BACKEND STEP 12: Creating flattened response object...');
+    const flattenedResponse = {
       ...employee,
       // Flatten user data
       email: employee.user?.email,
@@ -370,6 +376,19 @@ export class EmployeesService {
       // Group documents by category for easier display
       documentsByCategory: this.groupDocumentsByCategory(employee.documents || []),
     };
+
+    console.log('📊 BACKEND STEP 13: Flattened Response Created');
+    console.log('   - fullName:', flattenedResponse.fullName);
+    console.log('   - email:', flattenedResponse.email);
+    console.log('   - departmentName:', flattenedResponse.departmentName);
+    console.log('   - designationTitle:', flattenedResponse.designationTitle);
+    console.log('   - profileCompletion:', flattenedResponse.profileCompletion);
+    console.log('   - documentsCount:', flattenedResponse.documentsCount);
+    
+    console.log('\n✅ BACKEND STEP 14: Returning response to frontend');
+    console.log('╚══════════════════════════════════════════════════════════╝\n');
+
+    return flattenedResponse;
   }
 
   // Helper method to group documents by category
