@@ -301,13 +301,50 @@ export class NotificationService {
    * Get Unread Notifications count
    */
   async getUnreadCount(userId: string) {
-    const count = await this.prisma.notificationRecipient.count({
-      where: {
-        userId,
-        read: false,
-      },
-    });
-    return { count };
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔍 NOTIFICATION SERVICE: getUnreadCount() entered');
+    console.log('   User ID:', userId);
+    console.log('   Timestamp:', new Date().toISOString());
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    try {
+      console.log('📊 NOTIFICATION SERVICE: Executing Prisma query...');
+      console.log('   Query: notificationRecipient.count()');
+      console.log('   Where: { userId:', userId, ', read: false }');
+      
+      const count = await this.prisma.notificationRecipient.count({
+        where: {
+          userId,
+          read: false,
+        },
+      });
+      
+      console.log('✅ NOTIFICATION SERVICE: Prisma query successful');
+      console.log('   Unread count:', count);
+      console.log('   Returning: { count:', count, '}');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      return { count };
+    } catch (error) {
+      console.error('❌ NOTIFICATION SERVICE: Prisma query failed');
+      console.error('   User ID:', userId);
+      console.error('   Error Type:', error.constructor.name);
+      console.error('   Error Name:', error.name);
+      console.error('   Error Message:', error.message);
+      console.error('   Error Code:', error.code);
+      console.error('   Error Meta:', JSON.stringify(error.meta || {}, null, 2));
+      console.error('   Full Error:', error);
+      console.error('   Stack Trace:');
+      console.error(error.stack);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      this.logger.error(
+        `Failed to get unread count for user ${userId}: ${error.message}`,
+        error.stack,
+      );
+      
+      throw error;
+    }
   }
 
   /**

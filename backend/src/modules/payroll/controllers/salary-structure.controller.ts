@@ -35,6 +35,22 @@ export class SalaryStructureController {
     return this.salaryStructureService.findAll(query);
   }
 
+  @Get('list')
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  async getEmployeeSalaryList(
+    @Query('search') search?: string,
+    @Query('department') departmentId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.salaryStructureService.getEmployeeSalaryList({
+      search,
+      departmentId,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
+  }
+
   @Get('dashboard/stats')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   async getDashboardStats() {

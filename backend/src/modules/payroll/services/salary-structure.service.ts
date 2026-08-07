@@ -364,4 +364,92 @@ export class SalaryStructureService {
       totalNetSalary: totalNet._sum.netSalary || 0,
     };
   }
+
+  /**
+   * GET EMPLOYEE SALARY LIST (WITH JOINS)
+   */
+  async getEmployeeSalaryList(filters: {
+    search?: string;
+    departmentId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 50;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+
+    if (filters.search) {
+      where.OR = [
+        { firstName: { contains: filters.search, mode: 'insensitive' } },
+        { lastName: { contains: filters.search, mode: 'insensitive' } },
+        { employeeId: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (filters.departmentId) {
+      where.departmentId = filters.departmentId;
+    }
+
+    // Fetch employees with salary structures
+    const [employees, total] = await Promise.all([
+      this.database.employee.findMany({
+        where,
+        include: {
+          department: {
+            select: { id: true, name: true },
+          },
+          designation: {
+            select: { id: true, name: true },
+          },
+          salaryStructures: {
+            where: { isActive: true },
+            orderBy: { effectiveFrom: 'desc' },
+            take: 1,
+          },
+        },
+        orderBy: { employeeId: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.database.employee.count({ where }),
+    ]);
+
+    // Map data for frontend
+    const data = employees.map((emp) => {
+      const activeSalary = emp.salaryStructures[0];
+      return {
+        id: emp.id,
+        employeeId: emp.employeeId,
+        employeeName: `${emp.firstName} ${emp.lastName}`,
+        department: emp.department?.name || 'N/A',
+        departmentId: emp.department?.id || null,
+        designation: emp.designation?.name || 'N/A',
+        designationId: emp.designation?.id || null,
+        monthlySalary: activeSalary?.netSalary || 0,
+        basicSalary: activeSalary?.basicSalary || 0,
+        hra: activeSalary?.hra || 0,
+        specialAllowance: activeSalary?.specialAllowance || 0,
+        grossSalary: activeSalary?.grossSalary || 0,
+        netSalary: activeSalary?.netSalary || 0,
+        status: activeSalary ? 'ACTIVE' : 'NOT_CONFIGURED',
+        salaryStructureId: activeSalary?.id || null,
+        effectiveFrom: activeSalary?.effectiveFrom?.toISOString() || null,
+        ctc: activeSalary?.ctc || 0,
+      };
+    });
+
+    return {
+      success: true,
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }

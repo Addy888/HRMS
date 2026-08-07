@@ -58,8 +58,28 @@ export class NotificationsController {
   @ApiOperation({
     summary: 'Get unread notification count for the current user',
   })
-  getUnreadCount(@GetUser('id') userId: string) {
-    return this.notificationService.getUnreadCount(userId);
+  async getUnreadCount(@GetUser('id') userId: string) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 NOTIFICATION CONTROLLER: /unread endpoint hit');
+    console.log('   Authenticated User ID:', userId);
+    console.log('   Timestamp:', new Date().toISOString());
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    try {
+      const result = await this.notificationService.getUnreadCount(userId);
+      console.log('✅ NOTIFICATION CONTROLLER: Successfully retrieved unread count');
+      console.log('   Result:', JSON.stringify(result));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      return result;
+    } catch (error) {
+      console.error('❌ NOTIFICATION CONTROLLER: Error in /unread endpoint');
+      console.error('   User ID:', userId);
+      console.error('   Error Name:', error.name);
+      console.error('   Error Message:', error.message);
+      console.error('   Error Stack:', error.stack);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      throw error;
+    }
   }
 
   @Patch('read-all')
