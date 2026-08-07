@@ -31,6 +31,7 @@ import {
   CreateReplyDto,
   AssignComplaintDto,
   ResolveComplaintDto,
+  QueryComplaintsDto,
 } from './dto/complaint.dto.js';
 
 @ApiTags('Complaints')
@@ -82,7 +83,7 @@ export class ComplaintsController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
   @ApiOperation({ summary: "Get logged-in employee's raised complaints" })
-  getMyComplaints(@GetUser('id') userId: string, @Query() query: any) {
+  getMyComplaints(@GetUser('id') userId: string, @Query() query: QueryComplaintsDto) {
     return this.complaintsService.getMyComplaints(userId, query);
   }
 
@@ -162,7 +163,10 @@ export class ComplaintsController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Get global complaints queue list (HR Only)' })
-  getHRComplaintsQueue(@GetUser('id') userId: string, @Query() query: any) {
+  getHRComplaintsQueue(@GetUser('id') userId: string, @Query() query: QueryComplaintsDto) {
+    console.log('=== HR COMPLAINTS QUEUE REQUEST ===');
+    console.log('Query params received:', query);
+    console.log('===================================');
     return this.complaintsService.getHRComplaintsQueue(userId, query);
   }
 

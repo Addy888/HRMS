@@ -150,21 +150,22 @@ export class ComplaintsService {
       throw new NotFoundException('Employee profile not found');
     }
 
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
+    const page = Number(query?.page) || 1;
+    const limit = Number(query?.limit) || 10;
     const skip = (page - 1) * limit;
 
     const where: any = {
       raisedById: employee.id,
     };
 
-    if (query.status) {
+    // Only apply filters if they have actual values
+    if (query?.status && query.status.trim()) {
       where.status = query.status;
     }
-    if (query.category) {
+    if (query?.category && query.category.trim()) {
       where.category = query.category;
     }
-    if (query.priority) {
+    if (query?.priority && query.priority.trim()) {
       where.priority = query.priority;
     }
 

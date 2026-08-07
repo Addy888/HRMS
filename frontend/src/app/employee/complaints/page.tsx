@@ -90,9 +90,9 @@ export default function EmployeeHelpdeskDashboard() {
         page: String(page),
         limit: '10',
       });
-      if (search) params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
-      if (categoryFilter) params.set('category', categoryFilter);
+      if (search && search.trim()) params.set('search', search);
+      if (statusFilter && statusFilter.trim()) params.set('status', statusFilter);
+      if (categoryFilter && categoryFilter.trim()) params.set('category', categoryFilter);
 
       const res = await api.get(`/complaints/my?${params.toString()}`);
       return res.data;

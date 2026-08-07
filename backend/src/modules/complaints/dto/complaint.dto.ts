@@ -5,8 +5,11 @@ import {
   IsEnum,
   IsBoolean,
   IsUUID,
+  IsInt,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export enum ComplaintCategory {
   HR_ISSUE = 'HR_ISSUE',
@@ -40,6 +43,52 @@ export enum ComplaintStatus {
   RESOLVED = 'RESOLVED',
   CLOSED = 'CLOSED',
   REJECTED = 'REJECTED',
+}
+
+export class QueryComplaintsDto {
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: ComplaintStatus })
+  @IsOptional()
+  @IsEnum(ComplaintStatus)
+  status?: ComplaintStatus;
+
+  @ApiPropertyOptional({ enum: ComplaintPriority })
+  @IsOptional()
+  @IsEnum(ComplaintPriority)
+  priority?: ComplaintPriority;
+
+  @ApiPropertyOptional({ enum: ComplaintCategory })
+  @IsOptional()
+  @IsEnum(ComplaintCategory)
+  category?: ComplaintCategory;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  assignedToId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  departmentId?: string;
 }
 
 export class CreateComplaintDto {

@@ -93,8 +93,6 @@ export default function HRHelpdeskQueue() {
       const res = await api.get('/employees?limit=50&onboardingStatus=VERIFIED');
       const list = res.data?.data ?? res.data ?? [];
       const array = Array.isArray(list) ? list : list.data ?? [];
-      // Filter those who are HR role (simulated by email or department matching HR if strict, or just HR admins)
-      // Since it's demo, list all active employees
       return array;
     },
   });
@@ -107,11 +105,11 @@ export default function HRHelpdeskQueue() {
         page: String(page),
         limit: '10',
       });
-      if (search) params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
-      if (priorityFilter) params.set('priority', priorityFilter);
-      if (categoryFilter) params.set('category', categoryFilter);
-      if (assignedToId) params.set('assignedToId', assignedToId);
+      if (search && search.trim()) params.set('search', search);
+      if (statusFilter && statusFilter.trim()) params.set('status', statusFilter);
+      if (priorityFilter && priorityFilter.trim()) params.set('priority', priorityFilter);
+      if (categoryFilter && categoryFilter.trim()) params.set('category', categoryFilter);
+      if (assignedToId && assignedToId.trim()) params.set('assignedToId', assignedToId);
 
       const res = await api.get(`/admin/complaints?${params.toString()}`);
       return res.data;
