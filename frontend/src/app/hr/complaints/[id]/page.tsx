@@ -78,7 +78,7 @@ export default function HRComplaintDetailsPage() {
     queryKey: ['hr-complaint-detail', id],
     queryFn: async () => {
       const res = await api.get(`/complaints/${id}`);
-      return res.data?.data ?? res.data;
+      return res.data.data;
     },
   });
 
@@ -87,7 +87,7 @@ export default function HRComplaintDetailsPage() {
     queryKey: ['hr-active-employees'],
     queryFn: async () => {
       const res = await api.get('/employees?limit=50&onboardingStatus=VERIFIED');
-      return res.data?.data ?? res.data ?? [];
+      return res.data.data ?? [];
     },
   });
   const employeeList = Array.isArray(employeesData) ? employeesData : employeesData?.data ?? [];

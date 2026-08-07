@@ -78,7 +78,7 @@ export default function EmployeeHelpdeskDashboard() {
     queryKey: ['employee-complaint-stats'],
     queryFn: async () => {
       const res = await api.get('/complaints/dashboard/stats');
-      return res.data?.data ?? res.data;
+      return res.data.data;
     },
   });
 
@@ -95,7 +95,7 @@ export default function EmployeeHelpdeskDashboard() {
       if (categoryFilter) params.set('category', categoryFilter);
 
       const res = await api.get(`/complaints/my?${params.toString()}`);
-      return res.data?.data ?? res.data;
+      return res.data;
     },
   });
 

@@ -69,7 +69,7 @@ export default function EmployeeComplaintDetailsPage() {
     queryKey: ['employee-complaint-detail', id],
     queryFn: async () => {
       const res = await api.get(`/complaints/${id}`);
-      return res.data?.data ?? res.data;
+      return res.data.data;
     },
   });
 

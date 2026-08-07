@@ -39,7 +39,7 @@ export class ComplaintsService {
 
     const currentYear = new Date().getFullYear();
     const count = await this.prisma.complaint.count();
-    const complaintNumber = `COM-${currentYear}-${String(count + 1).padStart(4, '0')}`;
+    const complaintNumber = `HD-${currentYear}-${String(count + 1).padStart(6, '0')}`;
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Create Complaint

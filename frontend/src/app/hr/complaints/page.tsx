@@ -82,7 +82,7 @@ export default function HRHelpdeskQueue() {
     queryKey: ['hr-complaint-stats'],
     queryFn: async () => {
       const res = await api.get('/admin/complaints/dashboard/stats');
-      return res.data?.data ?? res.data;
+      return res.data.data;
     },
   });
 
@@ -114,7 +114,7 @@ export default function HRHelpdeskQueue() {
       if (assignedToId) params.set('assignedToId', assignedToId);
 
       const res = await api.get(`/admin/complaints?${params.toString()}`);
-      return res.data?.data ?? res.data;
+      return res.data;
     },
   });
 
