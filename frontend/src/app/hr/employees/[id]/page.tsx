@@ -63,9 +63,30 @@ function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
   });
 
   const handleView = () => {
+    // Build complete backend URL
+    const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1').replace('/api/v1', '');
+    
+    let documentUrl = '';
+    
     if (doc.fileUrl) {
-      window.open(doc.fileUrl, '_blank');
+      // Check if fileUrl is already a complete URL
+      if (doc.fileUrl.startsWith('http://') || doc.fileUrl.startsWith('https://')) {
+        documentUrl = doc.fileUrl;
+      } else {
+        // Relative path - prepend backend URL
+        const filePath = doc.fileUrl.startsWith('/') ? doc.fileUrl : `/${doc.fileUrl}`;
+        documentUrl = `${BACKEND_URL}${filePath}`;
+      }
+    } else if (doc.fileName) {
+      // Fallback: construct path from fileName
+      documentUrl = `${BACKEND_URL}/uploads/documents/${doc.fileName}`;
+    } else {
+      alert('Document file not found.');
+      return;
     }
+
+    console.log('Opening document:', documentUrl);
+    window.open(documentUrl, '_blank');
   };
 
   const handleApprove = () => {
