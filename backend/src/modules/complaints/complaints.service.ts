@@ -544,7 +544,22 @@ export class ComplaintsService {
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // Get HR user info for debugging
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { employee: true, role: true },
+    });
+
+    console.log('=== HR COMPLAINTS QUEUE DEBUG ===');
+    console.log('User ID:', userId);
+    console.log('User Role:', user?.role?.name);
+    console.log('Employee ID:', user?.employee?.id);
+    console.log('Query Params:', query);
+
     const where: any = {};
+
+    // HR should see ALL tickets (no employee filtering)
+    // Only apply optional filters from query params
 
     if (query.status) where.status = query.status;
     if (query.category) where.category = query.category;
@@ -558,7 +573,7 @@ export class ComplaintsService {
     }
 
     if (query.search) {
-      const searchFilter = { contains: query.search };
+      const searchFilter = { contains: query.search, mode: 'insensitive' };
       where.OR = [
         { complaintNumber: searchFilter },
         { title: searchFilter },
@@ -573,6 +588,8 @@ export class ComplaintsService {
         },
       ];
     }
+
+    console.log('Prisma Where Clause:', JSON.stringify(where, null, 2));
 
     const [data, total] = await Promise.all([
       this.prisma.complaint.findMany({
@@ -596,6 +613,10 @@ export class ComplaintsService {
       }),
       this.prisma.complaint.count({ where }),
     ]);
+
+    console.log('Tickets Found:', data.length);
+    console.log('Total Count:', total);
+    console.log('================================');
 
     const formatted = data.map((item) => ({
       ...item,
@@ -839,6 +860,8 @@ export class ComplaintsService {
 
   // Admin: Get HR Dashboard stats
   async getHRDashboardStats() {
+    console.log('=== HR DASHBOARD STATS DEBUG ===');
+    
     const [total, open, inProgress, resolved, closed, highPriority, critical] =
       await Promise.all([
         this.prisma.complaint.count(),
@@ -857,6 +880,14 @@ export class ComplaintsService {
         this.prisma.complaint.count({ where: { priority: 'HIGH' } }),
         this.prisma.complaint.count({ where: { priority: 'CRITICAL' } }),
       ]);
+
+    console.log('Dashboard Stats:');
+    console.log('- Total:', total);
+    console.log('- Open:', open);
+    console.log('- In Progress:', inProgress);
+    console.log('- Resolved:', resolved);
+    console.log('- Closed:', closed);
+    console.log('================================');
 
     const resolvedTickets = await this.prisma.complaint.findMany({
       where: {
