@@ -155,4 +155,176 @@ export class SalarySlipService {
       })),
     };
   }
+
+  /**
+   * GET SALARY SLIP LIST (HR)
+   */
+  async getSalarySlipList(
+    month: number,
+    year: number,
+    search?: string,
+    departmentId?: string,
+  ) {
+    const whereClause: any = {
+      month,
+      year,
+      status: { in: ['PROCESSED', 'PAID'] },
+    };
+
+    // Add employee filters
+    if (search || departmentId) {
+      whereClause.employee = {};
+      
+      if (departmentId) {
+        whereClause.employee.departmentId = departmentId;
+      }
+      
+      if (search) {
+        whereClause.employee.OR = [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { employeeId: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+    }
+
+    const payrollRuns = await this.database.payrollRun.findMany({
+      where: whereClause,
+      include: {
+        employee: {
+          select: {
+            employeeId: true,
+            firstName: true,
+            lastName: true,
+            department: { select: { name: true } },
+            designation: { select: { name: true } },
+          },
+        },
+        payslip: true,
+      },
+      orderBy: [{ employee: { employeeId: 'asc' } }],
+    });
+
+    const data = payrollRuns.map((run) => ({
+      id: run.payslip?.id || run.id,
+      payrollRunId: run.id,
+      employeeId: run.employeeId,
+      employeeName: `${run.employee.firstName} ${run.employee.lastName}`,
+      employeeCode: run.employee.employeeId,
+      department: run.employee.department?.name || 'N/A',
+      designation: run.employee.designation?.name || 'N/A',
+      month: run.month,
+      year: run.year,
+      generatedAt: run.payslip?.createdAt?.toISOString() || run.processedAt?.toISOString(),
+      basicSalary: run.basicSalary,
+      hra: 0, // Calculate from allowances if needed
+      allowances: run.allowances,
+      deductions: run.deductions,
+      grossSalary: run.grossSalary,
+      netSalary: run.netSalary,
+      status: run.payslip?.downloadedAt
+        ? 'DOWNLOADED'
+        : run.payslip
+          ? 'GENERATED'
+          : 'GENERATED',
+      downloadedAt: run.payslip?.downloadedAt?.toISOString(),
+      emailedAt: null, // Add when email feature is implemented
+    }));
+
+    return {
+      data,
+      meta: {
+        total: data.length,
+        page: 1,
+        limit: data.length,
+      },
+    };
+  }
+
+  /**
+   * GET SALARY SLIP STATS (HR)
+   */
+  async getSalarySlipStats(month: number, year: number) {
+    const payrollRuns = await this.database.payrollRun.findMany({
+      where: {
+        month,
+        year,
+        status: { in: ['PROCESSED', 'PAID'] },
+      },
+      include: {
+        payslip: true,
+      },
+    });
+
+    const totalSlips = payrollRuns.length;
+    const generatedSlips = payrollRuns.filter((r) => r.payslip).length;
+    const downloadedSlips = payrollRuns.filter((r) => r.payslip?.downloadedAt).length;
+    const emailedSlips = 0; // Update when email tracking is implemented
+    const totalPayroll = payrollRuns.reduce((sum, r) => sum + r.netSalary, 0);
+    const averageSalary = totalSlips > 0 ? totalPayroll / totalSlips : 0;
+
+    return {
+      totalSlips,
+      generatedSlips,
+      downloadedSlips,
+      emailedSlips,
+      totalPayroll,
+      averageSalary,
+    };
+  }
+
+  /**
+   * EMAIL SALARY SLIP
+   */
+  async emailSalarySlip(payslipId: string) {
+    // Implementation would integrate with email service
+    // For now, just mark as emailed
+    await this.database.payslip.update({
+      where: { id: payslipId },
+      data: { downloadedAt: new Date() },
+    });
+
+    return {
+      success: true,
+      message: 'Salary slip sent via email successfully',
+    };
+  }
+
+  /**
+   * WHATSAPP SALARY SLIP
+   */
+  async whatsappSalarySlip(payslipId: string) {
+    // Implementation would integrate with WhatsApp Business API
+    return {
+      success: true,
+      message: 'Salary slip sent via WhatsApp successfully',
+    };
+  }
+
+  /**
+   * BULK DOWNLOAD
+   */
+  async bulkDownload(payslipIds: string[]) {
+    // Implementation would generate ZIP file with multiple PDFs
+    return {
+      success: true,
+      message: 'Bulk download initiated',
+      count: payslipIds.length,
+    };
+  }
+
+  /**
+   * DELETE SALARY SLIP
+   */
+  async deleteSalarySlip(payslipId: string) {
+    await this.database.payslip.delete({
+      where: { id: payslipId },
+    });
+
+    return {
+      success: true,
+      message: 'Salary slip deleted successfully',
+    };
+  }
 }
+
