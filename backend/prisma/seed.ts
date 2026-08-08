@@ -223,7 +223,53 @@ async function main() {
   }
 
   // ─────────────────────────────────────────────────────
-  // 6. SEED DEFAULT POLICIES
+  // 6. NEW HR ADMIN USER
+  //    Email : sumaiyyatamboli50@gmail.com
+  //    Pass  : 123456789
+  //    Role  : HR
+  //    Code  : FCS-HR-002
+  // ─────────────────────────────────────────────────────
+  const newHREmail = 'sumaiyyatamboli50@gmail.com';
+  const newHRCode  = 'FCS-HR-002';
+
+  const existingNewHRUser = await prisma.user.findUnique({ where: { email: newHREmail } });
+  const existingNewHREmp  = await prisma.employee.findUnique({ where: { employeeId: newHRCode } });
+
+  if (existingNewHRUser || existingNewHREmp) {
+    console.log('✔ HR Admin (sumaiyyatamboli50@gmail.com) already exists — skipping');
+  } else {
+    const hashedNewHRPassword = await bcrypt.hash('123456789', 10);
+
+    const newHRUser = await prisma.user.create({
+      data: {
+        email: newHREmail,
+        password: hashedNewHRPassword,
+        roleId: hrRole.id,
+        isFirstLogin: false,
+        isActive: true,
+      },
+    });
+
+    await prisma.employee.create({
+      data: {
+        employeeId: newHRCode,
+        userId: newHRUser.id,
+        firstName: 'Sumaiyya',
+        lastName: 'Tamboli',
+        phone: '9876543220',
+        departmentId: deptAdministration.id,
+        designationId: desgHRManager.id,
+        onboardingStatus: 'VERIFIED',
+      },
+    });
+
+    await prisma.notificationPreference.create({ data: { userId: newHRUser.id } });
+
+    console.log('✔ HR Admin created:', newHREmail, '/ FCS-HR-002');
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 7. SEED DEFAULT POLICIES
   // ─────────────────────────────────────────────────────
   const policiesList = [
     {
@@ -286,7 +332,7 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
   console.log('✔ Policies seeded');
 
   // ─────────────────────────────────────────────────────
-  // 7. SEED ATTENDANCE MODULE
+  // 8. SEED ATTENDANCE MODULE
   // ─────────────────────────────────────────────────────
   const { seedAttendance } = await import('./seeds/attendance.seed.js');
   await seedAttendance();
@@ -294,6 +340,7 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
   console.log('\n✅ FCS HRMS seeding complete.\n');
   console.log('─────────────────────────────────────────────────────');
   console.log('  DEV HR LOGIN     → adityashastri76@gmail.com / 12345678');
+  console.log('  NEW HR LOGIN     → sumaiyyatamboli50@gmail.com / 123456789');
   console.log('  DEV EMP LOGIN    → employee@fcshrms.local / 12345678');
   console.log('─────────────────────────────────────────────────────\n');
 }
