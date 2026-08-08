@@ -64,8 +64,14 @@ export default function EmployeePoliciesPage() {
   });
 
   const stats = useMemo(() => {
-    const total = policies.length;
-    const accepted = policies.filter((p: any) => {
+    // ========================================
+    // FIX: Include BOTH regular policies AND company policies
+    // The progress must count ALL policies shown on the page
+    // ========================================
+    
+    // Count regular policies
+    const regularPoliciesTotal = policies.length;
+    const regularPoliciesAccepted = policies.filter((p: any) => {
       if (typeof p.accepted === 'boolean') {
         return p.accepted === true;
       }
@@ -74,11 +80,23 @@ export default function EmployeePoliciesPage() {
       }
       return false;
     }).length;
+    
+    // Count company policies
+    const companyPoliciesTotal = companyPolicies.length;
+    const companyPoliciesAccepted = companyPolicies.filter((p: any) => {
+      // Company policies use 'accepted' boolean field
+      return p.accepted === true;
+    }).length;
+    
+    // Combine totals
+    const total = regularPoliciesTotal + companyPoliciesTotal;
+    const accepted = regularPoliciesAccepted + companyPoliciesAccepted;
     const pending = total - accepted;
     const pct = total > 0 ? Math.round((accepted / total) * 100) : 0;
     const allAccepted = total > 0 && accepted === total;
+    
     return { total, accepted, pending, pct, allAccepted };
-  }, [policies]);
+  }, [policies, companyPolicies]);
 
   const filtered = useMemo(() => {
     return policies.filter((p: any) => {
