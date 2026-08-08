@@ -24,14 +24,14 @@ export class PayrollProcessingController {
   ) {}
 
   @Post('bulk')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async processBulk(@Body() dto: ProcessPayrollDto, @Request() req: any) {
     dto.processedBy = req.user.userId;
     return this.payrollProcessingService.processBulkPayroll(dto);
   }
 
   @Post('employee/:employeeId')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async processForEmployee(
     @Param('employeeId') employeeId: string,
     @Body() dto: { month: number; year: number },
@@ -46,12 +46,13 @@ export class PayrollProcessingController {
   }
 
   @Get('history')
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getHistory(@Query() filters: any) {
     return this.payrollProcessingService.getPayrollHistory(filters);
   }
 
   @Get('dashboard/stats')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getDashboardStats(@Query() query: { month?: string; year?: string }) {
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  PAYROLL DASHBOARD STATS - CONTROLLER                      ║');
@@ -85,13 +86,13 @@ export class PayrollProcessingController {
   }
 
   @Put(':id/approve')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async approve(@Param('id') id: string) {
     return this.payrollProcessingService.approvePayroll(id);
   }
 
   @Put(':id/mark-paid')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async markPaid(
     @Param('id') id: string,
     @Body() dto: { paymentDate?: string },
@@ -103,7 +104,7 @@ export class PayrollProcessingController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async delete(@Param('id') id: string) {
     return this.payrollProcessingService.deletePendingPayroll(id);
   }

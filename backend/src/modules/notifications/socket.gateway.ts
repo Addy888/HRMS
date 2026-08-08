@@ -14,7 +14,9 @@ import { PrismaService } from '../../database/prisma.service.js';
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',')
+      : (process.env.NODE_ENV === 'production' ? false : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   },
   namespace: '/notifications',

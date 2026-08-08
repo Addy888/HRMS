@@ -24,19 +24,19 @@ export class SalaryStructureController {
   ) {}
 
   @Post()
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async create(@Body() createDto: CreateSalaryStructureDto) {
     return this.salaryStructureService.create(createDto);
   }
 
   @Get()
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async findAll(@Query() query: any) {
     return this.salaryStructureService.findAll(query);
   }
 
   @Get('list')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getEmployeeSalaryList(
     @Query('search') search?: string,
     @Query('department') departmentId?: string,
@@ -52,13 +52,13 @@ export class SalaryStructureController {
   }
 
   @Get('dashboard/stats')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getDashboardStats() {
     return this.salaryStructureService.getDashboardStats();
   }
 
   @Get(':id')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async findOne(@Param('id') id: string) {
     return this.salaryStructureService.findOne(id);
   }
@@ -74,7 +74,7 @@ export class SalaryStructureController {
   }
 
   @Put(':id')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateSalaryStructureDto,
@@ -83,13 +83,13 @@ export class SalaryStructureController {
   }
 
   @Put(':id/deactivate')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async deactivate(@Param('id') id: string) {
     return this.salaryStructureService.deactivate(id);
   }
 
   @Delete(':id')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async delete(@Param('id') id: string) {
     return this.salaryStructureService.delete(id);
   }

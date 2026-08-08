@@ -121,8 +121,11 @@ export class DocumentsController {
   @ApiOperation({ summary: 'HR: Get all documents of a specific employee' })
   @ApiResponse({ status: 200, description: 'Returns all documents for the employee' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
-  getEmployeeDocumentsByEmployeeId(@Param('employeeId') employeeId: string) {
-    return this.documentsService.getDocumentsByEmployeeId(employeeId);
+  getEmployeeDocumentsByEmployeeId(
+    @GetUser('id') userId: string,
+    @Param('employeeId') employeeId: string,
+  ) {
+    return this.documentsService.getDocumentsByEmployeeId(employeeId, userId);
   }
 
   @Get('queue')
@@ -131,8 +134,8 @@ export class DocumentsController {
   @ApiOperation({
     summary: 'Get global HR document verification queue (HR Only)',
   })
-  getDocumentQueue(@Query() query: QueryDocumentDto) {
-    return this.documentsService.getDocumentQueue(query);
+  getDocumentQueue(@GetUser('id') userId: string, @Query() query: QueryDocumentDto) {
+    return this.documentsService.getDocumentQueue(query, userId);
   }
 
   @Post(':id/verify')

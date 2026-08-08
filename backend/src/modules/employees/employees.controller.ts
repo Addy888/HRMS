@@ -135,8 +135,8 @@ export class EmployeesController {
   @ApiOperation({
     summary: 'Get full detail of a specific employee profile (HR Only)',
   })
-  findOne(@Param('id') id: string) {
-    return this.employeesService.findOne(id);
+  findOne(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.employeesService.findOne(id, userId);
   }
 
   @Put(':id')
@@ -147,22 +147,23 @@ export class EmployeesController {
   update(
     @Param('id') id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
+    @GetUser('id') userId: string,
   ) {
-    return this.employeesService.update(id, updateEmployeeDto);
+    return this.employeesService.update(id, updateEmployeeDto, userId);
   }
 
   @Post(':id/activate')
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Activate employee account (HR Only)' })
-  activate(@Param('id') id: string) {
-    return this.employeesService.setActivation(id, true);
+  activate(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.employeesService.setActivation(id, true, userId);
   }
 
   @Post(':id/deactivate')
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Deactivate employee account (HR Only)' })
-  deactivate(@Param('id') id: string) {
-    return this.employeesService.setActivation(id, false);
+  deactivate(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.employeesService.setActivation(id, false, userId);
   }
 
   @Post(':id/reset-password')
@@ -171,8 +172,8 @@ export class EmployeesController {
     summary:
       'Reset employee password back to default (1234) and force rewrite (HR Only)',
   })
-  resetPassword(@Param('id') id: string) {
-    return this.employeesService.resetPassword(id);
+  resetPassword(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.employeesService.resetPassword(id, userId);
   }
 
   @Delete(':id')
@@ -180,7 +181,7 @@ export class EmployeesController {
   @ApiOperation({
     summary: 'Permanently remove employee user record from backend (HR Only)',
   })
-  remove(@Param('id') id: string) {
-    return this.employeesService.remove(id);
+  remove(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.employeesService.remove(id, userId);
   }
 }

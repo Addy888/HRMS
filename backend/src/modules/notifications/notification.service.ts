@@ -112,7 +112,7 @@ export class NotificationService {
                 dto.title,
                 dto.description,
                 dto.actionUrl
-                  ? `http://localhost:3000${dto.actionUrl}`
+                  ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}${dto.actionUrl}`
                   : undefined,
               )
               .catch((err) =>

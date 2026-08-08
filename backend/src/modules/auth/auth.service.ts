@@ -33,8 +33,11 @@ export class AuthService implements OnModuleInit {
   // The seed file properly creates all accounts with organizationId.
   // This method is kept for reference but not called.
   // ─────────────────────────────────────────────────────────────────
+  // ✅ PRODUCTION: All initialization now handled by prisma seed
+  // This method is intentionally removed to prevent runtime account creation
+  
   async onModuleInit() {
-    // await this.ensureDefaultHRUser();  // ✅ Disabled - use seed file instead
+    // Database initialization handled by: npx prisma db seed
   }
 
   private async ensureDefaultHRUser() {

@@ -9,6 +9,7 @@ import { DashboardService } from './dashboard.service.js';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { UserRole } from '../../common/constants/index.js';
+import { GetUser } from '../../common/decorators/get-user.decorator.js';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -27,7 +28,7 @@ export class DashboardController {
     status: 200,
     description: 'KPI stats and listings returned successfully',
   })
-  getHRStats() {
-    return this.dashboardService.getHRStats();
+  getHRStats(@GetUser('id') userId: string) {
+    return this.dashboardService.getHRStats(userId);
   }
 }

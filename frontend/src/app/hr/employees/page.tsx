@@ -12,11 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const MOCK_EMPLOYEES = [
-  { id: 'e1', employeeId: 'FCS-2026-0001', firstName: 'Rahul', lastName: 'Sharma', phone: '9876543210', dob: '1995-08-15', gender: 'MALE', joiningDate: '2026-08-01', onboardingStatus: 'PENDING', departmentId: 'd1', designationId: 'ds1', department: { name: 'Engineering' }, designation: { name: 'Software Engineer' }, user: { email: 'rahul@fcs.com', isActive: true }, profile: { profileCompletion: 30 } },
-  { id: 'e2', employeeId: 'FCS-2026-0002', firstName: 'Priya', lastName: 'Patel', phone: '9876500001', dob: '1997-03-20', gender: 'FEMALE', joiningDate: '2026-07-28', onboardingStatus: 'VERIFIED', departmentId: 'd2', designationId: 'ds2', department: { name: 'Human Resources' }, designation: { name: 'HR Executive' }, user: { email: 'priya@fcs.com', isActive: true }, profile: { profileCompletion: 100 } },
-  { id: 'e3', employeeId: 'FCS-2026-0003', firstName: 'Amit', lastName: 'Varma', phone: '9880012345', dob: '1990-12-10', gender: 'MALE', joiningDate: '2026-07-15', onboardingStatus: 'DOCUMENTS_UPLOADED', departmentId: 'd3', designationId: 'ds3', department: { name: 'Sales & Growth' }, designation: { name: 'Sales Executive' }, user: { email: 'amit@fcs.com', isActive: false }, profile: { profileCompletion: 65 } },
-];
+// ✅ PRODUCTION: No mock data - all employee data comes from database only
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
@@ -79,8 +75,9 @@ export default function EmployeesPage() {
         params.set('limit', String(LIMIT));
         const r = await api.get(`/employees?${params.toString()}`);
         return r.data || { data: [], meta: { total: 0, page: 1, totalPages: 1 } };
-      } catch {
-        return { data: MOCK_EMPLOYEES, meta: { total: 3, page: 1, totalPages: 1 } };
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
+        return { data: [], meta: { total: 0, page: 1, totalPages: 1 } };
       }
     }
   });

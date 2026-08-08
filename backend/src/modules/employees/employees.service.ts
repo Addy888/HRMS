@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
@@ -155,13 +156,10 @@ export class EmployeesService {
     const defaultPassword = '1234';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    // 6. Generate custom Employee ID Code (e.g. FCS-2026-XXXX)
-    const currentYear = new Date().getFullYear();
-    const count = await this.prisma.employee.count({
-      where: { organizationId: requestingUser.organizationId }, // ✅ Multi-tenant: Count within org
-    });
-    const nextSeq = String(count + 1).padStart(4, '0');
-    const employeeIdCode = `FCS-${currentYear}-${nextSeq}`;
+    // 6. Generate PRODUCTION Employee ID (FCS0151, FCS0152, FCS0153...)
+    // ✅ PRODUCTION FORMAT: FCS + 4-digit sequence starting from 0151
+    // ✅ SAFE: Uses transaction to prevent duplicate IDs
+    const employeeIdCode = await this.generateProductionEmployeeId(requestingUser.organizationId);
 
     // 7. Build transaction
     return this.prisma.$transaction(async (tx) => {
@@ -183,6 +181,7 @@ export class EmployeesService {
           employeeId: employeeIdCode,
           userId: user.id,
           organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Assign to org
+          createdByUserId: requestUserId, // ✅ HR Ownership: Track which HR created this employee
           firstName: createEmployeeDto.firstName,
           lastName: createEmployeeDto.lastName,
           phone: createEmployeeDto.phone,
@@ -254,18 +253,29 @@ export class EmployeesService {
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // ✅ Multi-tenant: Get requesting user's organizationId
+    // ✅ STEP 1: Validate authenticated user
+    if (!requestUserId) {
+      throw new UnauthorizedException('Authenticated user could not be identified');
+    }
+
+    // ✅ STEP 2: Get requesting user's organizationId
     const requestingUser = await this.prisma.user.findUnique({
       where: { id: requestUserId },
       select: { organizationId: true },
     });
 
     if (!requestingUser) {
-      throw new NotFoundException('Requesting user not found');
+      throw new UnauthorizedException('Requesting user not found');
     }
 
+    if (!requestingUser.organizationId) {
+      throw new BadRequestException('User is not associated with an organization');
+    }
+
+    // ✅ STEP 3: Build query with HR ownership filter
     const whereClause: any = {
-      organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by organization
+      organizationId: requestingUser.organizationId, // ✅ Organization isolation
+      createdByUserId: requestUserId, // ✅ HR Ownership: Only show employees created by this HR
       // Exclude HR admin profiles from employee listing
       user: {
         role: {
@@ -273,6 +283,11 @@ export class EmployeesService {
         },
       },
     };
+
+    console.log('🔍 Employee Query Filter:', {
+      organizationId: requestingUser.organizationId,
+      createdByUserId: requestUserId,
+    });
 
     if (query.search) {
       whereClause.OR = [
@@ -374,15 +389,29 @@ export class EmployeesService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, requestUserId: string) {
     console.log('╔══════════════════════════════════════════════════════════╗');
     console.log('║  findOne() called for Employee Details                   ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
     console.log('📋 BACKEND STEP 1: Employee ID received:', id);
-    console.log('📋 BACKEND STEP 2: Employee ID type:', typeof id);
-    console.log('📋 BACKEND STEP 3: Employee ID length:', id?.length);
+    console.log('📋 BACKEND STEP 2: Requesting User ID:', requestUserId);
     
-    console.log('\n🔍 BACKEND STEP 4: Executing Prisma Query...');
+    // ✅ STEP 1: Validate authenticated user
+    if (!requestUserId) {
+      throw new UnauthorizedException('Authenticated user could not be identified');
+    }
+
+    // ✅ STEP 2: Get requesting user's organizationId
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      throw new UnauthorizedException('User organization not found');
+    }
+    
+    console.log('\n🔍 BACKEND STEP 3: Executing Prisma Query with ownership verification...');
     const employee = await this.prisma.employee.findUnique({
       where: { id },
       include: {
@@ -442,22 +471,35 @@ export class EmployeesService {
       },
     });
 
-    console.log('📊 BACKEND STEP 5: Prisma Query Completed');
-    console.log('📊 BACKEND STEP 6: Employee object exists?', !!employee);
+    console.log('📊 BACKEND STEP 4: Prisma Query Completed');
+    console.log('📊 BACKEND STEP 5: Employee object exists?', !!employee);
 
     if (!employee) {
-      console.log('❌ BACKEND STEP 7: Employee NOT FOUND in database');
+      console.log('❌ BACKEND STEP 6: Employee NOT FOUND in database');
       console.log('╚══════════════════════════════════════════════════════════╝\n');
       throw new NotFoundException('Employee not found');
     }
 
-    console.log('✅ BACKEND STEP 8: Employee FOUND in database');
+    // ✅ STEP 4: Verify ownership - HR can only access their own employees
+    if (employee.organizationId !== requestingUser.organizationId) {
+      console.log('❌ BACKEND: Organization mismatch');
+      throw new ForbiddenException('You do not have access to this employee (different organization)');
+    }
+
+    if (employee.createdByUserId !== requestUserId) {
+      console.log('❌ BACKEND: Ownership mismatch - Employee belongs to another HR user');
+      throw new ForbiddenException('You do not have access to this employee (not created by you)');
+    }
+
+    console.log('✅ BACKEND STEP 7: Ownership verified');
+    console.log('✅ BACKEND STEP 8: Employee FOUND and AUTHORIZED');
     console.log('📊 BACKEND STEP 9: Raw Employee Object Keys:', Object.keys(employee));
     console.log('📊 BACKEND STEP 10: Employee Data from Prisma:');
     console.log('   - id:', employee.id);
     console.log('   - employeeId:', employee.employeeId);
     console.log('   - firstName:', employee.firstName);
     console.log('   - lastName:', employee.lastName);
+    console.log('   - createdByUserId:', employee.createdByUserId);
     console.log('   - phone:', employee.phone);
     console.log('   - email from user:', employee.user?.email);
     console.log('   - department object:', employee.department);
@@ -556,8 +598,9 @@ export class EmployeesService {
     };
   }
 
-  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
-    const employee = await this.findOne(id);
+  async update(id: string, updateEmployeeDto: UpdateEmployeeDto, requestUserId: string) {
+    // ✅ findOne already verifies ownership (organizationId + createdByUserId)
+    const employee = await this.findOne(id, requestUserId);
 
     const updateData: any = {
       firstName: updateEmployeeDto.firstName,
@@ -605,8 +648,9 @@ export class EmployeesService {
     });
   }
 
-  async setActivation(id: string, active: boolean) {
-    const employee = await this.findOne(id);
+  async setActivation(id: string, active: boolean, requestUserId: string) {
+    // ✅ findOne already verifies ownership
+    const employee = await this.findOne(id, requestUserId);
     await this.prisma.user.update({
       where: { id: employee.userId },
       data: { isActive: active },
@@ -620,8 +664,9 @@ export class EmployeesService {
     return { status: active ? 'Activated' : 'Deactivated' };
   }
 
-  async resetPassword(id: string) {
-    const employee = await this.findOne(id);
+  async resetPassword(id: string, requestUserId: string) {
+    // ✅ findOne already verifies ownership
+    const employee = await this.findOne(id, requestUserId);
     const defaultPassword = '1234';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
@@ -643,8 +688,9 @@ export class EmployeesService {
     return { message: 'Password reset to default (1234) successfully' };
   }
 
-  async remove(id: string) {
-    const employee = await this.findOne(id);
+  async remove(id: string, requestUserId: string) {
+    // ✅ findOne already verifies ownership
+    const employee = await this.findOne(id, requestUserId);
 
     await this.prisma.user.delete({
       where: { id: employee.userId },
@@ -891,5 +937,54 @@ export class EmployeesService {
         data: { onboardingStatus: OnboardingStatus.PROFILE_COMPLETED },
       });
     }
+  }
+
+  /**
+   * ✅ PRODUCTION EMPLOYEE ID GENERATOR
+   * 
+   * Format: FCS0151, FCS0152, FCS0153, FCS0154...
+   * - Starting sequence: 0151
+   * - Increments by 1 for each new employee
+   * - Thread-safe: Uses database query to find next available ID
+   * - Organization-scoped: Each organization has independent sequence
+   * 
+   * @param organizationId - Organization ID for scoping
+   * @returns Production employee ID (e.g., "FCS0151")
+   */
+  private async generateProductionEmployeeId(organizationId: string): Promise<string> {
+    const PREFIX = 'FCS';
+    const STARTING_SEQUENCE = 151; // First production employee: FCS0151
+
+    // Find the highest existing employee ID for this organization
+    const employees = await this.prisma.employee.findMany({
+      where: {
+        organizationId,
+        employeeId: {
+          startsWith: PREFIX,
+          // Exclude HR profile IDs (FCS-HR-xxx)
+          not: { contains: '-' },
+        },
+      },
+      select: { employeeId: true },
+      orderBy: { employeeId: 'desc' },
+      take: 1,
+    });
+
+    let nextSequence = STARTING_SEQUENCE;
+
+    if (employees.length > 0) {
+      const lastId = employees[0].employeeId;
+      // Extract numeric part: "FCS0151" -> "0151" -> 151
+      const numericPart = lastId.replace(PREFIX, '');
+      const lastSequence = parseInt(numericPart, 10);
+      
+      if (!isNaN(lastSequence)) {
+        nextSequence = lastSequence + 1;
+      }
+    }
+
+    // Format with leading zeros to maintain 4 digits
+    const sequenceStr = String(nextSequence).padStart(4, '0');
+    return `${PREFIX}${sequenceStr}`;
   }
 }

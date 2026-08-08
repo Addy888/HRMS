@@ -26,7 +26,7 @@ export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   @Post('generate/employee/:employeeId')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async generateForEmployee(
     @Param('employeeId') employeeId: string,
     @Body() body: { month: number; year: number },
@@ -41,7 +41,7 @@ export class PayrollController {
   }
 
   @Post('generate/bulk')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async generateForAllEmployees(
     @Body() body: { month: number; year: number },
     @Request() req: any,
@@ -54,7 +54,7 @@ export class PayrollController {
   }
 
   @Get('history')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getPayrollHistory(
     @Query('employeeId') employeeId?: string,
     @Query('month') month?: string,
@@ -74,18 +74,19 @@ export class PayrollController {
   }
 
   @Get(':id')
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getPayrollRun(@Param('id') id: string) {
     return this.payrollService.getPayrollRun(id);
   }
 
   @Patch(':id/approve')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async approvePayroll(@Param('id') id: string) {
     return this.payrollService.approvePayroll(id);
   }
 
   @Patch(':id/pay')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async markAsPaid(
     @Param('id') id: string,
     @Body() body: { paymentDate: string },
@@ -94,7 +95,7 @@ export class PayrollController {
   }
 
   @Get('summary/:month/:year')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getPayrollSummary(
     @Param('month') month: string,
     @Param('year') year: string,
@@ -106,7 +107,7 @@ export class PayrollController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async deletePendingPayroll(@Param('id') id: string) {
     return this.payrollService.deletePendingPayroll(id);
   }

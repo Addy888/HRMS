@@ -20,12 +20,8 @@ export default function DepartmentsPage() {
         const res = await api.get('/departments');
         return res.data;
       } catch (err) {
-        console.warn('API error, returning mock departments list');
-        return [
-          { id: '1', name: 'Engineering', description: 'Product & Tech development team', _count: { employees: 24 } },
-          { id: '2', name: 'Human Resources', description: 'People operations & recruitment', _count: { employees: 3 } },
-          { id: '3', name: 'Sales & Growth', description: 'Field sales operations & marketing', _count: { employees: 12 } },
-        ];
+        console.error('Failed to fetch departments:', err);
+        return []; // ✅ PRODUCTION: Return empty array, no mock data
       }
     }
   });

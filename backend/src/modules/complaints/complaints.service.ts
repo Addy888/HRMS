@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
@@ -546,23 +547,46 @@ export class ComplaintsService {
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Get HR user info for debugging
+    // ✅ Validate authenticated user
+    if (!userId) {
+      throw new UnauthorizedException('Authenticated user could not be identified');
+    }
+
+    // Get HR user info
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { employee: true, role: true },
     });
 
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     console.log('=== HR COMPLAINTS QUEUE DEBUG ===');
     console.log('User ID:', userId);
-    console.log('User Role:', user?.role?.name);
-    console.log('Employee ID:', user?.employee?.id);
+    console.log('User Role:', user.role.name);
+    console.log('Organization ID:', user.organizationId);
+    console.log('Employee ID:', user.employee?.id);
     console.log('Query Params:', query);
 
-    const where: any = {};
+    const where: any = {
+      organizationId: user.organizationId, // ✅ Organization isolation
+    };
 
-    // HR should see ALL tickets (no employee filtering)
-    // Only apply optional filters from query params
+    // ✅ HR Ownership: HR_USER can only see tickets from their employees
+    const isHRUser = user.role.name === 'HR_USER' || user.role.name === 'HR';
+    const isHRAdmin = user.role.name === 'HR_ADMIN' || user.role.name === 'SUPER_ADMIN';
+    
+    if (isHRUser) {
+      where.raisedBy = {
+        createdByUserId: userId, // Filter by employee ownership
+      };
+      console.log('HR_USER scope: filtering complaints by employee createdByUserId =', userId);
+    } else if (isHRAdmin) {
+      console.log('HR_ADMIN scope: organization-wide complaints');
+    }
 
+    // Apply optional filters from query params
     if (query.status) where.status = query.status;
     if (query.category) where.category = query.category;
     if (query.priority) where.priority = query.priority;
@@ -570,6 +594,7 @@ export class ComplaintsService {
 
     if (query.departmentId) {
       where.raisedBy = {
+        ...where.raisedBy,
         departmentId: query.departmentId,
       };
     }
@@ -581,6 +606,7 @@ export class ComplaintsService {
         { title: searchFilter },
         {
           raisedBy: {
+            ...where.raisedBy, // Preserve existing raisedBy filters
             OR: [
               { firstName: searchFilter },
               { lastName: searchFilter },

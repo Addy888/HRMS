@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { LocalStorageService } from './storage/local-storage.service.js';
@@ -320,7 +322,21 @@ export class DocumentsService {
   }
 
   // NEW: Get documents for a specific employee (HR use case)
-  async getDocumentsByEmployeeId(employeeId: string) {
+  async getDocumentsByEmployeeId(employeeId: string, requestUserId: string) {
+    // ✅ Validate authenticated user
+    if (!requestUserId) {
+      throw new UnauthorizedException('Authenticated user could not be identified');
+    }
+
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      include: { role: true },
+    });
+
+    if (!requestingUser) {
+      throw new UnauthorizedException('Requesting user not found');
+    }
+
     const employee = await this.prisma.employee.findUnique({
       where: { id: employeeId },
       include: {
@@ -331,6 +347,20 @@ export class DocumentsService {
     
     if (!employee) {
       throw new NotFoundException('Employee not found');
+    }
+
+    // ✅ HR Ownership: Verify access
+    const isHRUser = requestingUser.role.name === 'HR_USER' || requestingUser.role.name === 'HR';
+    const isHRAdmin = requestingUser.role.name === 'HR_ADMIN' || requestingUser.role.name === 'SUPER_ADMIN';
+
+    // HR_USER can only see documents of employees they created
+    if (isHRUser && employee.createdByUserId !== requestUserId) {
+      throw new ForbiddenException('You do not have access to this employee\'s documents');
+    }
+
+    // Organization isolation
+    if (employee.organizationId !== requestingUser.organizationId) {
+      throw new ForbiddenException('You do not have access to this employee (different organization)');
     }
 
     const documents = await this.prisma.document.findMany({
@@ -370,12 +400,42 @@ export class DocumentsService {
     return mimeTypes[ext || ''] || 'application/octet-stream';
   }
 
-  async getDocumentQueue(query: QueryDocumentDto) {
+  async getDocumentQueue(query: QueryDocumentDto, requestUserId: string) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const whereClause: any = {};
+    // ✅ Validate authenticated user
+    if (!requestUserId) {
+      throw new UnauthorizedException('Authenticated user could not be identified');
+    }
+
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      include: { role: true },
+    });
+
+    if (!requestingUser) {
+      throw new UnauthorizedException('Requesting user not found');
+    }
+
+    console.log('[DOCUMENTS QUEUE] requestUserId:', requestUserId);
+    console.log('[DOCUMENTS QUEUE] userRole:', requestingUser.role.name);
+    console.log('[DOCUMENTS QUEUE] organizationId:', requestingUser.organizationId);
+
+    const whereClause: any = {
+      organizationId: requestingUser.organizationId, // Organization isolation
+    };
+
+    // ✅ HR Ownership: HR_USER can only see documents of employees they created
+    const isHRUser = requestingUser.role.name === 'HR_USER' || requestingUser.role.name === 'HR';
+    
+    if (isHRUser) {
+      whereClause.employee = {
+        createdByUserId: requestUserId, // Filter by employee ownership
+      };
+      console.log('[DOCUMENTS QUEUE] HR_USER scope: filtering by createdByUserId =', requestUserId);
+    }
 
     if (query.status) {
       whereClause.status = query.status;
@@ -386,7 +446,9 @@ export class DocumentsService {
     }
 
     if (query.search || query.departmentId) {
-      whereClause.employee = {};
+      whereClause.employee = {
+        ...whereClause.employee,
+      };
 
       if (query.departmentId) {
         whereClause.employee.departmentId = query.departmentId;
@@ -400,6 +462,8 @@ export class DocumentsService {
         ];
       }
     }
+
+    console.log('[DOCUMENTS QUEUE] whereClause:', JSON.stringify(whereClause, null, 2));
 
     const [documents, total] = await Promise.all([
       this.prisma.document.findMany({
@@ -425,6 +489,8 @@ export class DocumentsService {
       }),
       this.prisma.document.count({ where: whereClause }),
     ]);
+
+    console.log('[DOCUMENTS QUEUE] total documents found:', total);
 
     // Enrich the response with flattened employee data
     const enrichedData = documents.map((doc) => ({

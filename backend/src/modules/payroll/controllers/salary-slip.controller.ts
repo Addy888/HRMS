@@ -22,7 +22,7 @@ export class SalarySlipController {
   constructor(private readonly salarySlipService: SalarySlipService) {}
 
   @Get('list')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getSalarySlipList(
     @Query('month') month: string,
     @Query('year') year: string,
@@ -38,7 +38,7 @@ export class SalarySlipController {
   }
 
   @Get('stats')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async getSalarySlipStats(
     @Query('month') month: string,
     @Query('year') year: string,
@@ -86,25 +86,25 @@ export class SalarySlipController {
   }
 
   @Post(':payslipId/email')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async emailSalarySlip(@Param('payslipId') payslipId: string) {
     return this.salarySlipService.emailSalarySlip(payslipId);
   }
 
   @Post(':payslipId/whatsapp')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async whatsappSalarySlip(@Param('payslipId') payslipId: string) {
     return this.salarySlipService.whatsappSalarySlip(payslipId);
   }
 
   @Post('bulk-download')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async bulkDownload(@Query('payslipIds') payslipIds: string[]) {
     return this.salarySlipService.bulkDownload(payslipIds);
   }
 
   @Delete(':payslipId')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR, UserRole.HR_USER, UserRole.HR_ADMIN, UserRole.SUPER_ADMIN)
   async deleteSalarySlip(@Param('payslipId') payslipId: string) {
     return this.salarySlipService.deleteSalarySlip(payslipId);
   }

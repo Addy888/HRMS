@@ -21,9 +21,9 @@ async function bootstrap() {
 
   // CORS config
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS
-      ? process.env.ALLOWED_ORIGINS.split(',')
-      : 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',')
+      : (process.env.NODE_ENV === 'production' ? false : 'http://localhost:3000'),
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Accept,Authorization',
@@ -81,8 +81,11 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(
-    `FCS HRMS backend API successfully running on: http://localhost:${port}/api/v1`,
-  );
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`✅ FCS HRMS Production API running on port ${port}`);
+  } else {
+    console.log(`🚀 FCS HRMS Development API: http://localhost:${port}/api/v1`);
+  }
 }
 bootstrap();
