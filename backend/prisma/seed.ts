@@ -130,120 +130,27 @@ async function main() {
   console.log('✔ Designations seeded (HR Manager, IT Engineer, Agent, and others)');
 
   // ─────────────────────────────────────────────────────
-  // 4. DEV ACCOUNT — HR ADMIN
-  //    Email : adityashastri76@gmail.com
-  //    Pass  : 12345678
-  //    Role  : HR
-  //    Code  : FCS-HR-001
-  // ─────────────────────────────────────────────────────
-  const devHREmail = 'adityashastri76@gmail.com';
-  const devHRCode  = 'FCS-HR-001';
-
-  const existingHRUser = await prisma.user.findUnique({ where: { email: devHREmail } });
-  const existingHREmp  = await prisma.employee.findUnique({ where: { employeeId: devHRCode } });
-
-  if (existingHRUser || existingHREmp) {
-    console.log('✔ Dev HR Admin already exists — skipping');
-  } else {
-    const hashedHRPassword = await bcrypt.hash('12345678', 10);
-
-    const hrUser = await prisma.user.create({
-      data: {
-        email: devHREmail,
-        password: hashedHRPassword,
-        roleId: hrRole.id,
-        isFirstLogin: false,   // mustChangePassword = false
-        isActive: true,
-      },
-    });
-
-    await prisma.employee.create({
-      data: {
-        employeeId: devHRCode,
-        userId: hrUser.id,
-        firstName: 'Aditya',
-        lastName: 'Shastri',
-        phone: '9876543210',
-        departmentId: deptAdministration.id,
-        designationId: desgHRManager.id,
-        onboardingStatus: 'VERIFIED', // profileCompleted = true
-      },
-    });
-
-    // Initialize notification preferences
-    await prisma.notificationPreference.create({ data: { userId: hrUser.id } });
-
-    console.log('✔ Dev HR Admin created:', devHREmail, '/ FCS-HR-001');
-  }
-
-  // ─────────────────────────────────────────────────────
-  // 5. DEV ACCOUNT — EMPLOYEE
-  //    Email : employee@fcshrms.local
-  //    Pass  : 12345678
-  //    Role  : EMPLOYEE
-  //    Code  : FCS-EMP-001
-  // ─────────────────────────────────────────────────────
-  const devEmpEmail = 'employee@fcshrms.local';
-  const devEmpCode  = 'FCS-EMP-001';
-
-  const existingEmpUser = await prisma.user.findUnique({ where: { email: devEmpEmail } });
-  const existingEmpEmp  = await prisma.employee.findUnique({ where: { employeeId: devEmpCode } });
-
-  if (existingEmpUser || existingEmpEmp) {
-    console.log('✔ Dev Employee already exists — skipping');
-  } else {
-    const hashedEmpPassword = await bcrypt.hash('12345678', 10);
-
-    const empUser = await prisma.user.create({
-      data: {
-        email: devEmpEmail,
-        password: hashedEmpPassword,
-        roleId: empRole.id,
-        isFirstLogin: false,
-        isActive: true,
-      },
-    });
-
-    await prisma.employee.create({
-      data: {
-        employeeId: devEmpCode,
-        userId: empUser.id,
-        firstName: 'Aditya',
-        lastName: 'Shastri',
-        phone: '9876543211',
-        departmentId: deptIT.id,
-        designationId: desgSoftwareEngineer.id,
-        onboardingStatus: 'VERIFIED',
-      },
-    });
-
-    await prisma.notificationPreference.create({ data: { userId: empUser.id } });
-
-    console.log('✔ Dev Employee created:', devEmpEmail, '/ FCS-EMP-001');
-  }
-
-  // ─────────────────────────────────────────────────────
-  // 6. NEW HR ADMIN USER
+  // 4. PRODUCTION HR ADMIN ACCOUNT
   //    Email : sumaiyyatamboli50@gmail.com
   //    Pass  : 123456789
   //    Role  : HR
-  //    Code  : FCS-HR-002
+  //    Code  : FCS-HR-001
   // ─────────────────────────────────────────────────────
-  const newHREmail = 'sumaiyyatamboli50@gmail.com';
-  const newHRCode  = 'FCS-HR-002';
+  const hrEmail = 'sumaiyyatamboli50@gmail.com';
+  const hrCode  = 'FCS-HR-001';
 
-  const existingNewHRUser = await prisma.user.findUnique({ where: { email: newHREmail } });
-  const existingNewHREmp  = await prisma.employee.findUnique({ where: { employeeId: newHRCode } });
+  const existingHRUser = await prisma.user.findUnique({ where: { email: hrEmail } });
+  const existingHREmp  = await prisma.employee.findUnique({ where: { employeeId: hrCode } });
 
-  if (existingNewHRUser || existingNewHREmp) {
-    console.log('✔ HR Admin (sumaiyyatamboli50@gmail.com) already exists — skipping');
+  if (existingHRUser || existingHREmp) {
+    console.log('✔ Production HR Admin already exists — skipping');
   } else {
-    const hashedNewHRPassword = await bcrypt.hash('123456789', 10);
+    const hashedHRPassword = await bcrypt.hash('123456789', 10);
 
-    const newHRUser = await prisma.user.create({
+    const hrUser = await prisma.user.create({
       data: {
-        email: newHREmail,
-        password: hashedNewHRPassword,
+        email: hrEmail,
+        password: hashedHRPassword,
         roleId: hrRole.id,
         isFirstLogin: false,
         isActive: true,
@@ -252,8 +159,8 @@ async function main() {
 
     await prisma.employee.create({
       data: {
-        employeeId: newHRCode,
-        userId: newHRUser.id,
+        employeeId: hrCode,
+        userId: hrUser.id,
         firstName: 'Sumaiyya',
         lastName: 'Tamboli',
         phone: '9876543220',
@@ -263,14 +170,20 @@ async function main() {
       },
     });
 
-    await prisma.notificationPreference.create({ data: { userId: newHRUser.id } });
+    await prisma.notificationPreference.create({ data: { userId: hrUser.id } });
 
-    console.log('✔ HR Admin created:', newHREmail, '/ FCS-HR-002');
+    console.log('✔ Production HR Admin created:', hrEmail, '/ FCS-HR-001');
   }
 
   // ─────────────────────────────────────────────────────
-  // 7. SEED DEFAULT POLICIES
+  // 5. SEED DEFAULT POLICIES (OPTIONAL)
+  //    Uncomment if you want to pre-populate policy templates
   // ─────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────
+  // 5. SEED DEFAULT POLICIES (OPTIONAL)
+  //    Uncomment if you want to pre-populate policy templates
+  // ─────────────────────────────────────────────────────
+  /*
   const policiesList = [
     {
       title: 'Attendance Policy',
@@ -330,18 +243,19 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
   }
 
   console.log('✔ Policies seeded');
+  */
 
   // ─────────────────────────────────────────────────────
-  // 8. SEED ATTENDANCE MODULE
+  // 6. SEED ATTENDANCE MODULE
   // ─────────────────────────────────────────────────────
   const { seedAttendance } = await import('./seeds/attendance.seed.js');
   await seedAttendance();
 
-  console.log('\n✅ FCS HRMS seeding complete.\n');
+  console.log('\n✅ FCS HRMS seeding complete (PRODUCTION MODE).\n');
   console.log('─────────────────────────────────────────────────────');
-  console.log('  DEV HR LOGIN     → adityashastri76@gmail.com / 12345678');
-  console.log('  NEW HR LOGIN     → sumaiyyatamboli50@gmail.com / 123456789');
-  console.log('  DEV EMP LOGIN    → employee@fcshrms.local / 12345678');
+  console.log('  PRODUCTION HR  → sumaiyyatamboli50@gmail.com / 123456789');
+  console.log('─────────────────────────────────────────────────────');
+  console.log('  ⚠️  No demo employees created - production ready');
   console.log('─────────────────────────────────────────────────────\n');
 }
 
