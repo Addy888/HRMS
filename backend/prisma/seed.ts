@@ -38,10 +38,22 @@ async function main() {
     create: { name: 'Administration', description: 'Core Executive & Administrative Operations' },
   });
 
+  const deptManager = await prisma.department.upsert({
+    where: { name: 'Manager' },
+    update: {},
+    create: { name: 'Manager', description: 'Management Department' },
+  });
+
   const deptIT = await prisma.department.upsert({
     where: { name: 'IT' },
     update: {},
     create: { name: 'IT', description: 'Information Technology & Software Engineering' },
+  });
+
+  const deptAgent = await prisma.department.upsert({
+    where: { name: 'Agent' },
+    update: {},
+    create: { name: 'Agent', description: 'Agent Department' },
   });
 
   await prisma.department.upsert({
@@ -62,7 +74,7 @@ async function main() {
     create: { name: 'Sales & Marketing', description: 'Business Growth & Marketing' },
   });
 
-  console.log('✔ Departments seeded');
+  console.log('✔ Departments seeded (Manager, IT, Agent, and others)');
 
   // ─────────────────────────────────────────────────────
   // 3. SEED DESIGNATIONS
@@ -80,12 +92,42 @@ async function main() {
   });
 
   await prisma.designation.upsert({
+    where: { name: 'IT Engineer' },
+    update: {},
+    create: { name: 'IT Engineer', description: 'Information Technology Engineer' },
+  });
+
+  await prisma.designation.upsert({
+    where: { name: 'Software Developer' },
+    update: {},
+    create: { name: 'Software Developer', description: 'Software Development Professional' },
+  });
+
+  await prisma.designation.upsert({
+    where: { name: 'Agent' },
+    update: {},
+    create: { name: 'Agent', description: 'Agent' },
+  });
+
+  await prisma.designation.upsert({
     where: { name: 'Sales Executive' },
     update: {},
     create: { name: 'Sales Executive', description: 'Field Sales Operations' },
   });
 
-  console.log('✔ Designations seeded');
+  await prisma.designation.upsert({
+    where: { name: 'Team Leader' },
+    update: {},
+    create: { name: 'Team Leader', description: 'Team Leader' },
+  });
+
+  await prisma.designation.upsert({
+    where: { name: 'Senior Manager' },
+    update: {},
+    create: { name: 'Senior Manager', description: 'Senior Management Position' },
+  });
+
+  console.log('✔ Designations seeded (HR Manager, IT Engineer, Agent, and others)');
 
   // ─────────────────────────────────────────────────────
   // 4. DEV ACCOUNT — HR ADMIN

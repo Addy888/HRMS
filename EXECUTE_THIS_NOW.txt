@@ -1,0 +1,82 @@
+═══════════════════════════════════════════════════════════
+   FIX EMPLOYEE CREATION - EXECUTE THESE COMMANDS NOW
+═══════════════════════════════════════════════════════════
+
+STEP 1: Stop Backend Server
+────────────────────────────────────────────────────────────
+In your backend terminal window, press:
+
+    Ctrl + C
+
+Wait for the server to stop completely.
+
+
+STEP 2: Run Database Seed
+────────────────────────────────────────────────────────────
+Copy and paste this command:
+
+    cd backend && npx prisma db seed
+
+Press Enter.
+
+Expected output:
+    ✔ Roles seeded
+    ✔ Departments seeded (Manager, IT, Agent, and others)
+    ✔ Designations seeded (IT Engineer, Agent, and others)
+    ✅ FCS HRMS seeding complete.
+
+
+STEP 3: Start Backend Again
+────────────────────────────────────────────────────────────
+Copy and paste this command:
+
+    npm run start:dev
+
+Press Enter.
+
+Wait for: "⚡ Server running on port 4000"
+
+
+STEP 4: Test Employee Creation
+────────────────────────────────────────────────────────────
+1. Open browser: http://localhost:3000/hr/employees
+2. Click "Create Employee"
+3. Check Department dropdown
+4. You should now see:
+   • Administration
+   • Manager         ← NEW
+   • IT
+   • Agent           ← NEW
+   • Engineering
+   • Human Resources
+   • Sales & Marketing
+
+
+STEP 5: Create Test Employee
+────────────────────────────────────────────────────────────
+Fill in the form:
+   First Name: Test
+   Last Name: User
+   Email: test@fcs.com
+   Department: IT
+   Designation: IT Engineer
+   Monthly Salary: 50000
+
+Click "Create Employee"
+
+Expected: ✅ SUCCESS
+
+
+═══════════════════════════════════════════════════════════
+                      THAT'S IT!
+═══════════════════════════════════════════════════════════
+
+Time Required: 2 minutes
+Result: Department dropdown now shows Manager, IT, and Agent
+
+If you encounter any issues:
+1. Check backend is running
+2. Hard refresh browser (Ctrl + Shift + R)
+3. Check: curl http://localhost:4000/api/v1/departments
+
+═══════════════════════════════════════════════════════════
