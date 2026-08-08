@@ -79,3 +79,6 @@ export class CreateSalaryStructureDto {
   @IsString()
   remarks?: string;
 }
+
+
+
