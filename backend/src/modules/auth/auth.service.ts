@@ -192,6 +192,11 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    // ========================================
+    // TEMPORARILY DISABLED: OTP verification for EMPLOYEE role
+    // TODO: Re-enable after OTP table is created
+    // ========================================
+    /*
     // 3. Check if user is EMPLOYEE role - requires OTP
     if (user.role.name === 'EMPLOYEE') {
       // Check if employee has phone number
@@ -232,8 +237,12 @@ export class AuthService implements OnModuleInit {
         },
       };
     }
+    */
+    // ========================================
+    // END TEMPORARY DISABLE
+    // ========================================
 
-    // 4. For HR/Admin users, proceed with normal JWT login (no OTP required)
+    // 4. For HR/Admin users AND EMPLOYEES (temporarily), proceed with normal JWT login (no OTP required)
     const payload = {
       sub: user.id,
       email: user.email,
@@ -285,6 +294,13 @@ export class AuthService implements OnModuleInit {
   // VERIFY LOGIN OTP
   // ─────────────────────────────────────────────────────────────────
   async verifyLoginOtp(userId: string, otp: string) {
+    // ========================================
+    // TEMPORARILY DISABLED: OTP verification functionality
+    // TODO: Re-enable after OTP table is created
+    // ========================================
+    throw new BadRequestException('OTP verification is temporarily unavailable');
+    
+    /*
     // Verify OTP
     await this.otpService.verifyOtp(userId, otp, 'LOGIN');
 
@@ -359,12 +375,23 @@ export class AuthService implements OnModuleInit {
           : null,
       },
     };
+    */
+    // ========================================
+    // END TEMPORARY DISABLE
+    // ========================================
   }
 
   // ─────────────────────────────────────────────────────────────────
   // RESEND LOGIN OTP
   // ─────────────────────────────────────────────────────────────────
   async resendLoginOtp(userId: string) {
+    // ========================================
+    // TEMPORARILY DISABLED: OTP resend functionality
+    // TODO: Re-enable after OTP table is created
+    // ========================================
+    throw new BadRequestException('OTP verification is temporarily unavailable');
+    
+    /*
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -390,6 +417,10 @@ export class AuthService implements OnModuleInit {
       message: 'OTP resent successfully',
       maskedPhone,
     };
+    */
+    // ========================================
+    // END TEMPORARY DISABLE
+    // ========================================
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -462,6 +493,17 @@ export class AuthService implements OnModuleInit {
   }
 
   async forgotPassword(email: string) {
+    // ========================================
+    // TEMPORARILY DISABLED: OTP-based password reset for employees
+    // TODO: Re-enable after OTP table is created
+    // For now, return a message that OTP is unavailable
+    // ========================================
+    
+    return {
+      message: 'Password reset with OTP is temporarily unavailable. Please contact HR for assistance.',
+    };
+    
+    /*
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
       include: {
@@ -522,12 +564,23 @@ export class AuthService implements OnModuleInit {
       message: successMessage,
       requiresOtp: false,
     };
+    */
+    // ========================================
+    // END TEMPORARY DISABLE
+    // ========================================
   }
 
   // ─────────────────────────────────────────────────────────────────
   // VERIFY RESET OTP (Employee Password Reset)
   // ─────────────────────────────────────────────────────────────────
   async verifyResetOtp(email: string, otp: string) {
+    // ========================================
+    // TEMPORARILY DISABLED: OTP verification for password reset
+    // TODO: Re-enable after OTP table is created
+    // ========================================
+    throw new BadRequestException('OTP verification is temporarily unavailable');
+    
+    /*
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
       include: {
@@ -561,12 +614,23 @@ export class AuthService implements OnModuleInit {
       message: 'OTP verified successfully',
       resetToken,
     };
+    */
+    // ========================================
+    // END TEMPORARY DISABLE
+    // ========================================
   }
 
   // ─────────────────────────────────────────────────────────────────
   // RESEND RESET OTP (Employee Password Reset)
   // ─────────────────────────────────────────────────────────────────
   async resendResetOtp(email: string) {
+    // ========================================
+    // TEMPORARILY DISABLED: OTP resend for password reset
+    // TODO: Re-enable after OTP table is created
+    // ========================================
+    throw new BadRequestException('OTP verification is temporarily unavailable');
+    
+    /*
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
       include: {
@@ -593,6 +657,10 @@ export class AuthService implements OnModuleInit {
       message: 'OTP resent successfully',
       maskedPhone,
     };
+    */
+    // ========================================
+    // END TEMPORARY DISABLE
+    // ========================================
   }
 
   async resetPassword(token: string, newPassword: string) {

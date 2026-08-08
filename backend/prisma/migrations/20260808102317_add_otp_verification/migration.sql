@@ -1,24 +1,21 @@
--- OTP Verification table already exists in schema.prisma
--- This migration ensures the table is created if it doesn't exist
+-- CreateTable
+CREATE TABLE `OtpVerification` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `otpHash` VARCHAR(191) NOT NULL,
+    `purpose` VARCHAR(191) NOT NULL,
+    `phoneNumber` VARCHAR(191) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `verified` BOOLEAN NOT NULL DEFAULT false,
+    `verifiedAt` DATETIME(3) NULL,
+    `attempts` INTEGER NOT NULL DEFAULT 0,
+    `maxAttempts` INTEGER NOT NULL DEFAULT 5,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
--- The OtpVerification model is already defined in the schema.prisma file:
--- model OtpVerification {
---   id              String   @id @default(uuid())
---   userId          String
---   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
---   otpHash         String   // Hashed OTP for security
---   purpose         String   // LOGIN, PASSWORD_RESET
---   phoneNumber     String   // Mobile number OTP was sent to
---   expiresAt       DateTime
---   verified        Boolean  @default(false)
---   verifiedAt      DateTime?
---   attempts        Int      @default(0)
---   maxAttempts     Int      @default(5)
---   createdAt       DateTime @default(now())
---   updatedAt       DateTime @updatedAt
---
---   @@index([userId, purpose, verified])
--- }
+    INDEX `OtpVerification_userId_purpose_verified_idx`(`userId`, `purpose`, `verified`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- This table should already exist from previous migrations
--- If not, run: npx prisma migrate dev --name add_otp_verification
+-- AddForeignKey
+ALTER TABLE `OtpVerification` ADD CONSTRAINT `OtpVerification_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
