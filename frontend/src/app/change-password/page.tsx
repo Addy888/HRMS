@@ -29,7 +29,6 @@ export default function ChangePasswordPage() {
           localStorage.getItem('fcs_token') || '',
           { ...user, mustChangePassword: false }
         );
-        localStorage.setItem('fcs_user', JSON.stringify({ ...user, mustChangePassword: false }));
       }
 
       if (user?.role === 'HR') {

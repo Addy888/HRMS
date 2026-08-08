@@ -44,11 +44,16 @@ export default function EmployeeLoginPage() {
         setUserData(data.user);
         setError('');
       } else {
+        // ✅ CRITICAL FIX: Clear stale auth data first
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('fcs_token');
+          localStorage.removeItem('fcs_user');
+          localStorage.removeItem('fcs-auth-storage');
+        }
+
         // Direct login for non-employee or if OTP not required
         setAuth(data.accessToken, data.user);
         api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
-        localStorage.setItem('fcs_token', data.accessToken);
-        localStorage.setItem('fcs_user', JSON.stringify(data.user));
 
         if (data.mustChangePassword) {
           router.push('/change-password');
@@ -69,10 +74,15 @@ export default function EmployeeLoginPage() {
       return res.data?.data ?? res.data;
     },
     onSuccess: (data) => {
+      // ✅ CRITICAL FIX: Clear stale auth data first
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('fcs_token');
+        localStorage.removeItem('fcs_user');
+        localStorage.removeItem('fcs-auth-storage');
+      }
+
       setAuth(data.accessToken, data.user);
       api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
-      localStorage.setItem('fcs_token', data.accessToken);
-      localStorage.setItem('fcs_user', JSON.stringify(data.user));
 
       if (data.mustChangePassword) {
         router.push('/change-password');

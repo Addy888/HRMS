@@ -112,13 +112,15 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
       return;
     }
-    if (user.role !== 'HR') {
+    // ✅ Allow HR_ADMIN, HR_USER, and legacy HR role
+    const isHRRole = ['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role);
+    if (!isHRRole) {
       router.push('/employee');
       return;
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || !user || user.role !== 'HR') {
+  if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
@@ -126,18 +128,46 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const links = [
+  // ✅ Check if user is HR role
+  const isHRRole = ['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role);
+  if (!isHRRole) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // ✅ Check if user is HR_ADMIN (for admin-only features)
+  const isHRAdmin = user.role === 'HR_ADMIN';
+
+  // ✅ Role-based navigation links
+  const commonLinks = [
     { href: '/hr', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/hr/employees', label: 'Employees', icon: <Users className="w-5 h-5" /> },
+  ];
+
+  const adminOnlyLinks = [
     { href: '/hr/hr-users', label: 'HR Users', icon: <Users className="w-5 h-5" /> },
     { href: '/hr/departments', label: 'Departments', icon: <Layers className="w-5 h-5" /> },
     { href: '/hr/designations', label: 'Designations', icon: <Award className="w-5 h-5" /> },
+  ];
+
+  const operationalLinks = [
     { href: '/hr/documents', label: 'Documents', icon: <FolderOpen className="w-5 h-5" /> },
     { href: '/hr/policies', label: 'Policies', icon: <BookOpen className="w-5 h-5" /> },
     { href: '/hr/complaints', label: 'Helpdesk', icon: <LifeBuoy className="w-5 h-5" /> },
   ];
 
-  const payrollMenu = {
+  // ✅ Build final links based on role
+  const links = [
+    ...commonLinks,
+    ...(isHRAdmin ? adminOnlyLinks : []),
+    ...operationalLinks,
+  ];
+
+  // ✅ Payroll is admin-only
+  const payrollMenu = isHRAdmin ? {
     label: 'Payroll',
     icon: <DollarSign className="w-5 h-5" />,
     subItems: [
@@ -149,7 +179,10 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
       { href: '/hr/payroll/history', label: 'Salary History' },
       { href: '/hr/payroll/reports', label: 'Payroll Reports' },
     ],
-  };
+  } : null;
+
+  // ✅ Display role badge based on actual role
+  const roleBadge = isHRAdmin ? 'HR ADMIN' : 'HR USER';
 
   return (
     <NotificationToastProvider>
@@ -170,8 +203,8 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4 flex flex-col gap-1">
             <span className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Signed In As</span>
             <span className="text-sm font-semibold truncate">{user?.email || 'hr@fcs.com'}</span>
-            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded w-max mt-1 font-bold">
-              HR ADMIN
+            <span className={`text-[10px] ${isHRAdmin ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'} border px-2 py-0.5 rounded w-max mt-1 font-bold`}>
+              {roleBadge}
             </span>
           </div>
 
@@ -188,13 +221,15 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
               </SidebarLink>
             ))}
             
-            {/* Payroll Menu with Submenu */}
-            <SidebarMenu
-              label={payrollMenu.label}
-              icon={payrollMenu.icon}
-              subItems={payrollMenu.subItems}
-              pathname={pathname}
-            />
+            {/* Payroll Menu with Submenu (Admin Only) */}
+            {payrollMenu && (
+              <SidebarMenu
+                label={payrollMenu.label}
+                icon={payrollMenu.icon}
+                subItems={payrollMenu.subItems}
+                pathname={pathname}
+              />
+            )}
           </nav>
 
           {/* Footer actions */}

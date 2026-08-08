@@ -41,7 +41,12 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Store auth
+      // ✅ CRITICAL FIX: Clear stale auth data first
+      localStorage.removeItem('fcs_token');
+      localStorage.removeItem('fcs_user');
+      localStorage.removeItem('fcs-auth-storage');
+
+      // Store auth in Zustand (single source of truth)
       setAuth(accessToken, userData);
 
       // Navigate to admin dashboard

@@ -32,6 +32,11 @@ export class CreateHRUserDto {
   @MaxLength(100)
   password: string;
 
+  @ApiProperty({ example: 'HR_USER', enum: ['HR_ADMIN', 'HR_USER'], required: false })
+  @IsOptional()
+  @IsString()
+  hrRole?: 'HR_ADMIN' | 'HR_USER';
+
   @ApiProperty({ example: '9876543210', required: false })
   @IsOptional()
   @IsString()

@@ -112,13 +112,41 @@ export class AuthService implements OnModuleInit {
   ) {
     try {
 
-      // 1. Ensure HR role exists
-      const hrRole = await this.prisma.role.upsert({
+      // ✅ CRITICAL: Create HR_ADMIN and HR_USER roles
+      const hrAdminRole = await this.prisma.role.upsert({
+        where: { name: 'HR_ADMIN' },
+        update: {},
+        create: {
+          name: 'HR_ADMIN',
+          displayName: 'HR Administrator',
+          description: 'HR Administrator with full access to HR management',
+          level: 80,
+          isSystem: true,
+        },
+      });
+
+      const hrUserRole = await this.prisma.role.upsert({
+        where: { name: 'HR_USER' },
+        update: {},
+        create: {
+          name: 'HR_USER',
+          displayName: 'HR User',
+          description: 'HR User with operational access',
+          level: 60,
+          isSystem: true,
+        },
+      });
+
+      // Legacy HR role (for backward compatibility)
+      await this.prisma.role.upsert({
         where: { name: 'HR' },
         update: {},
         create: {
           name: 'HR',
-          description: 'Human Resource Management & Administrator',
+          displayName: 'HR (Legacy)',
+          description: 'Legacy HR role - maps to HR_USER',
+          level: 60,
+          isSystem: true,
         },
       });
 
@@ -156,18 +184,24 @@ export class AuthService implements OnModuleInit {
       });
 
       if (existingUser) {
-        // If the existing user has a non-HR role (e.g. "Super Admin" from old seeder),
-        // update it to HR so authentication works correctly.
-        if (existingUser.role.name !== 'HR') {
+        // ✅ Determine if this should be HR_ADMIN or HR_USER based on email
+        const shouldBeAdmin =
+          defaultEmail === 'sumaiyyatamboli50@gmail.com' ||
+          defaultEmail === 'adityashastri76@gmail.com';
+
+        const targetRole = shouldBeAdmin ? hrAdminRole : hrUserRole;
+
+        // If the existing user has wrong role, update it
+        if (existingUser.role.name !== targetRole.name) {
           await this.prisma.user.update({
             where: { email: defaultEmail },
-            data: { roleId: hrRole.id },
+            data: { roleId: targetRole.id },
           });
           this.logger.log(
-            `✔ Default HR Admin role corrected: ${defaultEmail} → HR`,
+            `✔ Default HR role updated: ${defaultEmail} → ${targetRole.name}`,
           );
         } else {
-          this.logger.log(`✔ Default HR Admin already exists: ${defaultEmail}`);
+          this.logger.log(`✔ Default HR already exists: ${defaultEmail} (${targetRole.name})`);
         }
         return;
       }
@@ -178,10 +212,17 @@ export class AuthService implements OnModuleInit {
       });
       if (existingEmployee) {
         this.logger.log(
-          `✔ Default HR Admin employee record already exists: ${defaultCode}`,
+          `✔ Default HR employee record already exists: ${defaultCode}`,
         );
         return;
       }
+
+      // ✅ Determine role for new HR user (first 2 should be HR_ADMIN, rest HR_USER)
+      const shouldBeAdmin =
+        defaultEmail === 'sumaiyyatamboli50@gmail.com' ||
+        defaultEmail === 'adityashastri76@gmail.com';
+
+      const assignedRole = shouldBeAdmin ? hrAdminRole : hrUserRole;
 
       // 7. Create user with bcrypt-hashed password
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
@@ -189,7 +230,7 @@ export class AuthService implements OnModuleInit {
         data: {
           email: defaultEmail,
           password: hashedPassword,
-          roleId: hrRole.id,
+          roleId: assignedRole.id,
           isFirstLogin: false,
           isActive: true,
         },
@@ -215,7 +256,7 @@ export class AuthService implements OnModuleInit {
       });
 
       this.logger.log(
-        `✔ Default HR Admin created automatically: ${defaultEmail} / ${defaultCode}`,
+        `✔ Default HR created: ${defaultEmail} (${assignedRole.name}) / ${defaultCode}`,
       );
     } catch (err: any) {
       // Non-fatal — log and continue. Auth still works for existing users.

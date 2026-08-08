@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export interface AuthUser {
   id: string;
   email: string;
-  role: 'HR' | 'EMPLOYEE' | 'Super Admin';
+  role: 'HR_ADMIN' | 'HR_USER' | 'HR' | 'EMPLOYEE' | 'Super Admin';
   mustChangePassword: boolean;
   employee?: {
     id: string;
@@ -38,8 +38,16 @@ const useAuthStore = create<AuthState>()(
 
       logout: () => {
         if (typeof window !== 'undefined') {
+          // ✅ CRITICAL FIX: Clear ALL auth-related localStorage keys
           localStorage.removeItem('fcs_token');
           localStorage.removeItem('fcs_user');
+          localStorage.removeItem('fcs-auth-storage');
+          
+          // ✅ Clear axios authorization header
+          const api = require('@/lib/api').default;
+          if (api?.defaults?.headers?.common) {
+            delete api.defaults.headers.common['Authorization'];
+          }
         }
         set({ token: null, user: null, isAuthenticated: false });
       },

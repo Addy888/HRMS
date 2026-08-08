@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import HRLayout from '@/layouts/HRLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import useAuthStore from '@/store/authStore';
 import { Users, Plus, Search, MoreVertical, Edit2, Power, PowerOff, Key, Eye, EyeOff, Loader2, X, Check, AlertCircle } from 'lucide-react';
 
 interface HRUser {
@@ -24,10 +26,39 @@ interface HRUser {
 
 export default function HRUsersPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<HRUser | null>(null);
+
+  // ✅ Get authenticated user from store
+  const user = useAuthStore((state) => state.user);
+
+  // ✅ Check if user is HR_ADMIN
+  React.useEffect(() => {
+    if (user && user.role !== 'HR_ADMIN') {
+      // Redirect HR_USER to dashboard
+      router.push('/hr');
+    }
+  }, [user, router]);
+
+  // ✅ Show access denied for non-admin
+  if (user && user.role !== 'HR_ADMIN') {
+    return (
+      <HRLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <div className="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-red-400" />
+          </div>
+          <h2 className="font-heading text-xl font-bold text-white">Access Denied</h2>
+          <p className="text-sm text-neutral-400 max-w-md text-center">
+            You need HR Admin privileges to access HR User Management.
+          </p>
+        </div>
+      </HRLayout>
+    );
+  }
 
   const { data: hrUsersData, isLoading } = useQuery({
     queryKey: ['hr-users', search],
@@ -245,6 +276,7 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
     phone: '',
     departmentId: '',
     designationId: '',
+    hrRole: 'HR_USER' as 'HR_ADMIN' | 'HR_USER', // ✅ Default to HR_USER
     isActive: true,
   });
 
@@ -275,6 +307,7 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
+        hrRole: formData.hrRole, // ✅ Include HR role
         phone: formData.phone || undefined,
         departmentId: formData.departmentId || undefined,
         designationId: formData.designationId || undefined,
@@ -405,6 +438,21 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">HR Role *</label>
+            <select
+              value={formData.hrRole}
+              onChange={(e) => setFormData({ ...formData, hrRole: e.target.value as 'HR_ADMIN' | 'HR_USER' })}
+              className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="HR_USER">HR User (Operational Access)</option>
+              <option value="HR_ADMIN">HR Admin (Full Access)</option>
+            </select>
+            <p className="text-xs text-neutral-500 mt-1.5">
+              HR User: Can manage employees, documents, policies. HR Admin: Full access including HR user management, departments, payroll.
+            </p>
           </div>
 
           <div className="flex items-center gap-3 p-4 bg-neutral-950 rounded-xl border border-neutral-800">

@@ -146,10 +146,28 @@ export class HRUsersService {
       throw new ConflictException('Email already exists');
     }
 
-    // Get HR role
-    const hrRole = await this.prisma.role.findUnique({ where: { name: 'HR' } });
+    // ✅ Determine HR role - default to HR_USER if not specified
+    const hrRoleName = dto.hrRole || 'HR_USER';
+
+    // Get the appropriate HR role
+    let hrRole = await this.prisma.role.findUnique({
+      where: { name: hrRoleName },
+    });
+
+    // If role doesn't exist, create it
     if (!hrRole) {
-      throw new NotFoundException('HR role not found');
+      hrRole = await this.prisma.role.create({
+        data: {
+          name: hrRoleName,
+          displayName: hrRoleName === 'HR_ADMIN' ? 'HR Administrator' : 'HR User',
+          description:
+            hrRoleName === 'HR_ADMIN'
+              ? 'HR Administrator with full access to HR management'
+              : 'HR User with operational access',
+          level: hrRoleName === 'HR_ADMIN' ? 80 : 60,
+          isSystem: true,
+        },
+      });
     }
 
     // Hash the provided password
@@ -194,7 +212,7 @@ export class HRUsersService {
         data: {
           userId: user.id,
           action: 'HR_USER_CREATED',
-          details: `HR user created: ${dto.email} (${dto.firstName} ${dto.lastName})`,
+          details: `HR user created: ${dto.email} (${dto.firstName} ${dto.lastName}) with role ${hrRoleName}`,
         },
       });
 
@@ -203,6 +221,7 @@ export class HRUsersService {
           id: user.id,
           email: user.email,
           isActive: user.isActive,
+          role: hrRoleName,
         },
         employee: {
           id: employee.id,

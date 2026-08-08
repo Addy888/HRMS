@@ -18,7 +18,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('hr')
-  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary:
       'Get consolidated HR analytical metrics & charts (HR + Super Admin)',

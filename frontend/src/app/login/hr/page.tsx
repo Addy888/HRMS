@@ -8,8 +8,8 @@ import useAuthStore from '@/store/authStore';
 import { Eye, EyeOff, Loader2, ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-// HR portal accepts: HR and Super Admin roles (both are administrative roles)
-const HR_PORTAL_ROLES = ['HR', 'Super Admin'];
+// HR portal accepts: HR_ADMIN, HR_USER, and Super Admin roles (all are administrative roles)
+const HR_PORTAL_ROLES = ['HR_ADMIN', 'HR_USER', 'HR', 'Super Admin'];
 
 export default function HRLoginPage() {
   const router = useRouter();
@@ -35,11 +35,19 @@ export default function HRLoginPage() {
         return;
       }
 
-      // Persist auth state
+      // ✅ CRITICAL FIX: Clear any stale authentication data FIRST
+      // This prevents different HR accounts from showing the same identity
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('fcs_token');
+        localStorage.removeItem('fcs_user');
+        localStorage.removeItem('fcs-auth-storage');
+      }
+
+      // ✅ Set fresh auth state in Zustand store (single source of truth)
       setAuth(data.accessToken, data.user);
+      
+      // ✅ Set authorization header for immediate API requests
       api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
-      localStorage.setItem('fcs_token', data.accessToken);
-      localStorage.setItem('fcs_user', JSON.stringify(data.user));
 
       // Redirect
       if (data.mustChangePassword) {
