@@ -152,9 +152,8 @@ export class HRUsersService {
       throw new NotFoundException('HR role not found');
     }
 
-    // Generate temporary password
-    const tempPassword = this.generateTempPassword();
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    // Hash the provided password
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     // Generate Employee ID
     const employeeId = await this.generateEmployeeId();
@@ -166,7 +165,7 @@ export class HRUsersService {
           email: dto.email,
           password: hashedPassword,
           roleId: hrRole.id,
-          isFirstLogin: true, // Must change password on first login
+          isFirstLogin: false, // Password is set by admin, no need to change
           isActive: dto.isActive !== undefined ? dto.isActive : true,
         },
       });
@@ -212,7 +211,6 @@ export class HRUsersService {
           lastName: employee.lastName,
           phone: employee.phone,
         },
-        tempPassword,
       };
     });
   }

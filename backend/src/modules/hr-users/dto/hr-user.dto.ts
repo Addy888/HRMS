@@ -26,6 +26,12 @@ export class CreateHRUserDto {
   @IsEmail()
   email: string;
 
+  @ApiProperty({ example: 'SecurePass@123' })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  password: string;
+
   @ApiProperty({ example: '9876543210', required: false })
   @IsOptional()
   @IsString()

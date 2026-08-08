@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import HRLayout from '@/layouts/HRLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Users, Plus, Search, MoreVertical, Edit2, Power, PowerOff, Key, Eye, Loader2, X, Check, AlertCircle } from 'lucide-react';
+import { Users, Plus, Search, MoreVertical, Edit2, Power, PowerOff, Key, Eye, EyeOff, Loader2, X, Check, AlertCircle } from 'lucide-react';
 
 interface HRUser {
   id: string;
@@ -28,8 +28,6 @@ export default function HRUsersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<HRUser | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
 
   const { data: hrUsersData, isLoading } = useQuery({
     queryKey: ['hr-users', search],
@@ -62,13 +60,9 @@ export default function HRUsersPage() {
       const res = await api.post('/hr-users', data);
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hr-users'] });
       setShowAddModal(false);
-      if (data.tempPassword) {
-        setNewPassword(data.tempPassword);
-        setShowPasswordModal(true);
-      }
     },
     onError: (err: any) => alert(err.response?.data?.message || 'Failed to create HR user'),
   });
@@ -98,11 +92,8 @@ export default function HRUsersPage() {
       const res = await api.post(`/hr-users/${id}/reset-password`);
       return res.data;
     },
-    onSuccess: (data) => {
-      if (data.tempPassword) {
-        setNewPassword(data.tempPassword);
-        setShowPasswordModal(true);
-      }
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hr-users'] });
     },
     onError: (err: any) => alert(err.response?.data?.message || 'Failed to reset password'),
   });
@@ -238,9 +229,6 @@ export default function HRUsersPage() {
 
         {/* Edit HR Modal */}
         {showEditModal && selectedUser && <EditHRModal user={selectedUser} onClose={() => { setShowEditModal(false); setSelectedUser(null); }} onSubmit={(data) => updateMutation.mutate({ id: selectedUser.id, data })} isLoading={updateMutation.isPending} departments={departments} designations={designations} />}
-
-        {/* Password Display Modal */}
-        {showPasswordModal && <PasswordModal password={newPassword} onClose={() => { setShowPasswordModal(false); setNewPassword(''); }} />}
       </div>
     </HRLayout>
   );
@@ -252,12 +240,15 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     departmentId: '',
     designationId: '',
     isActive: true,
   });
 
+  const [showPassword, setShowPassword] = React.useState(false);
   const [errors, setErrors] = React.useState<any>({});
 
   const validate = () => {
@@ -266,6 +257,10 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
     if (!formData.lastName.trim()) err.lastName = 'Last name is required';
     if (!formData.email.trim()) err.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) err.email = 'Invalid email format';
+    if (!formData.password) err.password = 'Password is required';
+    else if (formData.password.length < 8) err.password = 'Password must be at least 8 characters';
+    if (!formData.confirmPassword) err.confirmPassword = 'Please confirm your password';
+    else if (formData.password !== formData.confirmPassword) err.confirmPassword = 'Passwords do not match';
     if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) err.phone = 'Mobile must be 10 digits';
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -274,11 +269,16 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
+      // Exclude confirmPassword from API payload
       const payload = {
-        ...formData,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
         phone: formData.phone || undefined,
         departmentId: formData.departmentId || undefined,
         designationId: formData.designationId || undefined,
+        isActive: formData.isActive,
       };
       onSubmit(payload);
     }
@@ -331,6 +331,40 @@ function AddHRModal({ onClose, onSubmit, isLoading, departments, designations }:
               placeholder="john.doe@company.com"
             />
             {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-neutral-300 mb-2">Password *</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={`w-full px-4 py-2.5 bg-neutral-950 border ${errors.password ? 'border-red-500' : 'border-neutral-800'} rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-neutral-300 mb-2">Confirm Password *</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                className={`w-full px-4 py-2.5 bg-neutral-950 border ${errors.confirmPassword ? 'border-red-500' : 'border-neutral-800'} rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                placeholder="••••••••"
+              />
+              {errors.confirmPassword && <p className="text-xs text-red-400 mt-1">{errors.confirmPassword}</p>}
+            </div>
           </div>
 
           <div>
@@ -537,61 +571,6 @@ function EditHRModal({ user, onClose, onSubmit, isLoading, departments, designat
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  );
-}
-
-// Password Display Modal
-function PasswordModal({ password, onClose }: { password: string; onClose: () => void }) {
-  const [copied, setCopied] = React.useState(false);
-
-  const copyPassword = () => {
-    navigator.clipboard.writeText(password);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="px-6 py-4 border-b border-neutral-800">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Key className="w-5 h-5 text-amber-500" />
-            Temporary Password
-          </h2>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-200">
-                <p className="font-semibold mb-1">Save this password securely!</p>
-                <p className="text-amber-300/80">The HR user must change this password on first login.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-neutral-950 rounded-xl border border-neutral-800">
-            <div className="flex items-center justify-between gap-4">
-              <code className="text-lg font-mono font-bold text-blue-400">{password}</code>
-              <button
-                onClick={copyPassword}
-                className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm font-semibold text-white transition-colors flex items-center gap-2"
-              >
-                {copied ? <><Check className="w-4 h-4" /> Copied</> : 'Copy'}
-              </button>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl text-white font-semibold transition-all"
-          >
-            Done
-          </button>
-        </div>
       </div>
     </div>
   );
