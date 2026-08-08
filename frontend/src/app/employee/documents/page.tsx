@@ -134,6 +134,36 @@ export default function EmployeeDocumentsPage() {
     return documents.find((d: any) => d.type === type.toUpperCase());
   };
 
+  // ========================================
+  // DOCUMENT UPLOAD PROGRESS CALCULATION
+  // Total required: 14 documents
+  // ========================================
+  const calculateProgress = () => {
+    const TOTAL_REQUIRED = 14;
+    
+    // Collect all required document types across all categories
+    const allRequiredTypes = Object.values(DOCUMENT_CATEGORIES).flat().map(item => item.type.toUpperCase());
+    
+    // Count how many of the required document types have been uploaded
+    const uploadedCount = allRequiredTypes.filter(type => {
+      const doc = documents.find((d: any) => d.type === type);
+      return !!doc; // Document exists = uploaded
+    }).length;
+    
+    const remaining = TOTAL_REQUIRED - uploadedCount;
+    const percentage = Math.round((uploadedCount / TOTAL_REQUIRED) * 100);
+    
+    return {
+      total: TOTAL_REQUIRED,
+      uploaded: uploadedCount,
+      remaining,
+      percentage: Math.max(0, Math.min(100, percentage)), // Clamp between 0-100
+      isComplete: uploadedCount === TOTAL_REQUIRED,
+    };
+  };
+
+  const progress = calculateProgress();
+
   if (isLoading) {
     return (
       <EmployeeLayout>
@@ -158,6 +188,75 @@ export default function EmployeeDocumentsPage() {
           <p className="text-sm text-neutral-400 mt-1">
             Please upload all required files. Supported formats: PDF, PNG, JPG, JPEG (Max 10 MB per file).
           </p>
+        </div>
+
+        {/* ========================================
+            DOCUMENT UPLOAD PROGRESS SECTION
+            ======================================== */}
+        <div className="bg-gradient-to-br from-neutral-900 via-neutral-900 to-blue-950/10 border border-neutral-800 rounded-2xl p-6 relative overflow-hidden">
+          {/* Ambient background effect */}
+          <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-blue-500/5 rounded-full blur-[60px] pointer-events-none" />
+          
+          <div className="relative space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-heading text-base font-bold text-white uppercase tracking-wider">
+                  Document Upload Progress
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {progress.uploaded} of {progress.total} documents uploaded
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white font-mono">
+                  {progress.percentage}%
+                </div>
+                <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">
+                  {progress.isComplete ? 'Complete' : 'In Progress'}
+                </p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="relative">
+              <div className="h-3 bg-neutral-950 border border-neutral-800 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-700 ease-out ${
+                    progress.isComplete 
+                      ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500' 
+                      : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600'
+                  }`}
+                  style={{ width: `${progress.percentage}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Status Message */}
+            {progress.isComplete ? (
+              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-emerald-400">All Required Documents Uploaded</p>
+                  <p className="text-xs text-emerald-400/70 mt-0.5">
+                    {progress.total} of {progress.total} documents submitted • Pending HR verification
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                <Clock className="w-5 h-5 text-blue-400 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-blue-400">
+                    {progress.remaining} {progress.remaining === 1 ? 'document' : 'documents'} remaining
+                  </p>
+                  <p className="text-xs text-blue-400/70 mt-0.5">
+                    Upload all required documents to complete this onboarding step
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <input
