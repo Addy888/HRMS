@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from '@tantml:react-query';
+import { useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 

@@ -13,6 +13,8 @@ import { ComplaintsModule } from './modules/complaints/complaints.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
 import { PayrollModule } from './modules/payroll/payroll.module.js';
+import { HRUsersModule } from './modules/hr-users/hr-users.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { PayrollModule } from './modules/payroll/payroll.module.js';
     NotificationsModule,
     AttendanceModule,
     PayrollModule,
+    HRUsersModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

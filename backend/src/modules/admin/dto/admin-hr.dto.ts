@@ -1,0 +1,81 @@
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsBoolean,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class CreateHRAccountDto {
+  @ApiProperty({ example: 'John' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  firstName: string;
+
+  @ApiProperty({ example: 'Doe' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  lastName: string;
+
+  @ApiProperty({ example: 'john.doe@company.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: 'SecurePass@123' })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  password: string;
+
+  @ApiProperty({ example: '9876543210', required: false })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]{10}$/, { message: 'Mobile number must be 10 digits' })
+  phone?: string;
+
+  @ApiProperty({ example: true, default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class UpdateHRAccountDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  firstName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  lastName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]{10}$/, { message: 'Mobile number must be 10 digits' })
+  phone?: string;
+}
+
+export class UpdateHRStatusDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  isActive: boolean;
+}
+
+export class ResetHRPasswordDto {
+  @ApiProperty({ example: 'NewSecurePass@123' })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  newPassword: string;
+}

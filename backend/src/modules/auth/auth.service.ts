@@ -35,8 +35,82 @@ export class AuthService implements OnModuleInit {
 
   private async ensureDefaultHRUser() {
     try {
-      const defaultEmail = 'adityashastri76@gmail.com';
-      const defaultCode = 'FCS-HR-001';
+      // Ensure default Super Admin account
+      await this.ensureSuperAdmin();
+      
+      // Ensure BOTH default HR accounts exist
+      await this.createDefaultHRIfNotExists('sumaiyyatamboli50@gmail.com', '123456789', 'FCS-HR-ADMIN-001', 'Sumaiyya', 'Tamboli');
+      await this.createDefaultHRIfNotExists('adityashastri76@gmail.com', '12345678', 'FCS-HR-001', 'Aditya', 'Shastri');
+    } catch (err: any) {
+      this.logger.error(`ensureDefaultHRUser failed: ${err.message}`);
+    }
+  }
+
+  private async ensureSuperAdmin() {
+    try {
+      const superAdminEmail = 'adityashastri76@gmail.com';
+      
+      // 1. Ensure Super Admin role exists
+      const superAdminRole = await this.prisma.role.upsert({
+        where: { name: 'Super Admin' },
+        update: {},
+        create: {
+          name: 'Super Admin',
+          description: 'System Super Administrator with full access',
+          level: 100,
+          isSystem: true,
+        },
+      });
+
+      // 2. Check if Super Admin user exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: superAdminEmail },
+        include: { role: true },
+      });
+
+      if (existingUser) {
+        // If user exists but role is not Super Admin, update it
+        if (existingUser.role.name !== 'Super Admin') {
+          await this.prisma.user.update({
+            where: { email: superAdminEmail },
+            data: { roleId: superAdminRole.id },
+          });
+          this.logger.log(
+            `✔ User role updated to Super Admin: ${superAdminEmail}`,
+          );
+        } else {
+          this.logger.log(`✔ Super Admin already exists: ${superAdminEmail}`);
+        }
+        return;
+      }
+
+      // 3. Create Super Admin user
+      const hashedPassword = await bcrypt.hash('12345678', 10);
+      await this.prisma.user.create({
+        data: {
+          email: superAdminEmail,
+          password: hashedPassword,
+          roleId: superAdminRole.id,
+          isFirstLogin: false,
+          isActive: true,
+        },
+      });
+
+      // Note: Super Admin doesn't need employee profile
+      this.logger.log(`✔ Super Admin created: ${superAdminEmail}`);
+    } catch (err: any) {
+      this.logger.error(`ensureSuperAdmin failed: ${err.message}`);
+    }
+  }
+
+  private async createDefaultHRIfNotExists(
+    defaultEmail: string,
+    defaultPassword: string,
+    defaultCode: string,
+    firstName: string,
+    lastName: string,
+  ) {
+    try {
 
       // 1. Ensure HR role exists
       const hrRole = await this.prisma.role.upsert({
@@ -110,7 +184,7 @@ export class AuthService implements OnModuleInit {
       }
 
       // 7. Create user with bcrypt-hashed password
-      const hashedPassword = await bcrypt.hash('12345678', 10);
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
       const newUser = await this.prisma.user.create({
         data: {
           email: defaultEmail,
@@ -126,8 +200,8 @@ export class AuthService implements OnModuleInit {
         data: {
           employeeId: defaultCode,
           userId: newUser.id,
-          firstName: 'Aditya',
-          lastName: 'Shastri',
+          firstName,
+          lastName,
           phone: '9876543210',
           departmentId: adminDept.id,
           designationId: hrManagerDesg.id,
@@ -141,11 +215,11 @@ export class AuthService implements OnModuleInit {
       });
 
       this.logger.log(
-        `✔ Default HR Admin created automatically: ${defaultEmail} / FCS-HR-001`,
+        `✔ Default HR Admin created automatically: ${defaultEmail} / ${defaultCode}`,
       );
     } catch (err: any) {
       // Non-fatal — log and continue. Auth still works for existing users.
-      this.logger.error(`ensureDefaultHRUser failed: ${err.message}`);
+      this.logger.error(`createDefaultHRIfNotExists failed for ${defaultEmail}: ${err.message}`);
     }
   }
 

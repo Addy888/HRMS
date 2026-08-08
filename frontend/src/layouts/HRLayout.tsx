@@ -129,6 +129,7 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
   const links = [
     { href: '/hr', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/hr/employees', label: 'Employees', icon: <Users className="w-5 h-5" /> },
+    { href: '/hr/hr-users', label: 'HR Users', icon: <Users className="w-5 h-5" /> },
     { href: '/hr/departments', label: 'Departments', icon: <Layers className="w-5 h-5" /> },
     { href: '/hr/designations', label: 'Designations', icon: <Award className="w-5 h-5" /> },
     { href: '/hr/documents', label: 'Documents', icon: <FolderOpen className="w-5 h-5" /> },
