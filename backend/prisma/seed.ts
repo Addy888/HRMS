@@ -4,17 +4,79 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 FCS HRMS — Starting database seeder...\n');
+  console.log('🌱 FCS HRMS — Starting database seeder (Multi-Tenant SaaS)...\n');
+
+  // ─────────────────────────────────────────────────────
+  // 0. CREATE DEFAULT ORGANIZATION
+  // ─────────────────────────────────────────────────────
+  const defaultOrg = await prisma.organization.upsert({
+    where: { code: 'ORG-DEFAULT' },
+    update: {},
+    create: {
+      name: 'Default Organization',
+      code: 'ORG-DEFAULT',
+      email: 'default@fcscorp.com',
+      phone: '1234567890',
+      address: 'Default Address',
+      isActive: true,
+    },
+  });
+
+  console.log('✔ Default Organization created:', defaultOrg.name, '(', defaultOrg.code, ')');
 
   // ─────────────────────────────────────────────────────
   // 1. SEED ROLES
   // ─────────────────────────────────────────────────────
+  const superAdminRole = await prisma.role.upsert({
+    where: { name: 'Super Admin' },
+    update: {},
+    create: {
+      name: 'Super Admin',
+      displayName: 'Super Administrator',
+      description: 'System Super Administrator with full access',
+      level: 100,
+      isSystem: true,
+      isActive: true,
+    },
+  });
+
+  const hrAdminRole = await prisma.role.upsert({
+    where: { name: 'HR_ADMIN' },
+    update: {},
+    create: {
+      name: 'HR_ADMIN',
+      displayName: 'HR Administrator',
+      description: 'HR Administrator with full HR management access',
+      level: 80,
+      isSystem: true,
+      isActive: true,
+    },
+  });
+
+  const hrUserRole = await prisma.role.upsert({
+    where: { name: 'HR_USER' },
+    update: {},
+    create: {
+      name: 'HR_USER',
+      displayName: 'HR User',
+      description: 'HR User with operational access',
+      level: 60,
+      isSystem: true,
+      isActive: true,
+    },
+  });
+
+  // Legacy HR role for backward compatibility
   const hrRole = await prisma.role.upsert({
     where: { name: 'HR' },
     update: {},
     create: {
       name: 'HR',
-      description: 'Human Resource Management & Administrator',
+      displayName: 'HR (Legacy)',
+      description: 'Legacy HR role - maps to HR_USER',
+      level: 60,
+      isSystem: true,
+      isActive: true,
     },
   });
 
@@ -23,135 +85,215 @@ async function main() {
     update: {},
     create: {
       name: 'EMPLOYEE',
+      displayName: 'Employee',
       description: 'Standard Company Employee',
+      level: 10,
+      isSystem: true,
+      isActive: true,
     },
   });
 
-  console.log('✔ Roles seeded:', hrRole.name, '|', empRole.name);
+  console.log('✔ Roles seeded:', superAdminRole.name, '|', hrAdminRole.name, '|', hrUserRole.name, '|', hrRole.name, '|', empRole.name);
 
   // ─────────────────────────────────────────────────────
-  // 2. SEED DEPARTMENTS
+  // 2. SEED DEPARTMENTS (Org-scoped)
   // ─────────────────────────────────────────────────────
   const deptAdministration = await prisma.department.upsert({
-    where: { name: 'Administration' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Administration' } },
     update: {},
-    create: { name: 'Administration', description: 'Core Executive & Administrative Operations' },
-  });
-
-  const deptManager = await prisma.department.upsert({
-    where: { name: 'Manager' },
-    update: {},
-    create: { name: 'Manager', description: 'Management Department' },
-  });
-
-  const deptIT = await prisma.department.upsert({
-    where: { name: 'IT' },
-    update: {},
-    create: { name: 'IT', description: 'Information Technology & Software Engineering' },
-  });
-
-  const deptAgent = await prisma.department.upsert({
-    where: { name: 'Agent' },
-    update: {},
-    create: { name: 'Agent', description: 'Agent Department' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Administration',
+      description: 'Core Executive & Administrative Operations',
+    },
   });
 
   await prisma.department.upsert({
-    where: { name: 'Engineering' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Manager' } },
     update: {},
-    create: { name: 'Engineering', description: 'Product & Tech Development' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Manager',
+      description: 'Management Department',
+    },
   });
 
   await prisma.department.upsert({
-    where: { name: 'Human Resources' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'IT' } },
     update: {},
-    create: { name: 'Human Resources', description: 'People Operations & Talent Acquisition' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'IT',
+      description: 'Information Technology & Software Engineering',
+    },
   });
 
   await prisma.department.upsert({
-    where: { name: 'Sales & Marketing' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Agent' } },
     update: {},
-    create: { name: 'Sales & Marketing', description: 'Business Growth & Marketing' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Agent',
+      description: 'Agent Department',
+    },
   });
 
-  console.log('✔ Departments seeded (Manager, IT, Agent, and others)');
+  await prisma.department.upsert({
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Engineering' } },
+    update: {},
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Engineering',
+      description: 'Product & Tech Development',
+    },
+  });
+
+  await prisma.department.upsert({
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Human Resources' } },
+    update: {},
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Human Resources',
+      description: 'People Operations & Talent Acquisition',
+    },
+  });
+
+  await prisma.department.upsert({
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Sales & Marketing' } },
+    update: {},
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Sales & Marketing',
+      description: 'Business Growth & Marketing',
+    },
+  });
+
+  console.log('✔ Departments seeded (Organization-scoped)');
 
   // ─────────────────────────────────────────────────────
-  // 3. SEED DESIGNATIONS
+  // 3. SEED DESIGNATIONS (Org-scoped)
   // ─────────────────────────────────────────────────────
   const desgHRManager = await prisma.designation.upsert({
-    where: { name: 'HR Manager' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'HR Manager' } },
     update: {},
-    create: { name: 'HR Manager', description: 'Department Head, HR' },
-  });
-
-  const desgSoftwareEngineer = await prisma.designation.upsert({
-    where: { name: 'Software Engineer' },
-    update: {},
-    create: { name: 'Software Engineer', description: 'Individual Contributor, Engineering' },
-  });
-
-  await prisma.designation.upsert({
-    where: { name: 'IT Engineer' },
-    update: {},
-    create: { name: 'IT Engineer', description: 'Information Technology Engineer' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'HR Manager',
+      description: 'Department Head, HR',
+    },
   });
 
   await prisma.designation.upsert({
-    where: { name: 'Software Developer' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Software Engineer' } },
     update: {},
-    create: { name: 'Software Developer', description: 'Software Development Professional' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Software Engineer',
+      description: 'Individual Contributor, Engineering',
+    },
   });
 
   await prisma.designation.upsert({
-    where: { name: 'Agent' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'IT Engineer' } },
     update: {},
-    create: { name: 'Agent', description: 'Agent' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'IT Engineer',
+      description: 'Information Technology Engineer',
+    },
   });
 
   await prisma.designation.upsert({
-    where: { name: 'Sales Executive' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Software Developer' } },
     update: {},
-    create: { name: 'Sales Executive', description: 'Field Sales Operations' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Software Developer',
+      description: 'Software Development Professional',
+    },
   });
 
   await prisma.designation.upsert({
-    where: { name: 'Team Leader' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Agent' } },
     update: {},
-    create: { name: 'Team Leader', description: 'Team Leader' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Agent',
+      description: 'Agent',
+    },
   });
 
   await prisma.designation.upsert({
-    where: { name: 'Senior Manager' },
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Sales Executive' } },
     update: {},
-    create: { name: 'Senior Manager', description: 'Senior Management Position' },
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Sales Executive',
+      description: 'Field Sales Operations',
+    },
   });
 
-  console.log('✔ Designations seeded (HR Manager, IT Engineer, Agent, and others)');
+  await prisma.designation.upsert({
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Team Leader' } },
+    update: {},
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Team Leader',
+      description: 'Team Leader',
+    },
+  });
+
+  await prisma.designation.upsert({
+    where: { organizationId_name: { organizationId: defaultOrg.id, name: 'Senior Manager' } },
+    update: {},
+    create: {
+      organizationId: defaultOrg.id,
+      name: 'Senior Manager',
+      description: 'Senior Management Position',
+    },
+  });
+
+  console.log('✔ Designations seeded (Organization-scoped)');
 
   // ─────────────────────────────────────────────────────
-  // 4. PRODUCTION HR ADMIN ACCOUNT
-  //    Email : sumaiyyatamboli50@gmail.com
-  //    Pass  : 123456789
-  //    Role  : HR
-  //    Code  : FCS-HR-001
+  // 4. PRODUCTION HR ADMIN ACCOUNTS (Multi-tenant ready)
   // ─────────────────────────────────────────────────────
-  const hrEmail = 'sumaiyyatamboli50@gmail.com';
-  const hrCode  = 'FCS-HR-001';
+  const hrAccounts = [
+    {
+      email: 'sumaiyyatamboli50@gmail.com',
+      password: '123456789',
+      code: 'FCS-HR-ADMIN-001',
+      firstName: 'Sumaiyya',
+      lastName: 'Tamboli',
+      role: hrAdminRole,
+    },
+    {
+      email: 'adityashastri76@gmail.com',
+      password: '12345678',
+      code: 'FCS-HR-001',
+      firstName: 'Aditya',
+      lastName: 'Shastri',
+      role: hrAdminRole,
+    },
+  ];
 
-  const existingHRUser = await prisma.user.findUnique({ where: { email: hrEmail } });
-  const existingHREmp  = await prisma.employee.findUnique({ where: { employeeId: hrCode } });
+  for (const hrAccount of hrAccounts) {
+    const existingUser = await prisma.user.findUnique({ where: { email: hrAccount.email } });
+    const existingEmp = await prisma.employee.findUnique({ where: { employeeId: hrAccount.code } });
 
-  if (existingHRUser || existingHREmp) {
-    console.log('✔ Production HR Admin already exists — skipping');
-  } else {
-    const hashedHRPassword = await bcrypt.hash('123456789', 10);
+    if (existingUser || existingEmp) {
+      console.log(`✔ HR Account already exists — skipping: ${hrAccount.email}`);
+      continue;
+    }
+
+    const hashedPassword = await bcrypt.hash(hrAccount.password, 10);
 
     const hrUser = await prisma.user.create({
       data: {
-        email: hrEmail,
-        password: hashedHRPassword,
-        roleId: hrRole.id,
+        email: hrAccount.email,
+        password: hashedPassword,
+        roleId: hrAccount.role.id,
+        organizationId: defaultOrg.id, // ✅ Multi-tenant: Assign to default org
         isFirstLogin: false,
         isActive: true,
       },
@@ -159,10 +301,11 @@ async function main() {
 
     await prisma.employee.create({
       data: {
-        employeeId: hrCode,
+        employeeId: hrAccount.code,
         userId: hrUser.id,
-        firstName: 'Sumaiyya',
-        lastName: 'Tamboli',
+        organizationId: defaultOrg.id, // ✅ Multi-tenant: Assign to default org
+        firstName: hrAccount.firstName,
+        lastName: hrAccount.lastName,
         phone: '9876543220',
         departmentId: deptAdministration.id,
         designationId: desgHRManager.id,
@@ -172,7 +315,7 @@ async function main() {
 
     await prisma.notificationPreference.create({ data: { userId: hrUser.id } });
 
-    console.log('✔ Production HR Admin created:', hrEmail, '/ FCS-HR-001');
+    console.log(`✔ HR Admin created: ${hrAccount.email} / ${hrAccount.code} (${hrAccount.role.name})`);
   }
 
   // ─────────────────────────────────────────────────────
@@ -251,11 +394,14 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
   const { seedAttendance } = await import('./seeds/attendance.seed.js');
   await seedAttendance();
 
-  console.log('\n✅ FCS HRMS seeding complete (PRODUCTION MODE).\n');
+  console.log('\n✅ FCS HRMS seeding complete (Multi-Tenant SaaS MODE).\n');
   console.log('─────────────────────────────────────────────────────');
-  console.log('  PRODUCTION HR  → sumaiyyatamboli50@gmail.com / 123456789');
+  console.log('  DEFAULT ORG    → Default Organization (ORG-DEFAULT)');
+  console.log('  HR ADMIN 1     → sumaiyyatamboli50@gmail.com / 123456789');
+  console.log('  HR ADMIN 2     → adityashastri76@gmail.com / 12345678');
   console.log('─────────────────────────────────────────────────────');
   console.log('  ⚠️  No demo employees created - production ready');
+  console.log('  ✅  Multi-Tenant Architecture: Each HR can manage their own organization');
   console.log('─────────────────────────────────────────────────────\n');
 }
 

@@ -18,6 +18,7 @@ import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
 import { Roles } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/constants';
+import { GetUser } from '../../common/decorators/get-user.decorator';
 
 @ApiTags('Departments')
 @ApiBearerAuth()
@@ -29,8 +30,8 @@ export class DepartmentsController {
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Create a new department (HR Only)' })
   @ApiResponse({ status: 201, description: 'Department created successfully' })
-  create(@Body() createDepartmentDto: CreateDepartmentDto) {
-    return this.departmentsService.create(createDepartmentDto);
+  create(@Body() createDepartmentDto: CreateDepartmentDto, @GetUser('id') userId: string) {
+    return this.departmentsService.create(createDepartmentDto, userId);
   }
 
   @Get()

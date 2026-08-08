@@ -52,6 +52,7 @@ export class ComplaintsService {
           description: dto.description,
           anonymous: dto.anonymous ?? false,
           status: ComplaintStatus.OPEN,
+          organizationId: employee.organizationId,
           raisedById: employee.id,
         },
       });

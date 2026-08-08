@@ -21,6 +21,7 @@ import {
 } from './dto/designation.dto';
 import { Roles } from '../../common/guards/roles.guard';
 import { UserRole } from '../../common/constants';
+import { GetUser } from '../../common/decorators/get-user.decorator';
 
 @ApiTags('Designations')
 @ApiBearerAuth()
@@ -32,8 +33,8 @@ export class DesignationsController {
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Create a new designation (HR Only)' })
   @ApiResponse({ status: 201, description: 'Designation created successfully' })
-  create(@Body() createDesignationDto: CreateDesignationDto) {
-    return this.designationsService.create(createDesignationDto);
+  create(@Body() createDesignationDto: CreateDesignationDto, @GetUser('id') userId: string) {
+    return this.designationsService.create(createDesignationDto, userId);
   }
 
   @Get()

@@ -9,6 +9,7 @@ export interface JwtPayload {
   email: string;
   role: string;
   employeeId?: string;
+  organizationId: string; // ✅ Multi-tenant: Organization ID for data isolation
 }
 
 @Injectable()
@@ -30,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.sub },
       include: {
         role: true,
+        organization: true, // ✅ Include organization for multi-tenant
         employee: {
           select: { id: true, employeeId: true, onboardingStatus: true },
         },
@@ -40,10 +42,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Account is inactive or does not exist');
     }
 
+    if (!user.organization || !user.organization.isActive) {
+      throw new UnauthorizedException('Organization is inactive or does not exist');
+    }
+
     return {
       id: user.id,
       email: user.email,
       role: user.role.name,
+      organizationId: user.organizationId, // ✅ Multi-tenant: Include organizationId
       mustChangePassword: user.isFirstLogin,
       employeeId: user.employee?.id ?? null,
       employeeCode: user.employee?.employeeId ?? null,

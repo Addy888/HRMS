@@ -13,20 +13,36 @@ export class HRUsersService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * List all HR users
+   * List all HR users (organization-scoped)
    */
-  async findAll(query: any) {
+  async findAll(query: any, requestUserId: string) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // Get HR role
-    const hrRole = await this.prisma.role.findUnique({ where: { name: 'HR' } });
-    if (!hrRole) {
-      throw new NotFoundException('HR role not found');
+    // ✅ Multi-tenant: Get requesting user's organizationId
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!requestingUser) {
+      throw new NotFoundException('Requesting user not found');
     }
 
-    const where: any = { roleId: hrRole.id };
+    // Get HR_ADMIN and HR_USER roles
+    const hrRoles = await this.prisma.role.findMany({
+      where: {
+        name: { in: ['HR_ADMIN', 'HR_USER', 'HR'] }, // Include legacy HR role
+      },
+    });
+
+    const hrRoleIds = hrRoles.map((r) => r.id);
+
+    const where: any = {
+      roleId: { in: hrRoleIds },
+      organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by organization
+    };
 
     if (query.search) {
       where.OR = [
@@ -47,6 +63,7 @@ export class HRUsersService {
         skip,
         take: limit,
         include: {
+          role: true, // ✅ Include role to show HR_ADMIN vs HR_USER
           employee: {
             include: {
               department: true,
@@ -61,6 +78,7 @@ export class HRUsersService {
     const hrUsers = data.map((user) => ({
       id: user.id,
       email: user.email,
+      role: user.role.name, // ✅ Include role name
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -134,9 +152,9 @@ export class HRUsersService {
   }
 
   /**
-   * Create new HR user
+   * Create new HR user (organization-scoped)
    */
-  async create(dto: CreateHRUserDto) {
+  async create(dto: CreateHRUserDto, requestUserId: string) {
     // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -144,6 +162,16 @@ export class HRUsersService {
 
     if (existingUser) {
       throw new ConflictException('Email already exists');
+    }
+
+    // ✅ Multi-tenant: Get requesting user's organizationId
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!requestingUser) {
+      throw new NotFoundException('Requesting user not found');
     }
 
     // ✅ Determine HR role - default to HR_USER if not specified
@@ -183,6 +211,7 @@ export class HRUsersService {
           email: dto.email,
           password: hashedPassword,
           roleId: hrRole.id,
+          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Assign to same organization
           isFirstLogin: false, // Password is set by admin, no need to change
           isActive: dto.isActive !== undefined ? dto.isActive : true,
         },
@@ -193,6 +222,7 @@ export class HRUsersService {
         data: {
           employeeId,
           userId: user.id,
+          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Assign to same organization
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone || null,

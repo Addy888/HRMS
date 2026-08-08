@@ -19,6 +19,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { Roles } from '../../common/guards/roles.guard.js';
 import { UserRole } from '../../common/constants/index.js';
+import { GetUser } from '../../common/decorators/get-user.decorator.js';
 
 @ApiTags('Admin - HR Management')
 @ApiBearerAuth()
@@ -42,8 +43,8 @@ export class AdminHRController {
 
   @Post()
   @ApiOperation({ summary: 'Create new HR account (Super Admin Only)' })
-  create(@Body() dto: CreateHRAccountDto) {
-    return this.adminHRService.create(dto);
+  create(@Body() dto: CreateHRAccountDto, @GetUser('id') userId: string) {
+    return this.adminHRService.create(dto, userId);
   }
 
   @Patch(':id')

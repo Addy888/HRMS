@@ -10,9 +10,20 @@ const prisma = new PrismaClient();
 export async function seedAttendance() {
   console.log('🕒 Seeding attendance module...');
 
-  // 1. Seed Shifts
+  // Get the default organization
+  const defaultOrg = await prisma.organization.findUnique({
+    where: { code: 'ORG-DEFAULT' },
+  });
+
+  if (!defaultOrg) {
+    console.error('❌ Default organization not found. Run main seed first.');
+    return;
+  }
+
+  // 1. Seed Shifts (Organization-scoped)
   const shifts = [
     {
+      organizationId: defaultOrg.id,
       name: 'General Shift',
       code: 'GEN',
       startTime: '09:00',
@@ -30,6 +41,7 @@ export async function seedAttendance() {
       description: 'Standard 9 AM to 6 PM office hours',
     },
     {
+      organizationId: defaultOrg.id,
       name: 'Morning Shift',
       code: 'MOR',
       startTime: '06:00',
@@ -47,6 +59,7 @@ export async function seedAttendance() {
       description: 'Early morning shift for operations team',
     },
     {
+      organizationId: defaultOrg.id,
       name: 'Evening Shift',
       code: 'EVE',
       startTime: '14:00',
@@ -64,6 +77,7 @@ export async function seedAttendance() {
       description: 'Evening shift for customer support',
     },
     {
+      organizationId: defaultOrg.id,
       name: 'Night Shift',
       code: 'NIGHT',
       startTime: '22:00',
@@ -81,6 +95,7 @@ export async function seedAttendance() {
       description: 'Night shift for 24/7 operations',
     },
     {
+      organizationId: defaultOrg.id,
       name: 'Flexible Shift',
       code: 'FLEX',
       startTime: '00:00',
@@ -101,13 +116,13 @@ export async function seedAttendance() {
 
   for (const shift of shifts) {
     await prisma.shift.upsert({
-      where: { code: shift.code },
+      where: { organizationId_code: { organizationId: defaultOrg.id, code: shift.code } },
       update: shift,
       create: shift,
     });
   }
 
-  console.log(`✔ Shifts seeded: ${shifts.length} shifts`);
+  console.log(`✔ Shifts seeded: ${shifts.length} shifts (Organization-scoped)`);
 
   // 2. Seed National Holidays 2026
   const holidays = [
@@ -344,10 +359,15 @@ export async function seedAttendance() {
 
   console.log(`✔ Attendance providers seeded: ${providers.length} providers`);
 
-  // 5. Assign General Shift to all existing employees
-  const employees = await prisma.employee.findMany();
-  const generalShift = await prisma.shift.findUnique({
-    where: { code: 'GEN' },
+  // 5. Assign General Shift to all existing employees in default org
+  const employees = await prisma.employee.findMany({
+    where: { organizationId: defaultOrg.id },
+  });
+  const generalShift = await prisma.shift.findFirst({
+    where: {
+      organizationId: defaultOrg.id,
+      code: 'GEN',
+    },
   });
 
   if (generalShift && employees.length > 0) {

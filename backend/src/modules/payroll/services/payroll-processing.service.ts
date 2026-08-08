@@ -25,9 +25,19 @@ export class PayrollProcessingService {
     year: number,
     processedBy?: string,
   ) {
+    // Get employee with organization
+    const employee = await this.database.employee.findUnique({
+      where: { id: employeeId },
+      select: { id: true, organizationId: true },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
     // Check if already processed
     const existing = await this.database.payrollRun.findFirst({
-      where: { employeeId, month, year },
+      where: { employeeId, month, year, organizationId: employee.organizationId },
     });
 
     if (existing && existing.status === 'PAID') {
@@ -117,6 +127,7 @@ export class PayrollProcessingService {
 
     const payrollData = {
       employeeId,
+      organizationId: employee.organizationId,
       month,
       year,
       basicSalary,

@@ -13,15 +13,32 @@ import {
 export class DesignationsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createDesignationDto: CreateDesignationDto) {
+  async create(createDesignationDto: CreateDesignationDto, requestUserId: string) {
+    // Get requesting user's organization
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      throw new NotFoundException('User organization not found');
+    }
+
     const existing = await this.prisma.designation.findUnique({
-      where: { name: createDesignationDto.name },
+      where: {
+        organizationId_name: {
+          organizationId: requestingUser.organizationId,
+          name: createDesignationDto.name,
+        },
+      },
     });
     if (existing) {
-      throw new ConflictException('Designation with this name already exists');
+      throw new ConflictException('Designation with this name already exists in your organization');
     }
     return this.prisma.designation.create({
-      data: createDesignationDto,
+      data: {
+        ...createDesignationDto,
+        organizationId: requestingUser.organizationId,
+      },
     });
   }
 

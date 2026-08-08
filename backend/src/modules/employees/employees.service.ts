@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import {
@@ -17,13 +18,41 @@ import { UserRole, OnboardingStatus } from '../../common/constants/index.js';
 export class EmployeesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createEmployeeDto: CreateEmployeeDto) {
+  async create(createEmployeeDto: CreateEmployeeDto, requestUserId: string) {
+    // ✅ STEP 1: Validate authenticated user ID
+    if (!requestUserId) {
+      throw new UnauthorizedException(
+        'Authenticated user could not be identified. Please log in again.',
+      );
+    }
+
     // Log incoming data for debugging
     console.log('📝 Creating employee with data:', {
       email: createEmployeeDto.email,
       departmentId: createEmployeeDto.departmentId,
       designationId: createEmployeeDto.designationId,
+      requestUserId, // ✅ Log the authenticated user ID
     });
+
+    // ✅ STEP 2: Get requesting user's organizationId
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!requestingUser) {
+      throw new UnauthorizedException(
+        'Authenticated user account not found. Please log in again.',
+      );
+    }
+
+    if (!requestingUser.organizationId) {
+      throw new BadRequestException(
+        'User is not associated with an organization. Please contact system administrator.',
+      );
+    }
+
+    console.log('✅ Authenticated user organizationId:', requestingUser.organizationId);
 
     // 1. Validate unique email
     const existingUser = await this.prisma.user.findUnique({
@@ -50,16 +79,19 @@ export class EmployeesService {
     if (createEmployeeDto.departmentId) {
       const inputDeptId = createEmployeeDto.departmentId.trim();
       
-      // First try to find by UUID
-      let department = await this.prisma.department.findUnique({
-        where: { id: inputDeptId },
+      // First try to find by UUID within the organization
+      let department = await this.prisma.department.findFirst({
+        where: {
+          id: inputDeptId,
+          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
+        },
       });
 
-      // If not found by UUID, try to find by name (MySQL doesn't support mode: 'insensitive')
-      // MySQL's default collation is case-insensitive for string comparisons
+      // If not found by UUID, try to find by name within the organization
       if (!department) {
         department = await this.prisma.department.findFirst({
           where: {
+            organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
             name: inputDeptId,
           },
         });
@@ -67,7 +99,7 @@ export class EmployeesService {
 
       if (!department) {
         throw new BadRequestException(
-          `Selected department "${inputDeptId}" does not exist. Please select a valid department.`,
+          `Selected department "${inputDeptId}" does not exist in your organization. Please select a valid department.`,
         );
       }
 
@@ -80,15 +112,19 @@ export class EmployeesService {
     if (createEmployeeDto.designationId) {
       const inputDesigId = createEmployeeDto.designationId.trim();
       
-      // First try to find by UUID
-      let designation = await this.prisma.designation.findUnique({
-        where: { id: inputDesigId },
+      // First try to find by UUID within the organization
+      let designation = await this.prisma.designation.findFirst({
+        where: {
+          id: inputDesigId,
+          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
+        },
       });
 
-      // If not found by UUID, try to find by name (MySQL is case-insensitive by default)
+      // If not found by UUID, try to find by name within the organization
       if (!designation) {
         designation = await this.prisma.designation.findFirst({
           where: {
+            organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
             name: inputDesigId,
           },
         });
@@ -99,6 +135,7 @@ export class EmployeesService {
         const nameWithSpaces = inputDesigId.replace(/_/g, ' ');
         designation = await this.prisma.designation.findFirst({
           where: {
+            organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
             name: nameWithSpaces,
           },
         });
@@ -106,7 +143,7 @@ export class EmployeesService {
 
       if (!designation) {
         throw new BadRequestException(
-          `Selected designation "${inputDesigId}" does not exist. Please select a valid designation.`,
+          `Selected designation "${inputDesigId}" does not exist in your organization. Please select a valid designation.`,
         );
       }
 
@@ -120,7 +157,9 @@ export class EmployeesService {
 
     // 6. Generate custom Employee ID Code (e.g. FCS-2026-XXXX)
     const currentYear = new Date().getFullYear();
-    const count = await this.prisma.employee.count();
+    const count = await this.prisma.employee.count({
+      where: { organizationId: requestingUser.organizationId }, // ✅ Multi-tenant: Count within org
+    });
     const nextSeq = String(count + 1).padStart(4, '0');
     const employeeIdCode = `FCS-${currentYear}-${nextSeq}`;
 
@@ -132,6 +171,7 @@ export class EmployeesService {
           email: createEmployeeDto.email,
           password: hashedPassword,
           roleId: empRole.id,
+          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Assign to org
           isFirstLogin: true,
           isActive: true,
         },
@@ -142,6 +182,7 @@ export class EmployeesService {
         data: {
           employeeId: employeeIdCode,
           userId: user.id,
+          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Assign to org
           firstName: createEmployeeDto.firstName,
           lastName: createEmployeeDto.lastName,
           phone: createEmployeeDto.phone,
@@ -208,16 +249,27 @@ export class EmployeesService {
     });
   }
 
-  async findAll(query: QueryEmployeeDto) {
+  async findAll(query: QueryEmployeeDto, requestUserId: string) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // ✅ Multi-tenant: Get requesting user's organizationId
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!requestingUser) {
+      throw new NotFoundException('Requesting user not found');
+    }
+
     const whereClause: any = {
-      // Exclude HR admin profile from listing
+      organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by organization
+      // Exclude HR admin profiles from employee listing
       user: {
         role: {
-          name: { not: UserRole.HR },
+          name: { notIn: [UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER] }, // Exclude all HR roles
         },
       },
     };

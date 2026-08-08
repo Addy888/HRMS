@@ -22,22 +22,37 @@ export class ShiftService {
   /**
    * CREATE SHIFT
    */
-  async createShift(dto: CreateShiftDto) {
+  async createShift(dto: CreateShiftDto, requestUserId: string) {
     this.logger.log(`Creating shift: ${dto.name}`);
 
-    // Check if shift code already exists
+    // Get requesting user's organization
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      throw new BadRequestException('User organization not found');
+    }
+
+    // Check if shift code already exists in this organization
     const existing = await this.prisma.shift.findUnique({
-      where: { code: dto.code },
+      where: {
+        organizationId_code: {
+          organizationId: requestingUser.organizationId,
+          code: dto.code,
+        },
+      },
     });
 
     if (existing) {
       throw new BadRequestException(
-        `Shift with code '${dto.code}' already exists`,
+        `Shift with code '${dto.code}' already exists in your organization`,
       );
     }
 
     return await this.prisma.shift.create({
       data: {
+        organizationId: requestingUser.organizationId,
         name: dto.name,
         code: dto.code,
         startTime: dto.startTime,

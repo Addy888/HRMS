@@ -128,7 +128,7 @@ export class AdminHRService {
   /**
    * Create new HR account (Super Admin only)
    */
-  async create(dto: CreateHRAccountDto) {
+  async create(dto: CreateHRAccountDto, requestUserId: string) {
     // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -136,6 +136,16 @@ export class AdminHRService {
 
     if (existingUser) {
       throw new ConflictException('Email already exists');
+    }
+
+    // Get requesting user's organization
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      include: { organization: true },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      throw new NotFoundException('Requesting user organization not found');
     }
 
     // Get HR role
@@ -157,6 +167,7 @@ export class AdminHRService {
           email: dto.email,
           password: hashedPassword,
           roleId: hrRole.id,
+          organizationId: requestingUser.organizationId,
           isFirstLogin: false, // Admin sets the password, not temporary
           isActive: dto.isActive !== undefined ? dto.isActive : true,
         },
@@ -167,6 +178,7 @@ export class AdminHRService {
         data: {
           employeeId,
           userId: user.id,
+          organizationId: requestingUser.organizationId,
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone || null,

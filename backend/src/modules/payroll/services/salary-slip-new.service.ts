@@ -29,6 +29,7 @@ export class SalarySlipService {
         data: {
           payrollRunId,
           employeeId: payrollRun.employeeId,
+          organizationId: payrollRun.organizationId,
           year: payrollRun.year,
           month: payrollRun.month,
           payslipNumber: `PAY-${payrollRun.year}-${String(payrollRun.month).padStart(2, '0')}-${payrollRun.employee.employeeId}`,

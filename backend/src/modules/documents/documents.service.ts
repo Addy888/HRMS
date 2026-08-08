@@ -107,6 +107,7 @@ export class DocumentsService {
       const doc = await tx.document.create({
         data: {
           employeeId: employee.id,
+          organizationId: employee.organizationId,
           type: type.toUpperCase(),
           fileUrl: uploadResult.fileUrl,
           fileName: uploadResult.fileName,

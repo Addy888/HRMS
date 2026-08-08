@@ -69,27 +69,36 @@ export class PoliciesService {
   }
 
   async createPolicy(hrUserId: string, dto: CreatePolicyDto) {
-    // Check duplicate title or number
-    const existing = await this.prisma.policy.findFirst({
-      where: { OR: [{ title: dto.title }, { policyNumber: dto.policyNumber }] },
-    });
-    if (existing) {
-      throw new BadRequestException(
-        'A policy with this title or policy number already exists.',
-      );
-    }
-
     const hrUser = await this.prisma.user.findUnique({
       where: { id: hrUserId },
       include: { employee: true },
     });
-    const creatorName = hrUser?.employee
+
+    if (!hrUser || !hrUser.organizationId) {
+      throw new NotFoundException('User organization not found');
+    }
+
+    // Check duplicate title or number in this organization
+    const existing = await this.prisma.policy.findFirst({
+      where: {
+        organizationId: hrUser.organizationId,
+        OR: [{ title: dto.title }, { policyNumber: dto.policyNumber }],
+      },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        'A policy with this title or policy number already exists in your organization.',
+      );
+    }
+
+    const creatorName = hrUser.employee
       ? `${hrUser.employee.firstName} ${hrUser.employee.lastName}`
       : 'HR Admin';
 
     return this.prisma.$transaction(async (tx) => {
       const policy = await tx.policy.create({
         data: {
+          organizationId: hrUser.organizationId,
           title: dto.title,
           policyNumber: dto.policyNumber,
           category: dto.category,

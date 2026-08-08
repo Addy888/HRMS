@@ -37,6 +37,7 @@ import * as fs from 'fs';
 @ApiTags('Employees')
 @ApiBearerAuth()
 @Controller('employees')
+@UseGuards(JwtAuthGuard) // ✅ JWT Auth Guard at controller level
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 
@@ -116,8 +117,8 @@ export class EmployeesController {
     description:
       'Employee registered successfully, temporary credentials returned',
   })
-  create(@Body() createEmployeeDto: CreateEmployeeDto) {
-    return this.employeesService.create(createEmployeeDto);
+  create(@Body() createEmployeeDto: CreateEmployeeDto, @GetUser('id') userId: string) {
+    return this.employeesService.create(createEmployeeDto, userId);
   }
 
   @Get()
@@ -125,8 +126,8 @@ export class EmployeesController {
   @ApiOperation({
     summary: 'Get all employees with pagination, search & filters (HR Only)',
   })
-  findAll(@Query() query: QueryEmployeeDto) {
-    return this.employeesService.findAll(query);
+  findAll(@Query() query: QueryEmployeeDto, @GetUser('id') userId: string) {
+    return this.employeesService.findAll(query, userId);
   }
 
   @Get(':id')

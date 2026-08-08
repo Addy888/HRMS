@@ -21,6 +21,7 @@ export class SalaryStructureService {
     // Check if employee exists
     const employee = await this.database.employee.findUnique({
       where: { id: createDto.employeeId },
+      select: { id: true, organizationId: true },
     });
 
     if (!employee) {
@@ -45,6 +46,7 @@ export class SalaryStructureService {
     return await this.database.salaryStructure.create({
       data: {
         ...createDto,
+        organizationId: employee.organizationId,
         hra: createDto.hra || 0,
         conveyance: createDto.conveyance || 0,
         medicalAllowance: createDto.medicalAllowance || 0,

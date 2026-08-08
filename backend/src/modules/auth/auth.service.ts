@@ -28,9 +28,13 @@ export class AuthService implements OnModuleInit {
   // STARTUP HOOK — Ensures the default HR admin account always exists
   // Runs once when the NestJS application initialises.
   // Safe to call repeatedly; uses upsert / existence checks.
+  //
+  // ✅ DISABLED: Database initialization now handled by seed file (prisma/seed.ts)
+  // The seed file properly creates all accounts with organizationId.
+  // This method is kept for reference but not called.
   // ─────────────────────────────────────────────────────────────────
   async onModuleInit() {
-    await this.ensureDefaultHRUser();
+    // await this.ensureDefaultHRUser();  // ✅ Disabled - use seed file instead
   }
 
   private async ensureDefaultHRUser() {
@@ -50,7 +54,20 @@ export class AuthService implements OnModuleInit {
     try {
       const superAdminEmail = 'adityashastri76@gmail.com';
       
-      // 1. Ensure Super Admin role exists
+      // 1. Ensure default organization exists
+      const defaultOrg = await this.prisma.organization.upsert({
+        where: { code: 'ORG-DEFAULT' },
+        update: {},
+        create: {
+          name: 'Default Organization',
+          code: 'ORG-DEFAULT',
+          email: 'default@fcscorp.com',
+          phone: '1234567890',
+          isActive: true,
+        },
+      });
+      
+      // 2. Ensure Super Admin role exists
       const superAdminRole = await this.prisma.role.upsert({
         where: { name: 'Super Admin' },
         update: {},
@@ -62,7 +79,7 @@ export class AuthService implements OnModuleInit {
         },
       });
 
-      // 2. Check if Super Admin user exists
+      // 3. Check if Super Admin user exists
       const existingUser = await this.prisma.user.findUnique({
         where: { email: superAdminEmail },
         include: { role: true },
@@ -84,13 +101,14 @@ export class AuthService implements OnModuleInit {
         return;
       }
 
-      // 3. Create Super Admin user
+      // 4. Create Super Admin user
       const hashedPassword = await bcrypt.hash('12345678', 10);
       await this.prisma.user.create({
         data: {
           email: superAdminEmail,
           password: hashedPassword,
           roleId: superAdminRole.id,
+          organizationId: defaultOrg.id, // ✅ Assign to default organization
           isFirstLogin: false,
           isActive: true,
         },
@@ -111,6 +129,18 @@ export class AuthService implements OnModuleInit {
     lastName: string,
   ) {
     try {
+      // ✅ STEP 1: Ensure default organization exists FIRST
+      const defaultOrg = await this.prisma.organization.upsert({
+        where: { code: 'ORG-DEFAULT' },
+        update: {},
+        create: {
+          name: 'Default Organization',
+          code: 'ORG-DEFAULT',
+          email: 'default@fcscorp.com',
+          phone: '1234567890',
+          isActive: true,
+        },
+      });
 
       // ✅ CRITICAL: Create HR_ADMIN and HR_USER roles
       const hrAdminRole = await this.prisma.role.upsert({
@@ -157,21 +187,33 @@ export class AuthService implements OnModuleInit {
         create: { name: 'EMPLOYEE', description: 'Standard Company Employee' },
       });
 
-      // 3. Ensure Administration department exists
+      // 3. Ensure Administration department exists (organization-scoped)
       const adminDept = await this.prisma.department.upsert({
-        where: { name: 'Administration' },
+        where: {
+          organizationId_name: {
+            organizationId: defaultOrg.id,
+            name: 'Administration',
+          },
+        },
         update: {},
         create: {
+          organizationId: defaultOrg.id,
           name: 'Administration',
           description: 'Core Executive & Administrative Operations',
         },
       });
 
-      // 4. Ensure HR Manager designation exists
+      // 4. Ensure HR Manager designation exists (organization-scoped)
       const hrManagerDesg = await this.prisma.designation.upsert({
-        where: { name: 'HR Manager' },
+        where: {
+          organizationId_name: {
+            organizationId: defaultOrg.id,
+            name: 'HR Manager',
+          },
+        },
         update: {},
         create: {
+          organizationId: defaultOrg.id,
           name: 'HR Manager',
           description: 'Human Resources Management Lead',
         },
@@ -231,6 +273,7 @@ export class AuthService implements OnModuleInit {
           email: defaultEmail,
           password: hashedPassword,
           roleId: assignedRole.id,
+          organizationId: defaultOrg.id, // ✅ Multi-tenant: Assign to default organization
           isFirstLogin: false,
           isActive: true,
         },
@@ -241,6 +284,7 @@ export class AuthService implements OnModuleInit {
         data: {
           employeeId: defaultCode,
           userId: newUser.id,
+          organizationId: defaultOrg.id, // ✅ Multi-tenant: Assign to default organization
           firstName,
           lastName,
           phone: '9876543210',
@@ -363,6 +407,7 @@ export class AuthService implements OnModuleInit {
       email: user.email,
       role: user.role.name,
       employeeId: user.employee?.id ?? null,
+      organizationId: user.organizationId, // ✅ Multi-tenant: Include organizationId in JWT
     };
 
     const accessToken = this.jwtService.sign(payload);

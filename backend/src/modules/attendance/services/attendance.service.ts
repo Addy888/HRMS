@@ -312,6 +312,7 @@ export class AttendanceService {
     return await this.prisma.attendance.create({
       data: {
         employeeId: employee.id,
+        organizationId: employee.organizationId,
         date: date,
         shiftId: shiftAssignment?.shiftId,
         checkInTime: event.timestamp,

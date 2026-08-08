@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { HRUsersService } from './hr-users.service.js';
@@ -29,8 +30,8 @@ export class HRUsersController {
 
   @Get()
   @ApiOperation({ summary: 'List all HR users (HR_ADMIN Only)' })
-  findAll(@Query() query: any) {
-    return this.hrUsersService.findAll(query);
+  findAll(@Query() query: any, @Request() req: any) {
+    return this.hrUsersService.findAll(query, req.user.id);
   }
 
   @Get(':id')
@@ -41,8 +42,8 @@ export class HRUsersController {
 
   @Post()
   @ApiOperation({ summary: 'Create new HR user (HR_ADMIN Only)' })
-  create(@Body() dto: CreateHRUserDto) {
-    return this.hrUsersService.create(dto);
+  create(@Body() dto: CreateHRUserDto, @Request() req: any) {
+    return this.hrUsersService.create(dto, req.user.id);
   }
 
   @Patch(':id')
