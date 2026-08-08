@@ -33,6 +33,13 @@ export default function EmployeeDashboard() {
   const emp = profileResponse || {};
   const isLoaded = !loadingCompletion && !loadingProfile;
 
+  // Debug log to verify onboarding status
+  React.useEffect(() => {
+    if (isLoaded && emp.onboardingStatus) {
+      console.log('📊 Dashboard loaded. Onboarding Status:', emp.onboardingStatus);
+    }
+  }, [isLoaded, emp.onboardingStatus]);
+
   const incompleteSections = Object.entries(completion.sections || {})
     .filter(([_, val]: any) => val.percentage < 100)
     .map(([key, val]: any) => ({ key, ...val }));

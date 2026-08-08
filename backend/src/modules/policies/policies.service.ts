@@ -380,6 +380,51 @@ export class PoliciesService {
     });
   }
 
+  async getAcknowledgementStatus(userId: string) {
+    const emp = await this.prisma.employee.findUnique({
+      where: { userId },
+      include: {
+        acknowledgement: true,
+      },
+    });
+    
+    if (!emp) throw new NotFoundException('Employee not found');
+
+    // Get company policies status
+    const companyPolicies = await this.prisma.companyPolicy.findMany({
+      where: { status: 'ACTIVE' },
+      include: {
+        acceptances: {
+          where: { 
+            employeeId: emp.id,
+            status: 'ACCEPTED',
+          },
+        },
+      },
+    });
+    
+    const totalAssigned = companyPolicies.length;
+    const totalAccepted = companyPolicies.filter(cp => cp.acceptances.length > 0).length;
+    const totalPending = totalAssigned - totalAccepted;
+    
+    const hasAcknowledgement = !!emp.acknowledgement;
+    
+    return {
+      submitted: hasAcknowledgement,
+      acknowledgement: emp.acknowledgement ? {
+        fullName: emp.acknowledgement.fullName,
+        signedAt: emp.acknowledgement.signedAt,
+        createdAt: emp.acknowledgement.createdAt,
+      } : null,
+      policies: {
+        total: totalAssigned,
+        accepted: totalAccepted,
+        pending: totalPending,
+        allAccepted: totalPending === 0,
+      },
+    };
+  }
+
   async submitAcknowledgement(
     userId: string,
     dto: SubmitAcknowledgementDto,
@@ -388,30 +433,77 @@ export class PoliciesService {
   ) {
     const emp = await this.prisma.employee.findUnique({
       where: { userId },
-      include: { user: true },
+      include: { 
+        user: true,
+        acknowledgement: true,
+      },
     });
     if (!emp) throw new NotFoundException('Employee not found');
 
-    // Make sure all policies are accepted first
-    const assigned = await this.getEmployeePolicies(userId);
-    const pending = assigned.filter((p) => !p.accepted);
-    if (pending.length > 0) {
+    // ========================================
+    // PREVENT DUPLICATE SUBMISSION - IMMUTABLE RECORD
+    // ========================================
+    if (emp.acknowledgement) {
+      console.log('⚠️  ACKNOWLEDGEMENT ALREADY SUBMITTED for employee:', emp.employeeId);
+      console.log('   Submitted at:', emp.acknowledgement.signedAt);
+      console.log('   Submitted by:', emp.acknowledgement.fullName);
+      
+      return {
+        success: true,
+        submitted: true,
+        alreadyExists: true,
+        acknowledgement: {
+          fullName: emp.acknowledgement.fullName,
+          signedAt: emp.acknowledgement.signedAt,
+          createdAt: emp.acknowledgement.createdAt,
+        },
+        message: 'Acknowledgement already submitted. This is an immutable record.',
+      };
+    }
+
+    // ========================================
+    // SURGICAL FIX: Only validate COMPANY POLICIES for final acknowledgement
+    // Regular policies are NOT required for final acknowledgement
+    // ========================================
+    
+    // Get company policies (they apply to all employees)
+    const companyPolicies = await this.prisma.companyPolicy.findMany({
+      where: { status: 'ACTIVE' },
+      include: {
+        acceptances: {
+          where: { 
+            employeeId: emp.id,
+            status: 'ACCEPTED',
+          },
+        },
+      },
+    });
+    
+    // Calculate company policy acceptance
+    const totalAssigned = companyPolicies.length;
+    const totalAccepted = companyPolicies.filter(cp => cp.acceptances.length > 0).length;
+    const totalPending = totalAssigned - totalAccepted;
+    
+    console.log('============ ACKNOWLEDGEMENT VALIDATION ============');
+    console.log('Employee:', emp.firstName, emp.lastName);
+    console.log('Company Policies:', totalAssigned, 'assigned,', totalPending, 'pending');
+    console.log('FINAL ACKNOWLEDGEMENT:');
+    console.log(' ', totalAssigned, 'assigned');
+    console.log(' ', totalAccepted, 'accepted');
+    console.log(' ', totalPending, 'pending');
+    console.log('===================================================');
+    
+    if (totalPending > 0) {
       throw new BadRequestException(
-        `Please accept all assigned policies first. ${pending.length} pending.`,
+        `Please accept all assigned policies first. ${totalPending} pending.`,
       );
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const ack = await tx.acknowledgement.upsert({
-        where: { employeeId: emp.id },
-        create: {
+      // Create immutable acknowledgement record
+      const ack = await tx.acknowledgement.create({
+        data: {
           employeeId: emp.id,
-          fullName: dto.fullName,
-          ipAddress,
-          userAgent,
-          signedAt: new Date(),
-        },
-        update: {
           fullName: dto.fullName,
           ipAddress,
           userAgent,
@@ -424,13 +516,18 @@ export class PoliciesService {
         where: { id: emp.id },
         data: { onboardingStatus: 'COMPLETED' },
       });
+      
+      console.log('✅ ONBOARDING STATUS UPDATED TO COMPLETED for employee:', emp.employeeId);
+      console.log('✅ ACKNOWLEDGEMENT CREATED - IMMUTABLE RECORD');
+      console.log('   Signed by:', ack.fullName);
+      console.log('   Signed at:', ack.signedAt);
 
       // Log audit
       await tx.auditLog.create({
         data: {
           userId,
           action: 'FINAL_ACKNOWLEDGEMENT_SIGNED',
-          details: `Employee signed digital declaration. Signature: ${dto.fullName}`,
+          details: `Employee signed digital declaration. Signature: ${dto.fullName}. Company Policies: ${totalAccepted}/${totalAssigned} accepted.`,
         },
       });
 
@@ -454,7 +551,20 @@ export class PoliciesService {
           .catch(() => {});
       }
 
-      return ack;
+      return {
+        success: true,
+        submitted: true,
+        acknowledgement: {
+          fullName: ack.fullName,
+          signedAt: ack.signedAt,
+          createdAt: ack.createdAt,
+        },
+        policies: {
+          total: totalAssigned,
+          accepted: totalAccepted,
+        },
+        message: 'Acknowledgement submitted successfully',
+      };
     });
   }
 

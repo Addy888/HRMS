@@ -161,38 +161,35 @@ export class CompanyPoliciesService {
     }
 
     try {
-      console.log('🔍 Querying CompanyPolicy with findMany...');
+      console.log('🔍 Querying ALL ACTIVE CompanyPolicies...');
       
-      // CRITICAL FIX: Return ALL assigned policies for this employee
-      // NOT just one active policy - maintain complete history
+      // FIX: Return ALL ACTIVE company policies (they apply to all employees)
+      // Then include THIS employee's acceptance status for each
       const policies = await this.prisma.companyPolicy.findMany({
         where: { 
           status: 'ACTIVE',
-          acceptances: {
-            some: {
-              employeeId: employeeId,
-            },
-          },
         },
         orderBy: { createdAt: 'desc' }, // Newest first
         include: {
           acceptances: {
-            where: { employeeId },
+            where: { employeeId }, // Only this employee's acceptance
           },
         },
       });
 
       console.log('✅ Query completed successfully');
-      console.log('📊 Policies found:', policies.length);
+      console.log('📊 Total ACTIVE policies found:', policies.length);
 
       if (!policies || policies.length === 0) {
-        console.log('ℹ️  No policies found, returning empty array');
+        console.log('ℹ️  No active policies found, returning empty array');
         return [];
       }
 
       // Map to include acceptance status for each policy
       const result = policies.map(policy => {
-        const acceptance = policy.acceptances[0];
+        const acceptance = policy.acceptances[0]; // This employee's acceptance (if exists)
+        const isAccepted = acceptance?.status === 'ACCEPTED';
+        
         return {
           id: policy.id,
           policyName: policy.policyName,
@@ -201,12 +198,14 @@ export class CompanyPoliciesService {
           uploadedBy: policy.uploadedByName,
           uploadedAt: policy.createdAt,
           status: acceptance?.status || 'PENDING',
-          accepted: acceptance?.status === 'ACCEPTED',
+          accepted: isAccepted,
           acceptedAt: acceptance?.acceptedAt || null,
         };
       });
 
       console.log('✅ Returning', result.length, 'policies');
+      console.log('   Accepted:', result.filter(p => p.accepted).length);
+      console.log('   Pending:', result.filter(p => !p.accepted).length);
       console.log('╔═══════════════════════════════════════════════════════════╗');
       console.log('║  getActivePolicyForEmployee COMPLETED                     ║');
       console.log('╚═══════════════════════════════════════════════════════════╝\n');

@@ -144,6 +144,16 @@ export class PoliciesController {
     return this.policiesService.acceptPolicy(userId, id, dto);
   }
 
+  @Get('acknowledgement/status')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.EMPLOYEE)
+  @ApiOperation({
+    summary: 'Get acknowledgement status for logged-in employee',
+  })
+  getAcknowledgementStatus(@GetUser('id') userId: string) {
+    return this.policiesService.getAcknowledgementStatus(userId);
+  }
+
   @Post('acknowledge')
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.EMPLOYEE)
