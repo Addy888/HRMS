@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import Link from 'next/link';
+import HRLayout from '@/layouts/HRLayout';
 import {
   FileText, Plus, Search, Filter, MoreVertical, Eye, Edit2, Trash2,
   CheckCircle2, Archive, Send, Globe, Loader2, BarChart2, Users,
@@ -164,28 +165,29 @@ export default function HRPoliciesPage() {
   const metrics = dashboard?.metrics || {};
 
   return (
-    <div className="min-h-screen bg-neutral-950 p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white font-heading">Policy Management</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Manage company policies and track employee acceptance</p>
+    <HRLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white font-heading">Policy Management</h1>
+            <p className="text-sm text-neutral-500 mt-0.5">Manage company policies and track employee acceptance</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleUploadClick}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-purple-950/30"
+            >
+              <Upload className="w-4 h-4" /> Upload Company Policy
+            </button>
+            <Link href="/hr/policies/tracking" className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-xl text-xs font-semibold text-neutral-300 transition-colors">
+              <BarChart2 className="w-4 h-4" /> Tracking
+            </Link>
+            <Link href="/hr/policies/create" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-blue-950/30">
+              <Plus className="w-4 h-4" /> New Policy
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleUploadClick}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-purple-950/30"
-          >
-            <Upload className="w-4 h-4" /> Upload Company Policy
-          </button>
-          <Link href="/hr/policies/tracking" className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-xl text-xs font-semibold text-neutral-300 transition-colors">
-            <BarChart2 className="w-4 h-4" /> Tracking
-          </Link>
-          <Link href="/hr/policies/create" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-blue-950/30">
-            <Plus className="w-4 h-4" /> New Policy
-          </Link>
-        </div>
-      </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4">
@@ -423,6 +425,7 @@ export default function HRPoliciesPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </HRLayout>
   );
 }
