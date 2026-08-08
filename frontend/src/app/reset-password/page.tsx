@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tantml:react-query';
 import api from '@/lib/api';
 import { ShieldCheck, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 
@@ -23,7 +23,7 @@ function ResetPasswordForm() {
   }, [searchParams]);
 
   const resetMutation = useMutation({
-    mutationFn: async (payload: { token: string; newPassword: any }) => {
+    mutationFn: async (payload: { resetToken: string; newPassword: string }) => {
       const res = await api.post('/auth/reset-password', payload);
       return res.data?.data ?? res.data;
     },
@@ -53,7 +53,7 @@ function ResetPasswordForm() {
       setError('Passwords do not match.');
       return;
     }
-    resetMutation.mutate({ token, newPassword });
+    resetMutation.mutate({ resetToken: token, newPassword });
   };
 
   return (
@@ -90,7 +90,7 @@ function ResetPasswordForm() {
             <label className="text-xs font-semibold text-neutral-400 uppercase">Reset Token</label>
             <input
               type="text"
-              placeholder="Enter the UUID reset token"
+              placeholder="Enter the reset token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
@@ -156,11 +156,13 @@ export default function ResetPasswordPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
         </button>
 
-        <Suspense fallback={
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex items-center justify-center min-h-[300px]">
-            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex items-center justify-center min-h-[300px]">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+            </div>
+          }
+        >
           <ResetPasswordForm />
         </Suspense>
       </div>

@@ -18,6 +18,13 @@ export class EmployeesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createEmployeeDto: CreateEmployeeDto) {
+    // Log incoming data for debugging
+    console.log('📝 Creating employee with data:', {
+      email: createEmployeeDto.email,
+      departmentId: createEmployeeDto.departmentId,
+      designationId: createEmployeeDto.designationId,
+    });
+
     // 1. Validate unique email
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createEmployeeDto.email },
@@ -38,17 +45,86 @@ export class EmployeesService {
       );
     }
 
-    // 3. Generate default credentials
+    // 3. Resolve department: Accept UUID or name/code, convert to UUID
+    let resolvedDepartmentId: string | null = null;
+    if (createEmployeeDto.departmentId) {
+      const inputDeptId = createEmployeeDto.departmentId.trim();
+      
+      // First try to find by UUID
+      let department = await this.prisma.department.findUnique({
+        where: { id: inputDeptId },
+      });
+
+      // If not found by UUID, try to find by name (MySQL doesn't support mode: 'insensitive')
+      // MySQL's default collation is case-insensitive for string comparisons
+      if (!department) {
+        department = await this.prisma.department.findFirst({
+          where: {
+            name: inputDeptId,
+          },
+        });
+      }
+
+      if (!department) {
+        throw new BadRequestException(
+          `Selected department "${inputDeptId}" does not exist. Please select a valid department.`,
+        );
+      }
+
+      resolvedDepartmentId = department.id;
+      console.log('✅ Department resolved:', inputDeptId, '→', department.name, '(', department.id, ')');
+    }
+
+    // 4. Resolve designation: Accept UUID or name/code, convert to UUID
+    let resolvedDesignationId: string | null = null;
+    if (createEmployeeDto.designationId) {
+      const inputDesigId = createEmployeeDto.designationId.trim();
+      
+      // First try to find by UUID
+      let designation = await this.prisma.designation.findUnique({
+        where: { id: inputDesigId },
+      });
+
+      // If not found by UUID, try to find by name (MySQL is case-insensitive by default)
+      if (!designation) {
+        designation = await this.prisma.designation.findFirst({
+          where: {
+            name: inputDesigId,
+          },
+        });
+      }
+
+      // If still not found, try matching with underscores replaced by spaces
+      if (!designation && inputDesigId.includes('_')) {
+        const nameWithSpaces = inputDesigId.replace(/_/g, ' ');
+        designation = await this.prisma.designation.findFirst({
+          where: {
+            name: nameWithSpaces,
+          },
+        });
+      }
+
+      if (!designation) {
+        throw new BadRequestException(
+          `Selected designation "${inputDesigId}" does not exist. Please select a valid designation.`,
+        );
+      }
+
+      resolvedDesignationId = designation.id;
+      console.log('✅ Designation resolved:', inputDesigId, '→', designation.name, '(', designation.id, ')');
+    }
+
+    // 5. Generate default credentials
     const defaultPassword = '1234';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    // 4. Generate custom Employee ID Code (e.g. FCS-2026-XXXX)
+    // 6. Generate custom Employee ID Code (e.g. FCS-2026-XXXX)
     const currentYear = new Date().getFullYear();
     const count = await this.prisma.employee.count();
     const nextSeq = String(count + 1).padStart(4, '0');
     const employeeIdCode = `FCS-${currentYear}-${nextSeq}`;
 
-    // 5. Build transaction
+    // 7. Build transaction
     return this.prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
@@ -77,8 +153,8 @@ export class EmployeesService {
           joiningDate: createEmployeeDto.joiningDate
             ? new Date(createEmployeeDto.joiningDate)
             : new Date(),
-          departmentId: createEmployeeDto.departmentId || null,
-          designationId: createEmployeeDto.designationId || null,
+          departmentId: resolvedDepartmentId,
+          designationId: resolvedDesignationId,
           monthlySalary: createEmployeeDto.monthlySalary || null,
           onboardingStatus: OnboardingStatus.PENDING,
         },

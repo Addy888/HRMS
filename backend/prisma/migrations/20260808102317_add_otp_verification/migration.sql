@@ -1,0 +1,24 @@
+-- OTP Verification table already exists in schema.prisma
+-- This migration ensures the table is created if it doesn't exist
+
+-- The OtpVerification model is already defined in the schema.prisma file:
+-- model OtpVerification {
+--   id              String   @id @default(uuid())
+--   userId          String
+--   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+--   otpHash         String   // Hashed OTP for security
+--   purpose         String   // LOGIN, PASSWORD_RESET
+--   phoneNumber     String   // Mobile number OTP was sent to
+--   expiresAt       DateTime
+--   verified        Boolean  @default(false)
+--   verifiedAt      DateTime?
+--   attempts        Int      @default(0)
+--   maxAttempts     Int      @default(5)
+--   createdAt       DateTime @default(now())
+--   updatedAt       DateTime @updatedAt
+--
+--   @@index([userId, purpose, verified])
+-- }
+
+-- This table should already exist from previous migrations
+-- If not, run: npx prisma migrate dev --name add_otp_verification

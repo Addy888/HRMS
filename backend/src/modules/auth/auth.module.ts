@@ -7,6 +7,8 @@ import { AuthService } from './auth.service.js';
 import { JwtStrategy } from './jwt.strategy.js';
 import { DatabaseModule } from '../../database/database.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { OtpService } from '../../common/services/otp.service.js';
+import { SmsService } from '../../common/services/sms.service.js';
 
 @Module({
   imports: [
@@ -28,7 +30,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, OtpService, SmsService],
   exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}

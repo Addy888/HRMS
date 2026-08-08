@@ -17,36 +17,40 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
     gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '',
   });
 
-  // Hardcoded departments - IT and Sales only
-  const departments = [
-    { id: 'IT', name: 'IT' },
-    { id: 'SALES', name: 'Sales' },
-  ];
+  // Fetch real departments from API
+  const { data: departmentsData, isLoading: loadingDepartments } = useQuery({
+    queryKey: ['departments-list-modal'],
+    queryFn: async () => {
+      console.log('🔍 Fetching departments from API...');
+      const res = await api.get('/departments');
+      const departments = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      console.log('📊 Departments loaded:', departments.length, 'items');
+      console.log('📋 Departments data:', departments);
+      return departments;
+    },
+    enabled: isOpen, // Only fetch when modal is open
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache
+  });
 
-  // Designation mapping based on department
-  const designationsByDepartment: Record<string, Array<{ id: string; name: string }>> = {
-    IT: [
-      { id: 'SOFTWARE_DEVELOPER', name: 'Software Developer' },
-      { id: 'FRONTEND_DEVELOPER', name: 'Frontend Developer' },
-      { id: 'BACKEND_DEVELOPER', name: 'Backend Developer' },
-      { id: 'FULLSTACK_DEVELOPER', name: 'Full Stack Developer' },
-      { id: 'UI_UX_DESIGNER', name: 'UI/UX Designer' },
-      { id: 'QA_ENGINEER', name: 'QA Engineer' },
-      { id: 'DEVOPS_ENGINEER', name: 'DevOps Engineer' },
-      { id: 'AI_ENGINEER', name: 'AI Engineer' },
-    ],
-    SALES: [
-      { id: 'SALES_EXECUTIVE', name: 'Sales Executive' },
-      { id: 'SENIOR_SALES_EXECUTIVE', name: 'Senior Sales Executive' },
-      { id: 'SALES_MANAGER', name: 'Sales Manager' },
-      { id: 'BDE', name: 'Business Development Executive' },
-      { id: 'BDM', name: 'Business Development Manager' },
-      { id: 'TEAM_LEADER', name: 'Team Leader' },
-    ],
-  };
+  // Fetch real designations from API
+  const { data: designationsData, isLoading: loadingDesignations } = useQuery({
+    queryKey: ['designations-list-modal'],
+    queryFn: async () => {
+      console.log('🔍 Fetching designations from API...');
+      const res = await api.get('/designations');
+      const designations = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      console.log('📊 Designations loaded:', designations.length, 'items');
+      console.log('📋 Designations data:', designations);
+      return designations;
+    },
+    enabled: isOpen, // Only fetch when modal is open
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache
+  });
 
-  // Get filtered designations based on selected department
-  const availableDesignations = form.departmentId ? designationsByDepartment[form.departmentId] || [] : [];
+  const departments = departmentsData || [];
+  const designations = designationsData || [];
 
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -55,26 +59,25 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
         ...payload,
         monthlySalary: payload.monthlySalary ? parseFloat(payload.monthlySalary) : undefined,
       };
-      await api.post('/employees', dataToSend);
+      const res = await api.post('/employees', dataToSend);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees-list'] });
       queryClient.invalidateQueries({ queryKey: ['hr-dashboard-stats'] });
       setForm({ firstName: '', lastName: '', email: '', phone: '', gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '' });
       onClose();
+      alert('Employee created successfully!');
     },
-    onError: (err: any) => alert(err.message || 'Failed to create employee'),
+    onError: (err: any) => {
+      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to create employee';
+      alert(Array.isArray(errorMsg) ? errorMsg[0] : errorMsg);
+    },
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    // Reset designation when department changes
-    if (name === 'departmentId') {
-      setForm(prev => ({ ...prev, departmentId: value, designationId: '' }));
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }));
-    }
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,6 +90,11 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
       alert('Please enter a valid monthly salary greater than zero');
       return;
     }
+    console.log('📤 Submitting employee creation with:', {
+      ...form,
+      departmentId: form.departmentId || 'NOT SET',
+      designationId: form.designationId || 'NOT SET',
+    });
     createMutation.mutate(form);
   };
 
@@ -148,35 +156,60 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
 
             {/* Department Select */}
             <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Department</label>
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                Department {loadingDepartments && '(Loading...)'}
+              </label>
               <select
                 name="departmentId"
                 value={form.departmentId}
-                onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                onChange={(e) => {
+                  console.log('🏢 Department selected:', {
+                    value: e.target.value,
+                    option: departments.find((d: any) => d.id === e.target.value)
+                  });
+                  handleChange(e);
+                }}
+                disabled={loadingDepartments}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
               >
                 <option value="">Select Department</option>
-                {departments.map((d: any) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
+                {departments.map((d: any) => {
+                  console.log('🏢 Department option:', { id: d.id, name: d.name });
+                  return <option key={d.id} value={d.id}>{d.name}</option>;
+                })}
               </select>
+              {departments.length === 0 && !loadingDepartments && (
+                <p className="text-xs text-red-400">No departments found. Please create departments first.</p>
+              )}
             </div>
 
             {/* Designation Select */}
             <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Designation</label>
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                Designation {loadingDesignations && '(Loading...)'}
+              </label>
               <select
                 name="designationId"
                 value={form.designationId}
-                onChange={handleChange}
-                disabled={!form.departmentId}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onChange={(e) => {
+                  console.log('💼 Designation selected:', {
+                    value: e.target.value,
+                    option: designations.find((d: any) => d.id === e.target.value)
+                  });
+                  handleChange(e);
+                }}
+                disabled={loadingDesignations}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
               >
                 <option value="">Select Designation</option>
-                {availableDesignations.map((d: any) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
+                {designations.map((d: any) => {
+                  console.log('💼 Designation option:', { id: d.id, name: d.name });
+                  return <option key={d.id} value={d.id}>{d.name}</option>;
+                })}
               </select>
+              {designations.length === 0 && !loadingDesignations && (
+                <p className="text-xs text-red-400">No designations found. Please create designations first.</p>
+              )}
             </div>
 
             {/* Monthly Salary */}

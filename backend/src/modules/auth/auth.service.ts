@@ -11,6 +11,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { LoginDto, ChangePasswordDto } from './dto/auth.dto.js';
 import * as bcrypt from 'bcrypt';
 import { NotificationService } from '../notifications/notification.service.js';
+import { OtpService } from '../../common/services/otp.service.js';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -20,6 +21,7 @@ export class AuthService implements OnModuleInit {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private notificationService: NotificationService,
+    private otpService: OtpService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────
@@ -149,6 +151,7 @@ export class AuthService implements OnModuleInit {
 
   // ─────────────────────────────────────────────────────────────────
   // LOGIN — Pure database authentication, no hardcoded logic
+  // EMPLOYEE LOGIN NOW REQUIRES OTP VERIFICATION
   // ─────────────────────────────────────────────────────────────────
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
@@ -164,6 +167,7 @@ export class AuthService implements OnModuleInit {
             employeeId: true,
             firstName: true,
             lastName: true,
+            phone: true,
             onboardingStatus: true,
             department: { select: { name: true } },
             designation: { select: { name: true } },
@@ -188,7 +192,48 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // 3. Sign JWT
+    // 3. Check if user is EMPLOYEE role - requires OTP
+    if (user.role.name === 'EMPLOYEE') {
+      // Check if employee has phone number
+      if (!user.employee?.phone) {
+        throw new BadRequestException(
+          'Your account does not have a registered mobile number. Please contact HR to update your profile.',
+        );
+      }
+
+      // Generate and send OTP
+      const { maskedPhone } = await this.otpService.createAndSendOtp(
+        user.id,
+        user.employee.phone,
+        'LOGIN',
+      );
+
+      // Return pending OTP verification response (DO NOT return access token yet)
+      return {
+        requiresOtp: true,
+        userId: user.id,
+        maskedPhone,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role.name,
+          mustChangePassword: user.isFirstLogin,
+          employee: user.employee
+            ? {
+                id: user.employee.id,
+                employeeId: user.employee.employeeId,
+                firstName: user.employee.firstName,
+                lastName: user.employee.lastName,
+                onboardingStatus: user.employee.onboardingStatus,
+                department: user.employee.department?.name ?? null,
+                designation: user.employee.designation?.name ?? null,
+              }
+            : null,
+        },
+      };
+    }
+
+    // 4. For HR/Admin users, proceed with normal JWT login (no OTP required)
     const payload = {
       sub: user.id,
       email: user.email,
@@ -198,7 +243,7 @@ export class AuthService implements OnModuleInit {
 
     const accessToken = this.jwtService.sign(payload);
 
-    // 4. Fire login notification (non-blocking — never breaks auth)
+    // 5. Fire login notification (non-blocking — never breaks auth)
     this.notificationService
       .createNotification([user.id], {
         title: 'New Login Detected',
@@ -211,7 +256,88 @@ export class AuthService implements OnModuleInit {
       })
       .catch(() => {});
 
-    // 5. Return token + user profile
+    // 6. Return token + user profile
+    return {
+      requiresOtp: false,
+      accessToken,
+      mustChangePassword: user.isFirstLogin,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role.name,
+        mustChangePassword: user.isFirstLogin,
+        employee: user.employee
+          ? {
+              id: user.employee.id,
+              employeeId: user.employee.employeeId,
+              firstName: user.employee.firstName,
+              lastName: user.employee.lastName,
+              onboardingStatus: user.employee.onboardingStatus,
+              department: user.employee.department?.name ?? null,
+              designation: user.employee.designation?.name ?? null,
+            }
+          : null,
+      },
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // VERIFY LOGIN OTP
+  // ─────────────────────────────────────────────────────────────────
+  async verifyLoginOtp(userId: string, otp: string) {
+    // Verify OTP
+    await this.otpService.verifyOtp(userId, otp, 'LOGIN');
+
+    // Get user details
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: true,
+        employee: {
+          select: {
+            id: true,
+            employeeId: true,
+            firstName: true,
+            lastName: true,
+            onboardingStatus: true,
+            department: { select: { name: true } },
+            designation: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Generate JWT token after successful OTP verification
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role.name,
+      employeeId: user.employee?.id ?? null,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    // Clear verified OTP
+    await this.otpService.clearVerifiedOtp(userId, 'LOGIN');
+
+    // Fire login notification
+    this.notificationService
+      .createNotification([user.id], {
+        title: 'New Login Detected',
+        description: `Your account was accessed at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}.`,
+        type: 'auth.login',
+        module: 'AUTH',
+        priority: 'LOW',
+        icon: 'log-in',
+        actionUrl: undefined,
+      })
+      .catch(() => {});
+
+    // Return token + user profile
     return {
       accessToken,
       mustChangePassword: user.isFirstLogin,
@@ -232,6 +358,37 @@ export class AuthService implements OnModuleInit {
             }
           : null,
       },
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // RESEND LOGIN OTP
+  // ─────────────────────────────────────────────────────────────────
+  async resendLoginOtp(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        employee: {
+          select: {
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!user || !user.employee?.phone) {
+      throw new BadRequestException('User or phone number not found');
+    }
+
+    const { maskedPhone } = await this.otpService.createAndSendOtp(
+      userId,
+      user.employee.phone,
+      'LOGIN',
+    );
+
+    return {
+      message: 'OTP resent successfully',
+      maskedPhone,
     };
   }
 
@@ -307,26 +464,134 @@ export class AuthService implements OnModuleInit {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
+      include: {
+        role: true,
+        employee: {
+          select: {
+            phone: true,
+          },
+        },
+      },
     });
 
-    if (user) {
-      const crypto = await import('crypto');
-      const token = crypto.randomUUID();
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 1);
+    // Always return success message to prevent email enumeration
+    const successMessage =
+      'If the email matches a registered account, an OTP has been sent to your registered mobile number.';
 
-      await this.prisma.passwordReset.create({
-        data: { userId: user.id, token, expiresAt },
-      });
-
-      this.logger.log(
-        `[EMAIL] Password reset requested for: ${email}. Token: ${token}`,
-      );
+    if (!user) {
+      return { message: successMessage };
     }
 
+    // Check if user is employee (OTP required)
+    if (user.role.name === 'EMPLOYEE') {
+      if (!user.employee?.phone) {
+        // Don't reveal whether user exists or not
+        return { message: successMessage };
+      }
+
+      // Send OTP to employee's phone
+      const { maskedPhone } = await this.otpService.createAndSendOtp(
+        user.id,
+        user.employee.phone,
+        'PASSWORD_RESET',
+      );
+
+      return {
+        message: successMessage,
+        requiresOtp: true,
+        maskedPhone,
+        email: user.email,
+      };
+    }
+
+    // For HR/Admin users, use existing token-based reset
+    const crypto = await import('crypto');
+    const token = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    await this.prisma.passwordReset.create({
+      data: { userId: user.id, token, expiresAt },
+    });
+
+    this.logger.log(
+      `[EMAIL] Password reset requested for: ${email}. Token: ${token}`,
+    );
+
     return {
-      message:
-        'If the email matches a registered account, a password reset link has been generated.',
+      message: successMessage,
+      requiresOtp: false,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // VERIFY RESET OTP (Employee Password Reset)
+  // ─────────────────────────────────────────────────────────────────
+  async verifyResetOtp(email: string, otp: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+      include: {
+        role: true,
+      },
+    });
+
+    if (!user || user.role.name !== 'EMPLOYEE') {
+      throw new BadRequestException('Invalid request');
+    }
+
+    // Verify OTP
+    await this.otpService.verifyOtp(user.id, otp, 'PASSWORD_RESET');
+
+    // Generate a short-lived reset token (valid for 10 minutes)
+    const crypto = await import('crypto');
+    const resetToken = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+    // Store reset token
+    await this.prisma.passwordReset.create({
+      data: {
+        userId: user.id,
+        token: resetToken,
+        expiresAt,
+      },
+    });
+
+    return {
+      message: 'OTP verified successfully',
+      resetToken,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // RESEND RESET OTP (Employee Password Reset)
+  // ─────────────────────────────────────────────────────────────────
+  async resendResetOtp(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+      include: {
+        role: true,
+        employee: {
+          select: {
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!user || user.role.name !== 'EMPLOYEE' || !user.employee?.phone) {
+      throw new BadRequestException('Invalid request');
+    }
+
+    const { maskedPhone } = await this.otpService.createAndSendOtp(
+      user.id,
+      user.employee.phone,
+      'PASSWORD_RESET',
+    );
+
+    return {
+      message: 'OTP resent successfully',
+      maskedPhone,
     };
   }
 
@@ -366,11 +631,14 @@ export class AuthService implements OnModuleInit {
       });
     });
 
+    // Clear any verified OTP for password reset
+    await this.otpService.clearVerifiedOtp(resetRequest.userId, 'PASSWORD_RESET');
+
     this.notificationService
       .createNotification([resetRequest.userId], {
         title: 'Password Reset',
         description:
-          'Your account password was reset via the password reset link.',
+          'Your account password was reset successfully. If this was not you, contact HR immediately.',
         type: 'auth.password_reset',
         module: 'AUTH',
         priority: 'HIGH',

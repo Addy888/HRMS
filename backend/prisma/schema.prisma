@@ -36,6 +36,7 @@ model User {
   updatedAt          DateTime         @updatedAt
   employee           Employee?
   passwordResets     PasswordReset[]
+  otpVerifications   OtpVerification[]
   auditLogs          AuditLog[]
   notifications           Notification[]          @relation("UserNotifications")
   notificationRecipients  NotificationRecipient[] @relation("UserNotificationRecipients")
@@ -516,6 +517,24 @@ model PasswordReset {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model OtpVerification {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash         String   // Hashed OTP for security
+  purpose         String   // LOGIN, PASSWORD_RESET
+  phoneNumber     String   // Mobile number OTP was sent to
+  expiresAt       DateTime
+  verified        Boolean  @default(false)
+  verifiedAt      DateTime?
+  attempts        Int      @default(0)
+  maxAttempts     Int      @default(5)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, purpose, verified])
 }
 
 model AuditLog {
