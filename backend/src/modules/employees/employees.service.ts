@@ -156,10 +156,49 @@ export class EmployeesService {
     const defaultPassword = '1234';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    // 6. Generate PRODUCTION Employee ID (FCS0151, FCS0152, FCS0153...)
-    // ✅ PRODUCTION FORMAT: FCS + 4-digit sequence starting from 0151
-    // ✅ SAFE: Uses transaction to prevent duplicate IDs
-    const employeeIdCode = await this.generateProductionEmployeeId(requestingUser.organizationId);
+    // 6. Generate or validate Employee ID based on mode
+    let employeeIdCode: string;
+
+    const mode = createEmployeeDto.employeeIdMode || 'auto';
+
+    if (mode === 'manual') {
+      // MANUAL MODE: Validate and use provided Employee ID
+      if (!createEmployeeDto.employeeId) {
+        throw new BadRequestException(
+          'Employee ID is required when using manual mode',
+        );
+      }
+
+      // Validate format
+      const employeeIdRegex = /^FCS\d{4,}$/;
+      if (!employeeIdRegex.test(createEmployeeDto.employeeId)) {
+        throw new BadRequestException(
+          'Employee ID must follow format FCS#### (e.g., FCS0151, FCS0160)',
+        );
+      }
+
+      // Check if ID already exists
+      const existingEmployee = await this.prisma.employee.findUnique({
+        where: { employeeId: createEmployeeDto.employeeId },
+      });
+
+      if (existingEmployee) {
+        throw new ConflictException(
+          `Employee ID ${createEmployeeDto.employeeId} already exists. Please use a different Employee ID.`,
+        );
+      }
+
+      employeeIdCode = createEmployeeDto.employeeId;
+      console.log('✅ Using manual Employee ID:', employeeIdCode);
+    } else {
+      // AUTO MODE: Generate next available ID
+      // ✅ PRODUCTION FORMAT: FCS + 4-digit sequence starting from 0160
+      // ✅ SAFE: Uses transaction to prevent duplicate IDs
+      employeeIdCode = await this.generateProductionEmployeeId(
+        requestingUser.organizationId,
+      );
+      console.log('✅ Auto-generated Employee ID:', employeeIdCode);
+    }
 
     // 7. Build transaction
     return this.prisma.$transaction(async (tx) => {
@@ -942,18 +981,19 @@ export class EmployeesService {
   /**
    * ✅ PRODUCTION EMPLOYEE ID GENERATOR
    * 
-   * Format: FCS0151, FCS0152, FCS0153, FCS0154...
-   * - Starting sequence: 0151
+   * Format: FCS0160, FCS0161, FCS0162...
+   * - Starting sequence: 0160 (minimum automatic ID)
    * - Increments by 1 for each new employee
    * - Thread-safe: Uses database query to find next available ID
    * - Organization-scoped: Each organization has independent sequence
+   * - Never generates below FCS0160
    * 
    * @param organizationId - Organization ID for scoping
-   * @returns Production employee ID (e.g., "FCS0151")
+   * @returns Production employee ID (e.g., "FCS0160")
    */
   private async generateProductionEmployeeId(organizationId: string): Promise<string> {
     const PREFIX = 'FCS';
-    const STARTING_SEQUENCE = 151; // First production employee: FCS0151
+    const STARTING_SEQUENCE = 160; // Minimum automatic employee ID: FCS0160
 
     // Find the highest existing employee ID for this organization
     const employees = await this.prisma.employee.findMany({
@@ -974,18 +1014,38 @@ export class EmployeesService {
 
     if (employees.length > 0) {
       const lastId = employees[0].employeeId;
-      // Extract numeric part: "FCS0151" -> "0151" -> 151
+      // Extract numeric part: "FCS0160" -> "0160" -> 160
       const numericPart = lastId.replace(PREFIX, '');
       const lastSequence = parseInt(numericPart, 10);
       
       if (!isNaN(lastSequence)) {
-        nextSequence = lastSequence + 1;
+        // If highest existing ID is below 160, start from 160
+        // If highest is 160 or above, use next sequential number
+        nextSequence = Math.max(lastSequence + 1, STARTING_SEQUENCE);
       }
     }
 
     // Format with leading zeros to maintain 4 digits
     const sequenceStr = String(nextSequence).padStart(4, '0');
     return `${PREFIX}${sequenceStr}`;
+  }
+
+  /**
+   * Get next available Employee ID (for preview)
+   */
+  async getNextEmployeeId(requestUserId: string): Promise<{ nextEmployeeId: string }> {
+    // Get requesting user's organizationId
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      throw new UnauthorizedException('User organization not found');
+    }
+
+    const nextId = await this.generateProductionEmployeeId(requestingUser.organizationId);
+    return { nextEmployeeId: nextId };
   }
 }
 

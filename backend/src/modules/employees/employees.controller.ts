@@ -121,6 +121,17 @@ export class EmployeesController {
     return this.employeesService.create(createEmployeeDto, userId);
   }
 
+  @Get('next-employee-id')
+  @Roles(UserRole.HR)
+  @ApiOperation({ summary: 'Get next available Employee ID for preview (HR Only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the next available Employee ID',
+  })
+  getNextEmployeeId(@GetUser('id') userId: string) {
+    return this.employeesService.getNextEmployeeId(userId);
+  }
+
   @Get()
   @Roles(UserRole.HR)
   @ApiOperation({

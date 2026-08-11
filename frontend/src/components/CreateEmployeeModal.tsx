@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Info } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
@@ -12,10 +12,26 @@ interface CreateEmployeeModalProps {
 
 export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProps) {
   const queryClient = useQueryClient();
+  const [employeeIdMode, setEmployeeIdMode] = React.useState<'auto' | 'manual'>('auto');
   const [form, setForm] = React.useState({
+    employeeId: '',
     firstName: '', lastName: '', email: '', phone: '',
     gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '',
   });
+
+  // Fetch next Employee ID for preview
+  const { data: nextIdData } = useQuery({
+    queryKey: ['next-employee-id'],
+    queryFn: async () => {
+      const res = await api.get('/employees/next-employee-id');
+      return res.data;
+    },
+    enabled: isOpen && employeeIdMode === 'auto',
+    refetchOnMount: true,
+    staleTime: 0,
+  });
+
+  const nextEmployeeId = nextIdData?.nextEmployeeId || 'FCS0160';
 
   // Fetch real departments from API
   const { data: departmentsData, isLoading: loadingDepartments } = useQuery({
@@ -57,17 +73,25 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
       // Convert monthlySalary to number if provided
       const dataToSend = {
         ...payload,
+        employeeIdMode,
+        employeeId: employeeIdMode === 'manual' ? payload.employeeId : undefined,
         monthlySalary: payload.monthlySalary ? parseFloat(payload.monthlySalary) : undefined,
       };
       const res = await api.post('/employees', dataToSend);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['employees-list'] });
       queryClient.invalidateQueries({ queryKey: ['hr-dashboard-stats'] });
-      setForm({ firstName: '', lastName: '', email: '', phone: '', gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '' });
+      queryClient.invalidateQueries({ queryKey: ['next-employee-id'] });
+      setForm({ 
+        employeeId: '',
+        firstName: '', lastName: '', email: '', phone: '', gender: '', dob: '', joiningDate: '', departmentId: '', designationId: '', monthlySalary: '' 
+      });
+      setEmployeeIdMode('auto');
       onClose();
-      alert('Employee created successfully!');
+      const employeeId = data?.employee?.employeeId || data?.data?.employeeId || 'Unknown';
+      alert(`Employee created successfully!\nEmployee ID: ${employeeId}`);
     },
     onError: (err: any) => {
       const errorMsg = err?.response?.data?.message || err?.message || 'Failed to create employee';
@@ -90,8 +114,23 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
       alert('Please enter a valid monthly salary greater than zero');
       return;
     }
+    
+    // Validate manual Employee ID
+    if (employeeIdMode === 'manual') {
+      if (!form.employeeId || !form.employeeId.trim()) {
+        alert('Please enter an Employee ID');
+        return;
+      }
+      const employeeIdRegex = /^FCS\d{4,}$/;
+      if (!employeeIdRegex.test(form.employeeId.trim())) {
+        alert('Employee ID must follow format FCS#### (e.g., FCS0151, FCS0160)');
+        return;
+      }
+    }
+    
     console.log('📤 Submitting employee creation with:', {
       ...form,
+      employeeIdMode,
       departmentId: form.departmentId || 'NOT SET',
       designationId: form.designationId || 'NOT SET',
     });
@@ -116,6 +155,68 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit}>
+          {/* Employee ID Mode Selection */}
+          <div className="px-6 pt-6 pb-4 border-b border-neutral-800">
+            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider mb-3 block">
+              Employee ID
+            </label>
+            <div className="flex gap-3 mb-4">
+              <button
+                type="button"
+                onClick={() => setEmployeeIdMode('auto')}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                  employeeIdMode === 'auto'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
+                }`}
+              >
+                Auto Generate
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmployeeIdMode('manual')}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                  employeeIdMode === 'manual'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
+                }`}
+              >
+                Enter Manually
+              </button>
+            </div>
+
+            {employeeIdMode === 'auto' ? (
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Info className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs text-neutral-400 font-semibold">Next Employee ID</span>
+                </div>
+                <div className="text-lg font-bold text-white font-mono">{nextEmployeeId}</div>
+                <p className="text-xs text-neutral-500 mt-2">
+                  Employee ID will be automatically assigned upon creation.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                  Employee ID *
+                </label>
+                <input
+                  type="text"
+                  name="employeeId"
+                  value={form.employeeId}
+                  onChange={handleChange}
+                  placeholder="FCS0155"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                  required={employeeIdMode === 'manual'}
+                />
+                <p className="text-xs text-neutral-500 mt-1">
+                  Enter a unique Employee ID for this employee (format: FCS####)
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
             {[
               { label: 'First Name *', name: 'firstName', type: 'text', placeholder: 'Rahul' },
@@ -232,7 +333,7 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
           {/* Info Box */}
           <div className="mx-6 mb-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
             <p className="text-xs text-amber-400/80 font-medium leading-relaxed">
-              Employee ID will be auto-generated (e.g. FCS-2026-XXXX). The employee will be prompted to change their temporary password on first login.
+              The employee will receive temporary password: <code className="font-mono font-bold">1234</code>. They will be prompted to change it on first login.
             </p>
           </div>
 

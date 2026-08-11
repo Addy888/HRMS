@@ -5,10 +5,35 @@ import {
   IsOptional,
   IsDateString,
   IsEnum,
+  Matches,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEmployeeDto {
+  @ApiProperty({
+    description: 'Employee ID mode: auto or manual',
+    example: 'auto',
+    enum: ['auto', 'manual'],
+    required: false,
+  })
+  @IsEnum(['auto', 'manual'])
+  @IsOptional()
+  employeeIdMode?: 'auto' | 'manual';
+
+  @ApiProperty({
+    description: 'Manual Employee ID (required if employeeIdMode is manual)',
+    example: 'FCS0155',
+    required: false,
+  })
+  @ValidateIf((o) => o.employeeIdMode === 'manual')
+  @IsString()
+  @IsNotEmpty({ message: 'Employee ID is required when using manual mode' })
+  @Matches(/^FCS\d{4,}$/, {
+    message: 'Employee ID must follow format FCS#### (e.g., FCS0151, FCS0160)',
+  })
+  employeeId?: string;
+
   @ApiProperty({ description: 'Employee first name', example: 'Rahul' })
   @IsString()
   @IsNotEmpty()
