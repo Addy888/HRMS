@@ -24,6 +24,8 @@ const getModuleIcon = (module: string) => {
       return <MessageSquare className="w-4 h-4 text-rose-500" />;
     case 'POLICY':
       return <Sparkles className="w-4 h-4 text-emerald-500" />;
+    case 'HR_ACTION':
+      return <ShieldAlert className="w-4 h-4 text-amber-400" />;
     default:
       return <Bell className="w-4 h-4 text-indigo-500" />;
   }

@@ -17,7 +17,9 @@ import {
   LifeBuoy,
   DollarSign,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle,
+  History
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -156,6 +158,8 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
   const operationalLinks = [
     { href: '/hr/documents', label: 'Documents', icon: <FolderOpen className="w-5 h-5" /> },
     { href: '/hr/policies', label: 'Policies', icon: <BookOpen className="w-5 h-5" /> },
+    { href: '/hr/hr-actions', label: 'HR Actions', icon: <AlertTriangle className="w-5 h-5" /> },
+    { href: '/hr/action-history', label: 'HR Action History', icon: <History className="w-5 h-5" /> },
     { href: '/hr/complaints', label: 'Helpdesk', icon: <LifeBuoy className="w-5 h-5" /> },
   ];
 
@@ -293,14 +297,16 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
                   ))}
                   
                   {/* Payroll Menu with Submenu for Mobile */}
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <SidebarMenu
-                      label={payrollMenu.label}
-                      icon={payrollMenu.icon}
-                      subItems={payrollMenu.subItems}
-                      pathname={pathname}
-                    />
-                  </div>
+                  {payrollMenu && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <SidebarMenu
+                        label={payrollMenu.label}
+                        icon={payrollMenu.icon}
+                        subItems={payrollMenu.subItems}
+                        pathname={pathname}
+                      />
+                    </div>
+                  )}
                 </nav>
                 <div className="border-t border-neutral-800 pt-6 mt-auto">
                   <button

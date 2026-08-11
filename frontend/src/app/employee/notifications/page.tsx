@@ -24,6 +24,8 @@ const getModuleIcon = (module: string) => {
       return <Calendar className="w-5 h-5 text-purple-500" />;
     case 'PAYROLL':
       return <FileText className="w-5 h-5 text-green-500" />;
+    case 'HR_ACTION':
+      return <AlertTriangle className="w-5 h-5 text-amber-400" />;
     case 'SYSTEM':
       return <Bell className="w-5 h-5 text-indigo-500" />;
     default:

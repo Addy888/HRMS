@@ -15,6 +15,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module.js';
 import { PayrollModule } from './modules/payroll/payroll.module.js';
 import { HRUsersModule } from './modules/hr-users/hr-users.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { HRActionsModule } from './modules/hr-actions/hr-actions.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
     PayrollModule,
     HRUsersModule,
     AdminModule,
+    HRActionsModule,
   ],
   controllers: [HealthController],
 })

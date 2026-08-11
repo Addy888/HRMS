@@ -8,7 +8,7 @@ import { CreateEmployeeModal } from '@/components/CreateEmployeeModal';
 import { EditEmployeeModal } from '@/components/EditEmployeeModal';
 import {
   Users, Plus, Search, Eye, Edit2, KeyRound,
-  UserX, UserCheck, Trash2, ChevronLeft, ChevronRight, Loader2
+  UserX, UserCheck, Trash2, ChevronLeft, ChevronRight, Loader2, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -266,9 +266,16 @@ export default function EmployeesPage() {
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
+                          <Link
+                            href={`/hr/hr-actions/create?employeeId=${emp.id}`}
+                            className="p-1.5 hover:bg-amber-500/10 rounded-lg text-neutral-400 hover:text-amber-400 transition-colors"
+                            title="Issue HR Warning/Action"
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                          </Link>
                           <button
                             onClick={() => { if (confirm('Reset password to 1234?')) resetPasswordMutation.mutate(emp.id); }}
-                            className="p-1.5 hover:bg-amber-500/10 rounded-lg text-neutral-400 hover:text-amber-400 transition-colors"
+                            className="p-1.5 hover:bg-purple-500/10 rounded-lg text-neutral-400 hover:text-purple-400 transition-colors"
                             title="Reset password"
                           >
                             <KeyRound className="w-4 h-4" />

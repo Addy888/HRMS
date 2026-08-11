@@ -42,6 +42,7 @@ model Organization {
   PayrollRun       PayrollRun[]
   Loan             Loan[]
   AdvanceSalary    AdvanceSalary[]
+  hrActions        HRAction[]
 }
 
 model Role {
@@ -83,6 +84,11 @@ model User {
   complaintReplies        ComplaintReply[]
   complaintTimelineEvents ComplaintTimeline[]
   complaintAuditLogs      ComplaintAuditLog[]
+  hrActionsIssued         HRAction[]              @relation("HRActionsIssued")
+  hrActionsAcknowledged   HRAction[]              @relation("HRActionsAcknowledged")
+  hrActionsResolved       HRAction[]              @relation("HRActionsResolved")
+  hrActionsCancelled      HRAction[]              @relation("HRActionsCancelled")
+  hrActionAudits          HRActionAuditLog[]      @relation("HRActionAudits")
 
   @@index([organizationId])
 }
@@ -201,6 +207,9 @@ model Employee {
 
   // Company Policy Acceptances
   companyPolicyAcceptances CompanyPolicyAcceptance[]
+  
+  // HR Disciplinary Actions
+  hrActions HRAction[] @relation("EmployeeHRActions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2380,4 +2389,74 @@ model CompanyPolicyAcceptance {
   @@unique([companyPolicyId, employeeId])
   @@index([employeeId])
   @@index([status])
+}
+
+// ==========================================
+// HR DISCIPLINARY ACTIONS MODULE
+// ==========================================
+
+model HRAction {
+  id                  String       @id @default(uuid())
+  actionNumber        String       @unique
+  employeeId          String
+  employee            Employee     @relation("EmployeeHRActions", fields: [employeeId], references: [id], onDelete: Cascade)
+  issuedById          String
+  issuedBy            User         @relation("HRActionsIssued", fields: [issuedById], references: [id])
+  organizationId      String
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actionType          String
+  severity            String
+  subject             String
+  reason              String       @db.Text
+  incidentDate        DateTime
+  correctiveAction    String?      @db.Text
+  additionalRemarks   String?      @db.Text
+  responseRequired    Boolean      @default(false)
+  responseDeadline    DateTime?
+  status              String       @default("DRAFT")
+  documentUrl         String?
+  issuedAt            DateTime?
+  sentAt              DateTime?
+  viewedAt            DateTime?
+  acknowledgedAt      DateTime?
+  acknowledgedById    String?
+  acknowledgedBy      User?        @relation("HRActionsAcknowledged", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  responseSubmittedAt DateTime?
+  responseText        String?      @db.Text
+  resolvedAt          DateTime?
+  resolvedById        String?
+  resolvedBy          User?        @relation("HRActionsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedRemarks     String?      @db.Text
+  cancelledAt         DateTime?
+  cancelledById       String?
+  cancelledBy         User?        @relation("HRActionsCancelled", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledReason     String?      @db.Text
+  
+  auditLogs HRActionAuditLog[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([issuedById])
+  @@index([status])
+  @@index([actionType])
+  @@index([severity])
+}
+
+model HRActionAuditLog {
+  id         String   @id @default(uuid())
+  hrActionId String
+  hrAction   HRAction @relation(fields: [hrActionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("HRActionAudits", fields: [userId], references: [id])
+  action     String
+  details    String   @db.Text
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([hrActionId])
+  @@index([userId])
 }
