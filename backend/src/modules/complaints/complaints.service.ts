@@ -31,32 +31,77 @@ export class ComplaintsService {
     ipAddress?: string,
     userAgent?: string,
   ) {
+    console.log('\n========== HELPDESK CREATE START ==========');
+    console.log('[HELPDESK CREATE] Authenticated user ID:', userId);
+    console.log('[HELPDESK CREATE] DTO received:', {
+      title: dto.title,
+      category: dto.category,
+      priority: dto.priority,
+      anonymous: dto.anonymous,
+      hasDescription: !!dto.description,
+    });
+
     const employee = await this.prisma.employee.findUnique({
       where: { userId },
+      include: {
+        user: { select: { email: true } },
+        department: { select: { name: true } },
+      },
     });
+    
     if (!employee) {
+      console.error('[HELPDESK CREATE] ERROR: Employee profile not found for userId:', userId);
       throw new NotFoundException('Employee profile not found');
     }
+
+    console.log('[HELPDESK CREATE] Resolved employee:', {
+      databaseId: employee.id,
+      employeeId: employee.employeeId,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      email: employee.user.email,
+      department: employee.department?.name,
+      organizationId: employee.organizationId,
+    });
 
     const currentYear = new Date().getFullYear();
     const count = await this.prisma.complaint.count();
     const complaintNumber = `HD-${currentYear}-${String(count + 1).padStart(6, '0')}`;
 
+    console.log('[HELPDESK CREATE] Generated ticket number:', complaintNumber);
+
     return this.prisma.$transaction(async (tx) => {
       // 1. Create Complaint
-      const complaint = await tx.complaint.create({
-        data: {
-          complaintNumber,
-          title: dto.title,
-          category: dto.category,
-          priority: dto.priority,
-          description: dto.description,
-          anonymous: dto.anonymous ?? false,
-          status: ComplaintStatus.OPEN,
-          organizationId: employee.organizationId,
-          raisedById: employee.id,
-        },
+      const complaintData = {
+        complaintNumber,
+        title: dto.title,
+        category: dto.category,
+        priority: dto.priority,
+        description: dto.description,
+        anonymous: dto.anonymous ?? false,
+        status: ComplaintStatus.OPEN,
+        organizationId: employee.organizationId,
+        raisedById: employee.id,
+      };
+
+      console.log('[HELPDESK CREATE] Creating complaint with data:', {
+        complaintNumber: complaintData.complaintNumber,
+        anonymous: complaintData.anonymous,
+        raisedById: complaintData.raisedById,
+        organizationId: complaintData.organizationId,
       });
+
+      const complaint = await tx.complaint.create({
+        data: complaintData,
+      });
+
+      console.log('[HELPDESK CREATE] Complaint created successfully:', {
+        id: complaint.id,
+        complaintNumber: complaint.complaintNumber,
+        anonymous: complaint.anonymous,
+        raisedById: complaint.raisedById,
+      });
+      console.log('========== HELPDESK CREATE END ==========\n');
 
       // 2. Handle File Attachment if present
       if (file) {
@@ -575,15 +620,19 @@ export class ComplaintsService {
 
     // ✅ HR Ownership: HR_USER can only see tickets from their employees
     const isHRUser = user.role.name === 'HR_USER' || user.role.name === 'HR';
-    const isHRAdmin = user.role.name === 'HR_ADMIN' || user.role.name === 'SUPER_ADMIN';
+    const isHRAdmin = user.role.name === 'HR_ADMIN' || user.role.name === 'SUPER_ADMIN' || user.role.name === 'Super Admin';
     
     if (isHRUser) {
+      // HR_USER can see tickets from employees they created
       where.raisedBy = {
         createdByUserId: userId, // Filter by employee ownership
       };
       console.log('HR_USER scope: filtering complaints by employee createdByUserId =', userId);
     } else if (isHRAdmin) {
-      console.log('HR_ADMIN scope: organization-wide complaints');
+      console.log('HR_ADMIN/SUPER_ADMIN scope: organization-wide complaints');
+    } else {
+      // For any other HR role, show all organization complaints
+      console.log('Standard HR scope: organization-wide complaints');
     }
 
     // Apply optional filters from query params
@@ -644,15 +693,51 @@ export class ComplaintsService {
 
     console.log('Tickets Found:', data.length);
     console.log('Total Count:', total);
+    
+    // Debug: Log each ticket's employee details
+    data.forEach((ticket, index) => {
+      console.log(`\nTicket ${index + 1}:`, {
+        ticketNumber: ticket.complaintNumber,
+        anonymous: ticket.anonymous,
+        raisedById: ticket.raisedById,
+        raisedByExists: !!ticket.raisedBy,
+        raisedByFirstName: ticket.raisedBy?.firstName,
+        raisedByLastName: ticket.raisedBy?.lastName,
+        raisedByEmployeeId: ticket.raisedBy?.employeeId,
+        department: ticket.raisedBy?.department?.name,
+      });
+    });
     console.log('================================');
 
-    const formatted = data.map((item) => ({
-      ...item,
-      raisedByName: item.anonymous
+    const formatted = data.map((item) => {
+      // Debug: Check if raisedBy exists
+      if (!item.raisedBy) {
+        console.error(`ERROR: Ticket ${item.complaintNumber} has NO raisedBy relationship!`);
+        console.error(`  - raisedById field: ${item.raisedById}`);
+        console.error(`  - anonymous field: ${item.anonymous}`);
+      }
+      
+      const raisedByName = item.anonymous
         ? 'Anonymous'
-        : `${item.raisedBy.firstName} ${item.raisedBy.lastName}`,
-      department: item.raisedBy.department?.name || '—',
-    }));
+        : item.raisedBy
+          ? `${item.raisedBy.firstName} ${item.raisedBy.lastName}`
+          : 'Unknown Employee';
+      
+      console.log(`Formatting ticket ${item.complaintNumber}:`, {
+        anonymous: item.anonymous,
+        hasRaisedBy: !!item.raisedBy,
+        raisedById: item.raisedById,
+        raisedByName,
+        employeeId: item.raisedBy?.employeeId,
+      });
+
+      return {
+        ...item,
+        raisedByName,
+        raisedByEmployeeId: item.raisedBy?.employeeId || null,
+        department: item.raisedBy?.department?.name || '—',
+      };
+    });
 
     return {
       data: formatted,

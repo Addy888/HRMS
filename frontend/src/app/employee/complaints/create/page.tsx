@@ -50,21 +50,37 @@ export default function CreateComplaintPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      console.log('[HELPDESK CREATE] Starting ticket creation');
+      console.log('[HELPDESK CREATE] Form data:', {
+        category,
+        priority,
+        title,
+        anonymous,
+        anonymousType: typeof anonymous,
+      });
+
       const formData = new FormData();
       formData.append('category', category);
       formData.append('priority', priority);
       formData.append('title', title);
       formData.append('description', description);
-      formData.append('anonymous', String(anonymous));
+      // Fix: Send boolean as string "true" or "false", backend will parse it
+      formData.append('anonymous', anonymous ? 'true' : 'false');
+      
+      console.log('[HELPDESK CREATE] Anonymous value being sent:', anonymous ? 'true' : 'false');
+      
       if (file) {
         formData.append('file', file);
+        console.log('[HELPDESK CREATE] File attached:', file.name);
       }
 
+      console.log('[HELPDESK CREATE] Sending request to /complaints');
       const response = await api.post('/complaints', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      console.log('[HELPDESK CREATE] Response received:', response.data);
       return response.data;
     },
     onSuccess: (data) => {

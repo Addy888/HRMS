@@ -111,13 +111,35 @@ export default function HRHelpdeskQueue() {
       if (categoryFilter && categoryFilter.trim()) params.set('category', categoryFilter);
       if (assignedToId && assignedToId.trim()) params.set('assignedToId', assignedToId);
 
+      console.log('[HELPDESK] Fetching complaints with params:', params.toString());
       const res = await api.get(`/admin/complaints?${params.toString()}`);
+      console.log('[HELPDESK] API Response:', res.data);
+      console.log('[HELPDESK] Response data type:', typeof res.data);
+      console.log('[HELPDESK] Response data keys:', res.data ? Object.keys(res.data) : 'null');
+      
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        console.log('[HELPDESK] Tickets array length:', res.data.data.length);
+        res.data.data.forEach((ticket: any, index: number) => {
+          console.log(`[HELPDESK] Ticket ${index + 1}:`, {
+            ticketNumber: ticket.complaintNumber,
+            raisedByName: ticket.raisedByName,
+            raisedByEmployeeId: ticket.raisedByEmployeeId,
+            anonymous: ticket.anonymous,
+            department: ticket.department,
+            hasRaisedBy: !!ticket.raisedBy,
+          });
+        });
+      }
+      
       return res.data;
     },
   });
 
   const queueList = queueData?.data ?? [];
   const meta = queueData?.meta ?? { totalPages: 1, total: 0 };
+
+  console.log('[HELPDESK] Final queueList:', queueList);
+  console.log('[HELPDESK] Queue list length:', queueList.length);
 
   const formatResolutionTime = (minutes: number) => {
     if (!minutes) return '—';
@@ -283,8 +305,21 @@ export default function HRHelpdeskQueue() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs font-semibold text-neutral-200">
-                        {item.raisedByName}
-                        {item.anonymous && <span className="text-[8px] bg-neutral-800 text-neutral-500 border border-neutral-700 px-1 py-0.5 rounded ml-1.5 font-bold uppercase">Anon</span>}
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            {item.raisedByName || 'Unknown'}
+                            {item.anonymous && (
+                              <span className="text-[8px] bg-neutral-800 text-neutral-500 border border-neutral-700 px-1 py-0.5 rounded font-bold uppercase">
+                                Anon
+                              </span>
+                            )}
+                          </div>
+                          {item.raisedByEmployeeId && !item.anonymous && (
+                            <div className="text-[9px] text-neutral-500 font-mono">
+                              {item.raisedByEmployeeId}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-xs text-neutral-450">
                         {item.department}

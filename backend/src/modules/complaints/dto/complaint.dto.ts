@@ -9,7 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export enum ComplaintCategory {
   HR_ISSUE = 'HR_ISSUE',
@@ -117,6 +117,18 @@ export class CreateComplaintDto {
   description: string;
 
   @ApiPropertyOptional({ example: false })
+  @Transform(({ value }) => {
+    // Handle string values from FormData
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    // Handle boolean values
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    // Default to false for authenticated employees
+    return false;
+  })
   @IsBoolean()
   @IsOptional()
   anonymous?: boolean;
