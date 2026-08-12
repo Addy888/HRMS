@@ -307,7 +307,9 @@ export default function HRHelpdeskQueue() {
                       <td className="px-6 py-4 text-xs font-semibold text-neutral-200">
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-2">
-                            {item.raisedByName || 'Unknown'}
+                            <span className={item.raisedByName === 'Unknown' ? 'text-neutral-600 italic' : ''}>
+                              {item.raisedByName || 'Unknown'}
+                            </span>
                             {item.anonymous && (
                               <span className="text-[8px] bg-neutral-800 text-neutral-500 border border-neutral-700 px-1 py-0.5 rounded font-bold uppercase">
                                 Anon

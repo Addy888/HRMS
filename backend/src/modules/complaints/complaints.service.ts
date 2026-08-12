@@ -717,24 +717,37 @@ export class ComplaintsService {
         console.error(`  - anonymous field: ${item.anonymous}`);
       }
       
-      const raisedByName = item.anonymous
-        ? 'Anonymous'
-        : item.raisedBy
-          ? `${item.raisedBy.firstName} ${item.raisedBy.lastName}`
-          : 'Unknown Employee';
+      // Determine display name based on anonymous flag and data availability
+      let raisedByName: string;
+      let raisedByEmployeeId: string | null = null;
+      
+      if (item.anonymous) {
+        // Intentionally anonymous ticket
+        raisedByName = 'Anonymous';
+        raisedByEmployeeId = null;
+      } else if (item.raisedBy) {
+        // Normal ticket with employee relation
+        raisedByName = `${item.raisedBy.firstName} ${item.raisedBy.lastName}`;
+        raisedByEmployeeId = item.raisedBy.employeeId;
+      } else {
+        // Old ticket or broken relation - show Unknown instead of Anonymous
+        raisedByName = 'Unknown';
+        raisedByEmployeeId = null;
+        console.warn(`⚠️ Ticket ${item.complaintNumber} (ID: ${item.id}) has raisedById=${item.raisedById} but relation is null`);
+      }
       
       console.log(`Formatting ticket ${item.complaintNumber}:`, {
         anonymous: item.anonymous,
         hasRaisedBy: !!item.raisedBy,
         raisedById: item.raisedById,
         raisedByName,
-        employeeId: item.raisedBy?.employeeId,
+        employeeId: raisedByEmployeeId,
       });
 
       return {
         ...item,
         raisedByName,
-        raisedByEmployeeId: item.raisedBy?.employeeId || null,
+        raisedByEmployeeId,
         department: item.raisedBy?.department?.name || '—',
       };
     });
