@@ -361,8 +361,8 @@ export default function SalaryStructureForm({
             </div>
           )}
         </div>
-        {errors[valueName] && (
-          <p className="text-xs text-red-400">{errors[valueName]?.message?.toString()}</p>
+        {errors[valueName as keyof typeof errors] && (
+          <p className="text-xs text-red-400">{errors[valueName as keyof typeof errors]?.message?.toString()}</p>
         )}
       </div>
     );

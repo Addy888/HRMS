@@ -603,7 +603,7 @@ export default function SalaryHistoryPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800">
-                    {salaryRecords.map((record, index) => (
+                    {salaryRecords.map((record: any, index: number) => (
                       <motion.tr
                         key={record.id}
                         initial={{ opacity: 0, y: 10 }}

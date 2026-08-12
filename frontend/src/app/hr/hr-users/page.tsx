@@ -256,10 +256,10 @@ export default function HRUsersPage() {
         )}
 
         {/* Add HR Modal */}
-        {showAddModal && <AddHRModal onClose={() => setShowAddModal(false)} onSubmit={(data) => createMutation.mutate(data)} isLoading={createMutation.isPending} departments={departments} designations={designations} />}
+        {showAddModal && <AddHRModal onClose={() => setShowAddModal(false)} onSubmit={(data: any) => createMutation.mutate(data)} isLoading={createMutation.isPending} departments={departments} designations={designations} />}
 
         {/* Edit HR Modal */}
-        {showEditModal && selectedUser && <EditHRModal user={selectedUser} onClose={() => { setShowEditModal(false); setSelectedUser(null); }} onSubmit={(data) => updateMutation.mutate({ id: selectedUser.id, data })} isLoading={updateMutation.isPending} departments={departments} designations={designations} />}
+        {showEditModal && selectedUser && <EditHRModal user={selectedUser} onClose={() => { setShowEditModal(false); setSelectedUser(null); }} onSubmit={(data: any) => updateMutation.mutate({ id: selectedUser.id, data })} isLoading={updateMutation.isPending} departments={departments} designations={designations} />}
       </div>
     </HRLayout>
   );

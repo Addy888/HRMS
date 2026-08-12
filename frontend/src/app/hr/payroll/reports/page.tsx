@@ -519,7 +519,7 @@ export default function PayrollReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
-                  {reports.map((report) => (
+                  {reports.map((report: any) => (
                     <tr key={report.id} className="hover:bg-neutral-900/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium text-white">{report.employeeName}</div>
