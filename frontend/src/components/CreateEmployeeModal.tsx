@@ -46,7 +46,6 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
     },
     enabled: isOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache
   });
 
   // Fetch real designations from API
@@ -62,11 +61,10 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
     },
     enabled: isOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache
   });
 
-  const departments = departmentsData || [];
-  const designations = designationsData || [];
+  const departments: any[] = departmentsData || [];
+  const designations: any[] = designationsData || [];
 
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -141,9 +139,9 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        {/* Modal Header - Fixed */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800 shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold text-white">Create New Employee</h2>
             <p className="text-sm text-neutral-400 mt-0.5">A login will be automatically generated with password: <code className="text-amber-400 font-mono">1234</code></p>
@@ -154,191 +152,194 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Employee ID Mode Selection */}
-          <div className="px-6 pt-6 pb-4 border-b border-neutral-800">
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider mb-3 block">
-              Employee ID
-            </label>
-            <div className="flex gap-3 mb-4">
-              <button
-                type="button"
-                onClick={() => setEmployeeIdMode('auto')}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
-                  employeeIdMode === 'auto'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
-                }`}
-              >
-                Auto Generate
-              </button>
-              <button
-                type="button"
-                onClick={() => setEmployeeIdMode('manual')}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
-                  employeeIdMode === 'manual'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
-                }`}
-              >
-                Enter Manually
-              </button>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Employee ID Mode Selection */}
+            <div className="px-6 pt-6 pb-4 border-b border-neutral-800">
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider mb-3 block">
+                Employee ID
+              </label>
+              <div className="flex gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setEmployeeIdMode('auto')}
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                    employeeIdMode === 'auto'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
+                  }`}
+                >
+                  Auto Generate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmployeeIdMode('manual')}
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                    employeeIdMode === 'manual'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
+                  }`}
+                >
+                  Enter Manually
+                </button>
+              </div>
+
+              {employeeIdMode === 'auto' ? (
+                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Info className="w-4 h-4 text-blue-400" />
+                    <span className="text-xs text-neutral-400 font-semibold">Next Employee ID</span>
+                  </div>
+                  <div className="text-lg font-bold text-white font-mono">{nextEmployeeId}</div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Employee ID will be automatically assigned upon creation.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                    Employee ID *
+                  </label>
+                  <input
+                    type="text"
+                    name="employeeId"
+                    value={form.employeeId}
+                    onChange={handleChange}
+                    placeholder="FCS0155"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                    required={employeeIdMode === 'manual'}
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Enter a unique Employee ID for this employee (format: FCS####)
+                  </p>
+                </div>
+              )}
             </div>
 
-            {employeeIdMode === 'auto' ? (
-              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Info className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-neutral-400 font-semibold">Next Employee ID</span>
+            <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {[
+                { label: 'First Name *', name: 'firstName', type: 'text', placeholder: 'Rahul' },
+                { label: 'Last Name *', name: 'lastName', type: 'text', placeholder: 'Sharma' },
+                { label: 'Corporate Email *', name: 'email', type: 'email', placeholder: 'rahul@fcs.com' },
+                { label: 'Mobile Number', name: 'phone', type: 'tel', placeholder: '9876543210' },
+                { label: 'Date of Birth', name: 'dob', type: 'date', placeholder: '' },
+                { label: 'Joining Date', name: 'joiningDate', type: 'date', placeholder: '' },
+              ].map((field) => (
+                <div key={field.name} className="space-y-1.5">
+                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">{field.label}</label>
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    value={(form as any)[field.name]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
                 </div>
-                <div className="text-lg font-bold text-white font-mono">{nextEmployeeId}</div>
-                <p className="text-xs text-neutral-500 mt-2">
-                  Employee ID will be automatically assigned upon creation.
-                </p>
+              ))}
+
+              {/* Gender Select */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Gender</label>
+                <select
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other / Prefer not to say</option>
+                </select>
               </div>
-            ) : (
+
+              {/* Department Select */}
               <div className="space-y-1.5">
                 <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
-                  Employee ID *
+                  Department {loadingDepartments && '(Loading...)'}
                 </label>
-                <input
-                  type="text"
-                  name="employeeId"
-                  value={form.employeeId}
-                  onChange={handleChange}
-                  placeholder="FCS0155"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
-                  required={employeeIdMode === 'manual'}
-                />
-                <p className="text-xs text-neutral-500 mt-1">
-                  Enter a unique Employee ID for this employee (format: FCS####)
-                </p>
+                <select
+                  name="departmentId"
+                  value={form.departmentId}
+                  onChange={(e) => {
+                    console.log('🏢 Department selected:', {
+                      value: e.target.value,
+                      option: departments.find((d: any) => d.id === e.target.value)
+                    });
+                    handleChange(e);
+                  }}
+                  disabled={loadingDepartments}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((d: any) => {
+                    console.log('🏢 Department option:', { id: d.id, name: d.name });
+                    return <option key={d.id} value={d.id}>{d.name}</option>;
+                  })}
+                </select>
+                {departments.length === 0 && !loadingDepartments && (
+                  <p className="text-xs text-red-400">No departments found. Please create departments first.</p>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {[
-              { label: 'First Name *', name: 'firstName', type: 'text', placeholder: 'Rahul' },
-              { label: 'Last Name *', name: 'lastName', type: 'text', placeholder: 'Sharma' },
-              { label: 'Corporate Email *', name: 'email', type: 'email', placeholder: 'rahul@fcs.com' },
-              { label: 'Mobile Number', name: 'phone', type: 'tel', placeholder: '9876543210' },
-              { label: 'Date of Birth', name: 'dob', type: 'date', placeholder: '' },
-              { label: 'Joining Date', name: 'joiningDate', type: 'date', placeholder: '' },
-            ].map((field) => (
-              <div key={field.name} className="space-y-1.5">
-                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">{field.label}</label>
+              {/* Designation Select */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                  Designation {loadingDesignations && '(Loading...)'}
+                </label>
+                <select
+                  name="designationId"
+                  value={form.designationId}
+                  onChange={(e) => {
+                    console.log('💼 Designation selected:', {
+                      value: e.target.value,
+                      option: designations.find((d: any) => d.id === e.target.value)
+                    });
+                    handleChange(e);
+                  }}
+                  disabled={loadingDesignations}
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                >
+                  <option value="">Select Designation</option>
+                  {designations.map((d: any) => {
+                    console.log('💼 Designation option:', { id: d.id, name: d.name });
+                    return <option key={d.id} value={d.id}>{d.name}</option>;
+                  })}
+                </select>
+                {designations.length === 0 && !loadingDesignations && (
+                  <p className="text-xs text-red-400">No designations found. Please create designations first.</p>
+                )}
+              </div>
+
+              {/* Monthly Salary */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Monthly Salary (₹ INR) *</label>
                 <input
-                  type={field.type}
-                  name={field.name}
-                  value={(form as any)[field.name]}
+                  type="number"
+                  name="monthlySalary"
+                  value={form.monthlySalary}
                   onChange={handleChange}
-                  placeholder={field.placeholder}
+                  placeholder="25000"
+                  min="1"
+                  step="1"
+                  required
                   className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
-            ))}
-
-            {/* Gender Select */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Gender</label>
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
-              >
-                <option value="">Select Gender</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="OTHER">Other / Prefer not to say</option>
-              </select>
             </div>
 
-            {/* Department Select */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
-                Department {loadingDepartments && '(Loading...)'}
-              </label>
-              <select
-                name="departmentId"
-                value={form.departmentId}
-                onChange={(e) => {
-                  console.log('🏢 Department selected:', {
-                    value: e.target.value,
-                    option: departments.find((d: any) => d.id === e.target.value)
-                  });
-                  handleChange(e);
-                }}
-                disabled={loadingDepartments}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
-              >
-                <option value="">Select Department</option>
-                {departments.map((d: any) => {
-                  console.log('🏢 Department option:', { id: d.id, name: d.name });
-                  return <option key={d.id} value={d.id}>{d.name}</option>;
-                })}
-              </select>
-              {departments.length === 0 && !loadingDepartments && (
-                <p className="text-xs text-red-400">No departments found. Please create departments first.</p>
-              )}
-            </div>
-
-            {/* Designation Select */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
-                Designation {loadingDesignations && '(Loading...)'}
-              </label>
-              <select
-                name="designationId"
-                value={form.designationId}
-                onChange={(e) => {
-                  console.log('💼 Designation selected:', {
-                    value: e.target.value,
-                    option: designations.find((d: any) => d.id === e.target.value)
-                  });
-                  handleChange(e);
-                }}
-                disabled={loadingDesignations}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
-              >
-                <option value="">Select Designation</option>
-                {designations.map((d: any) => {
-                  console.log('💼 Designation option:', { id: d.id, name: d.name });
-                  return <option key={d.id} value={d.id}>{d.name}</option>;
-                })}
-              </select>
-              {designations.length === 0 && !loadingDesignations && (
-                <p className="text-xs text-red-400">No designations found. Please create designations first.</p>
-              )}
-            </div>
-
-            {/* Monthly Salary */}
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Monthly Salary (₹ INR) *</label>
-              <input
-                type="number"
-                name="monthlySalary"
-                value={form.monthlySalary}
-                onChange={handleChange}
-                placeholder="25000"
-                min="1"
-                step="1"
-                required
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
-              />
+            {/* Info Box */}
+            <div className="mx-6 mb-6 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+              <p className="text-xs text-amber-400/80 font-medium leading-relaxed">
+                The employee will receive temporary password: <code className="font-mono font-bold">1234</code>. They will be prompted to change it on first login.
+              </p>
             </div>
           </div>
 
-          {/* Info Box */}
-          <div className="mx-6 mb-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-            <p className="text-xs text-amber-400/80 font-medium leading-relaxed">
-              The employee will receive temporary password: <code className="font-mono font-bold">1234</code>. They will be prompted to change it on first login.
-            </p>
-          </div>
-
-          {/* Modal Footer */}
-          <div className="flex gap-3 px-6 py-4 border-t border-neutral-800">
+          {/* Modal Footer - Fixed */}
+          <div className="flex gap-3 px-6 py-4 border-t border-neutral-800 shrink-0 bg-neutral-950">
             <button
               type="button"
               onClick={onClose}

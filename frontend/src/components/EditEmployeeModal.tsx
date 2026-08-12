@@ -78,8 +78,9 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800 sticky top-0 bg-neutral-950 z-10">
+      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        {/* Header - Fixed */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800 shrink-0">
           <div>
             <h2 className="font-heading text-xl font-bold text-white">Edit Employee Profile</h2>
             <p className="text-sm text-neutral-400 mt-0.5">{employee.employeeId} — {employee.firstName} {employee.lastName}</p>
@@ -89,8 +90,9 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
             {[
               { label: 'First Name', name: 'firstName', type: 'text' },
               { label: 'Last Name', name: 'lastName', type: 'text' },
