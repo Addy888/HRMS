@@ -18,10 +18,33 @@ export const useSocket = () => {
       return;
     }
 
-    // Connect to backend port 4000 with the /notifications namespace
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000/notifications';
+    // Get Socket.IO URL with production validation
+    const getSocketUrl = () => {
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      if (isProduction && !socketUrl) {
+        console.error('❌ CONFIGURATION ERROR: NEXT_PUBLIC_SOCKET_URL is not set in production');
+        console.warn('⚠️  Socket.IO will not connect. Please set NEXT_PUBLIC_SOCKET_URL in Vercel Environment Variables.');
+        return null;
+      }
+      
+      // Default to localhost for development
+      return socketUrl || 'http://localhost:4000/notifications';
+    };
 
-    console.log('Initializing socket connection to:', socketUrl);
+    const socketUrl = getSocketUrl();
+    
+    // If no URL available (production misconfiguration), don't connect
+    if (!socketUrl) {
+      console.warn('⚠️  Socket.IO disabled due to missing configuration');
+      setConnected(false);
+      return;
+    }
+
+    console.log('🔌 Initializing socket connection');
+    console.log('   Environment:', process.env.NODE_ENV);
+    console.log('   Socket URL:', socketUrl);
 
     const socket = io(socketUrl, {
       auth: {

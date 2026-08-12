@@ -1,11 +1,29 @@
 import axios from 'axios';
 
+// Environment validation for production
+const getApiUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction && !apiUrl) {
+    console.error('❌ CONFIGURATION ERROR: NEXT_PUBLIC_API_URL is not set in production');
+    throw new Error('Backend API URL is not configured. Please set NEXT_PUBLIC_API_URL in Vercel Environment Variables.');
+  }
+  
+  // Default to localhost for development
+  return apiUrl || 'http://localhost:4000/api/v1';
+};
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1',
+  baseURL: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+console.log('🌐 API Client initialized');
+console.log('   Environment:', process.env.NODE_ENV);
+console.log('   Base URL:', api.defaults.baseURL);
 
 // Attach token from Zustand-persisted localStorage on every request
 api.interceptors.request.use((config) => {
