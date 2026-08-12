@@ -19,7 +19,9 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "npx prisma db seed",
-    "cleanup:production": "tsx prisma/cleanup-production.ts"
+    "cleanup:production": "tsx prisma/cleanup-production.ts",
+    "cleanup:hr-users": "tsx src/scripts/cleanup-hr-users.ts",
+    "verify:hr-users": "tsx src/scripts/verify-hr-users.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
