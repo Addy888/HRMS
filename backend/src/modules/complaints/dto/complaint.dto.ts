@@ -115,23 +115,6 @@ export class CreateComplaintDto {
   @IsString()
   @IsNotEmpty()
   description: string;
-
-  @ApiPropertyOptional({ example: false })
-  @Transform(({ value }) => {
-    // Handle string values from FormData
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    // Handle boolean values
-    if (typeof value === 'boolean') {
-      return value;
-    }
-    // Default to false for authenticated employees
-    return false;
-  })
-  @IsBoolean()
-  @IsOptional()
-  anonymous?: boolean;
 }
 
 export class UpdateComplaintDto {

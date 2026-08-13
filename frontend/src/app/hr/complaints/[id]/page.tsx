@@ -259,11 +259,6 @@ export default function HRComplaintDetailsPage() {
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Description</p>
-              {ticket.anonymous && (
-                <span className="flex items-center gap-1 text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-lg font-bold uppercase">
-                  <EyeOff className="w-3 h-3" /> Anonymous Complaint
-                </span>
-              )}
             </div>
             <div className="text-xs text-neutral-300 leading-[1.8] whitespace-pre-wrap bg-black/40 border border-neutral-850 rounded-xl p-5 font-[Inter]">
               {ticket.description}
@@ -341,7 +336,7 @@ export default function HRComplaintDetailsPage() {
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
               {ticket.replies.map((reply: any) => {
                 const isInternalNote = reply.isInternal;
-                const isEmployee = reply.senderRole === 'Employee' || reply.senderRole === 'Anonymous';
+                const isEmployee = reply.senderRole === 'Employee';
                 return (
                   <div
                     key={reply.id}
@@ -359,11 +354,6 @@ export default function HRComplaintDetailsPage() {
                         {isInternalNote && (
                           <span className="text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1 py-0.5 rounded font-bold uppercase flex items-center gap-0.5">
                             <EyeOff className="w-2.5 h-2.5" /> Internal Note
-                          </span>
-                        )}
-                        {isEmployee && reply.senderRole === 'Anonymous' && (
-                          <span className="text-[8px] bg-neutral-800 text-neutral-550 border border-neutral-700 px-1 py-0.5 rounded font-bold uppercase">
-                            Anon
                           </span>
                         )}
                       </span>
@@ -470,16 +460,15 @@ export default function HRComplaintDetailsPage() {
               <div>
                 <span className="block text-[9px] text-neutral-500 font-bold uppercase tracking-wider">Raised By</span>
                 <span className="text-xs text-white font-semibold block mt-1">
-                  {ticket.anonymous ? 'Anonymous Employee' : `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`}
+                  {`${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`}
                 </span>
-                {!ticket.anonymous && (
-                  <div className="mt-1 space-y-0.5">
-                    <p className="text-[10px] text-neutral-500 font-semibold">{ticket.raisedBy.email}</p>
-                    <p className="text-[10px] text-neutral-500 font-semibold">
-                      Dept: {ticket.raisedBy.department} · Desg: {ticket.raisedBy.designation}
-                    </p>
-                  </div>
-                )}
+                <div className="mt-1 space-y-0.5">
+                  <p className="text-[10px] text-neutral-500 font-semibold font-mono">{ticket.raisedBy.employeeId}</p>
+                  <p className="text-[10px] text-neutral-500 font-semibold">{ticket.raisedBy.email}</p>
+                  <p className="text-[10px] text-neutral-500 font-semibold">
+                    Dept: {ticket.raisedBy.department} · Desg: {ticket.raisedBy.designation}
+                  </p>
+                </div>
               </div>
 
               {/* Status Update */}

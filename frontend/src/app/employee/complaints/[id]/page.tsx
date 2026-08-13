@@ -194,7 +194,6 @@ export default function EmployeeComplaintDetailsPage() {
               ) : (
                 ticket.replies.map((reply: any) => {
                   const isHR = reply.senderRole === 'HR';
-                  const isUserAnonymous = reply.senderRole === 'Anonymous';
                   return (
                     <div
                       key={reply.id}
@@ -207,7 +206,6 @@ export default function EmployeeComplaintDetailsPage() {
                       <div className="flex items-center justify-between gap-6">
                         <span className="text-[10px] font-extrabold text-neutral-300">
                           {reply.sender} {isHR && <span className="text-blue-400 font-medium ml-1">· HR Agent</span>}
-                          {isUserAnonymous && <span className="text-neutral-500 font-medium ml-1">· Anonymous</span>}
                         </span>
                         <span className="text-[9px] text-neutral-550">
                           {new Date(reply.createdAt).toLocaleDateString('en-IN', {

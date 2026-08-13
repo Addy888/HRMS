@@ -37,7 +37,6 @@ export class ComplaintsService {
       title: dto.title,
       category: dto.category,
       priority: dto.priority,
-      anonymous: dto.anonymous,
       hasDescription: !!dto.description,
     });
 
@@ -78,7 +77,7 @@ export class ComplaintsService {
         category: dto.category,
         priority: dto.priority,
         description: dto.description,
-        anonymous: dto.anonymous ?? false,
+        anonymous: false, // Always false - no anonymous tickets allowed
         status: ComplaintStatus.OPEN,
         organizationId: employee.organizationId,
         raisedById: employee.id,
@@ -86,7 +85,6 @@ export class ComplaintsService {
 
       console.log('[HELPDESK CREATE] Creating complaint with data:', {
         complaintNumber: complaintData.complaintNumber,
-        anonymous: complaintData.anonymous,
         raisedById: complaintData.raisedById,
         organizationId: complaintData.organizationId,
       });
@@ -98,7 +96,6 @@ export class ComplaintsService {
       console.log('[HELPDESK CREATE] Complaint created successfully:', {
         id: complaint.id,
         complaintNumber: complaint.complaintNumber,
-        anonymous: complaint.anonymous,
         raisedById: complaint.raisedById,
       });
       console.log('========== HELPDESK CREATE END ==========\n');
@@ -144,7 +141,7 @@ export class ComplaintsService {
         data: {
           complaintId: complaint.id,
           action: 'COMPLAINT_CREATED',
-          details: `Complaint ${complaintNumber} has been raised by ${dto.anonymous ? 'Anonymous Employee' : 'Employee'}`,
+          details: `Complaint ${complaintNumber} has been raised by employee ${employee.firstName} ${employee.lastName} (${employee.employeeId})`,
           actorId: userId,
         },
       });
@@ -155,7 +152,7 @@ export class ComplaintsService {
           complaintId: complaint.id,
           userId,
           action: 'CREATED',
-          details: `Complaint created. Anonymous: ${dto.anonymous ?? false}`,
+          details: `Complaint created by ${employee.firstName} ${employee.lastName}`,
           ipAddress,
           userAgent,
         },
@@ -235,12 +232,11 @@ export class ComplaintsService {
       this.prisma.complaint.count({ where }),
     ]);
 
-    // Format output to respect anonymity if necessary
+    // Format output with employee information
     const formatted = data.map((item) => ({
       ...item,
-      raisedBy: item.anonymous
-        ? 'Anonymous'
-        : `${employee.firstName} ${employee.lastName}`,
+      raisedBy: `${employee.firstName} ${employee.lastName}`,
+      raisedByEmployeeId: employee.employeeId,
     }));
 
     return {
@@ -310,14 +306,13 @@ export class ComplaintsService {
       },
     });
 
-    // If Employee is viewing, hide internal replies and clean up anonymous profile
+    // Format replies for response
     const showReplies =
       userRole === 'HR'
         ? complaint.replies
         : complaint.replies.filter((r) => !r.isInternal);
 
     const formattedReplies = showReplies.map((r) => {
-      const isActorHR = r.user.roleId === 'HR'; // or role checking
       return {
         id: r.id,
         message: r.message,
@@ -326,12 +321,7 @@ export class ComplaintsService {
         sender: r.user.employee
           ? `${r.user.employee.firstName} ${r.user.employee.lastName}`
           : 'System Admin',
-        senderRole:
-          r.user.id === complaint.raisedBy.userId && complaint.anonymous
-            ? 'Anonymous'
-            : r.user.employee
-              ? 'Employee'
-              : 'HR',
+        senderRole: r.user.employee ? 'Employee' : 'HR',
       };
     });
 
@@ -343,29 +333,19 @@ export class ComplaintsService {
       category: complaint.category,
       priority: complaint.priority,
       status: complaint.status,
-      anonymous: complaint.anonymous,
       createdAt: complaint.createdAt,
       updatedAt: complaint.updatedAt,
       resolvedAt: complaint.resolvedAt,
       resolutionTime: complaint.resolutionTime,
-      raisedBy:
-        complaint.anonymous && userRole !== 'HR'
-          ? {
-              id: '',
-              firstName: 'Anonymous',
-              lastName: '',
-              department: null,
-              designation: null,
-            }
-          : {
-              id: complaint.raisedBy.id,
-              firstName: complaint.raisedBy.firstName,
-              lastName: complaint.raisedBy.lastName,
-              email: complaint.raisedBy.user.email,
-              employeeId: complaint.raisedBy.employeeId,
-              department: complaint.raisedBy.department?.name || '—',
-              designation: complaint.raisedBy.designation?.name || '—',
-            },
+      raisedBy: {
+        id: complaint.raisedBy.id,
+        firstName: complaint.raisedBy.firstName,
+        lastName: complaint.raisedBy.lastName,
+        email: complaint.raisedBy.user.email,
+        employeeId: complaint.raisedBy.employeeId,
+        department: complaint.raisedBy.department?.name || '—',
+        designation: complaint.raisedBy.designation?.name || '—',
+      },
       assignedTo: complaint.assignedTo
         ? {
             id: complaint.assignedTo.id,
@@ -698,7 +678,6 @@ export class ComplaintsService {
     data.forEach((ticket, index) => {
       console.log(`\nTicket ${index + 1}:`, {
         ticketNumber: ticket.complaintNumber,
-        anonymous: ticket.anonymous,
         raisedById: ticket.raisedById,
         raisedByExists: !!ticket.raisedBy,
         raisedByFirstName: ticket.raisedBy?.firstName,
@@ -710,34 +689,28 @@ export class ComplaintsService {
     console.log('================================');
 
     const formatted = data.map((item) => {
-      // Debug: Check if raisedBy exists
+      // Check if raisedBy exists
       if (!item.raisedBy) {
         console.error(`ERROR: Ticket ${item.complaintNumber} has NO raisedBy relationship!`);
         console.error(`  - raisedById field: ${item.raisedById}`);
-        console.error(`  - anonymous field: ${item.anonymous}`);
       }
       
-      // Determine display name based on anonymous flag and data availability
+      // Determine display name based on data availability
       let raisedByName: string;
       let raisedByEmployeeId: string | null = null;
       
-      if (item.anonymous) {
-        // Intentionally anonymous ticket
-        raisedByName = 'Anonymous';
-        raisedByEmployeeId = null;
-      } else if (item.raisedBy) {
+      if (item.raisedBy) {
         // Normal ticket with employee relation
         raisedByName = `${item.raisedBy.firstName} ${item.raisedBy.lastName}`;
         raisedByEmployeeId = item.raisedBy.employeeId;
       } else {
-        // Old ticket or broken relation - show Unknown instead of Anonymous
-        raisedByName = 'Unknown';
+        // Old ticket or broken relation - show Unknown
+        raisedByName = 'Unknown Employee';
         raisedByEmployeeId = null;
         console.warn(`⚠️ Ticket ${item.complaintNumber} (ID: ${item.id}) has raisedById=${item.raisedById} but relation is null`);
       }
       
       console.log(`Formatting ticket ${item.complaintNumber}:`, {
-        anonymous: item.anonymous,
         hasRaisedBy: !!item.raisedBy,
         raisedById: item.raisedById,
         raisedByName,

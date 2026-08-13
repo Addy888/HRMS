@@ -45,7 +45,6 @@ export default function CreateComplaintPage() {
   const [priority, setPriority] = useState('MEDIUM');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [anonymous, setAnonymous] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   const createMutation = useMutation({
@@ -55,8 +54,6 @@ export default function CreateComplaintPage() {
         category,
         priority,
         title,
-        anonymous,
-        anonymousType: typeof anonymous,
       });
 
       const formData = new FormData();
@@ -64,10 +61,6 @@ export default function CreateComplaintPage() {
       formData.append('priority', priority);
       formData.append('title', title);
       formData.append('description', description);
-      // Fix: Send boolean as string "true" or "false", backend will parse it
-      formData.append('anonymous', anonymous ? 'true' : 'false');
-      
-      console.log('[HELPDESK CREATE] Anonymous value being sent:', anonymous ? 'true' : 'false');
       
       if (file) {
         formData.append('file', file);
@@ -271,26 +264,6 @@ export default function CreateComplaintPage() {
                 </div>
               </label>
             )}
-          </div>
-
-          {/* Anonymous Option */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={anonymous}
-                onChange={(e) => setAnonymous(e.target.checked)}
-                className="mt-1 w-4 h-4 bg-neutral-950 border-neutral-800 rounded"
-              />
-              <div>
-                <div className="text-sm font-semibold text-white">
-                  Submit Anonymously
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">
-                  Your identity will be hidden from the ticket. Only HR admins can see your details.
-                </p>
-              </div>
-            </label>
           </div>
 
           {/* Info Box */}
