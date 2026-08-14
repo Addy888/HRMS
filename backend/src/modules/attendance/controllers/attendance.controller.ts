@@ -39,6 +39,7 @@ import { RolesGuard, Roles } from '../../../common/guards/roles.guard.js';
 import { UserRole } from '../../../common/constants/index.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { getAttendanceBusinessDate } from '../utils/attendance-date.util.js';
+import { toZonedTime } from 'date-fns-tz';
 
 @ApiTags('Attendance')
 @ApiBearerAuth()
@@ -157,6 +158,15 @@ export class AttendanceController {
     // Use canonical attendance business date
     const businessDate = getAttendanceBusinessDate();
 
+    // ============================================
+    // BUSINESS RULE: MONDAY = WEEK OFF
+    // ============================================
+    // Check if today is Monday using Asia/Kolkata timezone
+    const now = new Date();
+    const zonedDate = toZonedTime(now, 'Asia/Kolkata');
+    const dayOfWeek = zonedDate.getDay(); // 0 = Sunday, 1 = Monday
+    const isMonday = dayOfWeek === 1;
+
     const attendance = await this.prisma.attendance.findFirst({
       where: {
         employeeId: employee.id,
@@ -170,6 +180,7 @@ export class AttendanceController {
     console.log('[ATTENDANCE-API] Today\'s attendance fetched:', {
       employeeId: employee.id,
       date: businessDate,
+      isMonday,
       found: !!attendance,
       attendance: attendance ? {
         id: attendance.id,
@@ -183,14 +194,15 @@ export class AttendanceController {
     const response = {
       date: businessDate,
       attendance,
-      canCheckIn: !attendance || !attendance.checkInTime,
-      canCheckOut:
-        attendance && attendance.checkInTime && !attendance.checkOutTime,
+      isMonday, // Flag for frontend to know it's Monday
+      canCheckIn: !isMonday && (!attendance || !attendance.checkInTime), // Disable on Monday
+      canCheckOut: !isMonday && (attendance && attendance.checkInTime && !attendance.checkOutTime), // Disable on Monday
     };
 
     console.log('[ATTENDANCE-API] Returning response:', {
       date: response.date,
       hasAttendance: !!response.attendance,
+      isMonday: response.isMonday,
       canCheckIn: response.canCheckIn,
       canCheckOut: response.canCheckOut,
       attendanceCheckInTime: response.attendance?.checkInTime,

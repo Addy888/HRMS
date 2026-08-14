@@ -106,6 +106,12 @@ export default function EmployeeMonthlyAttendancePage() {
       const indiaDate = toZonedTime(day, 'Asia/Kolkata');
       const dateKey = format(indiaDate, 'yyyy-MM-dd');
 
+      // ============================================
+      // BUSINESS RULE: MONDAY = WEEK OFF
+      // ============================================
+      const dayOfWeek = indiaDate.getDay(); // 0 = Sunday, 1 = Monday
+      const isMonday = dayOfWeek === 1;
+
       // Find matching attendance record
       const attendance = attendances.find((att: any) => {
         const attDate = new Date(att.date);
@@ -118,6 +124,7 @@ export default function EmployeeMonthlyAttendancePage() {
         dateKey,
         dayNumber: format(day, 'd'),
         dayName: format(day, 'EEEE'),
+        isMonday, // Flag for Monday
         attendance: attendance || null,
       };
     });
@@ -439,7 +446,13 @@ export default function EmployeeMonthlyAttendancePage() {
                   <tbody className="divide-y divide-neutral-800/40 print:divide-neutral-300">
                     {monthDays.map((day) => {
                       const att = day.attendance;
-                      const status = att?.status || 'NOT_MARKED';
+                      // ============================================
+                      // BUSINESS RULE: MONDAY = WEEK OFF
+                      // ============================================
+                      // If Monday and no attendance, show WEEK_OFF
+                      // If Monday with attendance, respect backend status
+                      const status = att?.status || (day.isMonday ? 'WEEK_OFF' : 'NOT_MARKED');
+                      
                       return (
                         <tr
                           key={day.dateKey}

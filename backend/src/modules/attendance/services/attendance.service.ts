@@ -107,12 +107,24 @@ export class AttendanceService {
       throw new ForbiddenException('You can only mark your own attendance');
     }
 
+    // ============================================
+    // BUSINESS RULE: MONDAY = WEEK OFF
+    // ============================================
+    // Check if today is Monday using Asia/Kolkata timezone
+    const timestamp = dto.timestamp ? parseISO(dto.timestamp) : new Date();
+    const zonedDate = toZonedTime(timestamp, 'Asia/Kolkata');
+    const dayOfWeek = zonedDate.getDay(); // 0 = Sunday, 1 = Monday, 2 = Tuesday, ...
+    
+    if (dayOfWeek === 1) { // Monday
+      this.logger.log(`[ATTENDANCE-CHECKIN] Monday detected - WEEK OFF`);
+      throw new BadRequestException('Today is a weekly off.');
+    }
+
     // Get active provider (Manual/Biometric/RFID/etc.)
     const provider = await this.providerRegistry.getActiveProvider();
     this.logger.log(`Using provider: ${provider.getName()}`);
 
     // Prepare attendance event
-    const timestamp = dto.timestamp ? parseISO(dto.timestamp) : new Date();
     const attendanceEvent: Partial<IAttendanceEvent> = {
       employeeId,
       eventType: AttendanceEventType.CHECK_IN,
@@ -185,6 +197,19 @@ export class AttendanceService {
 
     if (!this.isHRRole(user.role.name) && employee.userId !== userId) {
       throw new ForbiddenException('You can only mark your own attendance');
+    }
+
+    // ============================================
+    // BUSINESS RULE: MONDAY = WEEK OFF
+    // ============================================
+    // Check if today is Monday using Asia/Kolkata timezone
+    const timestamp = dto.timestamp ? parseISO(dto.timestamp) : new Date();
+    const zonedDate = toZonedTime(timestamp, 'Asia/Kolkata');
+    const dayOfWeek = zonedDate.getDay(); // 0 = Sunday, 1 = Monday, 2 = Tuesday, ...
+    
+    if (dayOfWeek === 1) { // Monday
+      this.logger.log(`[ATTENDANCE-CHECKOUT] Monday detected - WEEK OFF`);
+      throw new BadRequestException('Today is a weekly off.');
     }
 
     // Check if checked in today
@@ -290,65 +315,78 @@ export class AttendanceService {
       include: { shift: true },
     });
 
-    // Calculate late status
-    let lateBy = 0;
+    // ============================================
+    // BUSINESS RULE: MONDAY = WEEK OFF (PRIORITY 1)
+    // ============================================
+    // Check if this date is Monday using Asia/Kolkata timezone
+    const zonedBusinessDate = toZonedTime(event.timestamp, 'Asia/Kolkata');
+    const dayOfWeekNumber = zonedBusinessDate.getDay(); // 0 = Sunday, 1 = Monday
+    
     let status = AttendanceStatus.PRESENT;
+    let lateBy = 0;
 
-    if (shiftAssignment) {
-      const shift = shiftAssignment.shift;
-      const [startHour, startMinute] = shift.startTime.split(':').map(Number);
-      
-      // Create shift start time in IST for comparison
-      const zonedCheckInTime = toZonedTime(event.timestamp, 'Asia/Kolkata');
-      const shiftStartTime = new Date(zonedCheckInTime);
-      shiftStartTime.setHours(startHour, startMinute, 0, 0);
+    if (dayOfWeekNumber === 1) { // Monday
+      this.logger.log(`[ATTENDANCE-CHECKIN] Monday detected - Setting status to WEEK_OFF`);
+      status = AttendanceStatus.WEEK_OFF;
+      lateBy = 0; // No late marking on week off
+    } else {
+      // Calculate late status only for working days
+      if (shiftAssignment) {
+        const shift = shiftAssignment.shift;
+        const [startHour, startMinute] = shift.startTime.split(':').map(Number);
+        
+        // Create shift start time in IST for comparison
+        const zonedCheckInTime = toZonedTime(event.timestamp, 'Asia/Kolkata');
+        const shiftStartTime = new Date(zonedCheckInTime);
+        shiftStartTime.setHours(startHour, startMinute, 0, 0);
 
-      const minutesLate = differenceInMinutes(zonedCheckInTime, shiftStartTime);
+        const minutesLate = differenceInMinutes(zonedCheckInTime, shiftStartTime);
 
-      // IMPORTANT: Late starts AFTER grace time, not AT grace time
-      // If graceTime is 10 minutes and startTime is 09:00:
-      // - 09:00 to 09:10 => ON TIME
-      // - 09:11 onwards => LATE
-      if (minutesLate > shift.graceTime) {
-        lateBy = minutesLate - shift.graceTime;
-        if (lateBy >= shift.halfDayIfLateBy) {
-          status = AttendanceStatus.HALF_DAY;
-        } else if (lateBy >= shift.lateMarkAfter) {
-          status = AttendanceStatus.LATE;
+        // IMPORTANT: Late starts AFTER grace time, not AT grace time
+        // If graceTime is 10 minutes and startTime is 09:00:
+        // - 09:00 to 09:10 => ON TIME
+        // - 09:11 onwards => LATE
+        if (minutesLate > shift.graceTime) {
+          lateBy = minutesLate - shift.graceTime;
+          if (lateBy >= shift.halfDayIfLateBy) {
+            status = AttendanceStatus.HALF_DAY;
+          } else if (lateBy >= shift.lateMarkAfter) {
+            status = AttendanceStatus.LATE;
+          }
         }
       }
-    }
 
-    // Check holiday
-    const holiday = await this.prisma.holiday.findFirst({
-      where: {
-        date: businessDate,
-        OR: [{ departmentId: null }, { departmentId: employee.departmentId }],
-      },
-    });
+      // Check holiday (only for non-Monday days)
+      const holiday = await this.prisma.holiday.findFirst({
+        where: {
+          date: businessDate,
+          OR: [{ departmentId: null }, { departmentId: employee.departmentId }],
+        },
+      });
 
-    if (holiday) {
-      status = AttendanceStatus.HOLIDAY;
-    }
+      if (holiday) {
+        status = AttendanceStatus.HOLIDAY;
+      }
 
-    // Check week off
-    const dayOfWeek = format(new Date(businessDate), 'EEEE').toUpperCase();
-    const weekOff = await this.prisma.weekOff.findFirst({
-      where: {
-        dayOfWeek: dayOfWeek,
-        isActive: true,
-        effectiveFrom: { lte: new Date(businessDate) },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: new Date(businessDate) } },
-          { employeeId: null },
-          { employeeId: employee.id },
-        ],
-      },
-    });
+      // Check database week off (only for non-Monday days as fallback)
+      const dayOfWeekName = format(new Date(businessDate), 'EEEE').toUpperCase();
+      const weekOff = await this.prisma.weekOff.findFirst({
+        where: {
+          dayOfWeek: dayOfWeekName,
+          isActive: true,
+          effectiveFrom: { lte: new Date(businessDate) },
+          OR: [
+            { effectiveTo: null },
+            { effectiveTo: { gte: new Date(businessDate) } },
+            { employeeId: null },
+            { employeeId: employee.id },
+          ],
+        },
+      });
 
-    if (weekOff) {
-      status = AttendanceStatus.WEEK_OFF;
+      if (weekOff) {
+        status = AttendanceStatus.WEEK_OFF;
+      }
     }
 
     // STEP 4: Prepare check-in data
@@ -509,7 +547,7 @@ export class AttendanceService {
   /**
    * UPDATE CHECK-OUT
    * Private method to update attendance with check-out
-   * Applies half-day rule if checking out before official end time
+   * Applies HALF_DAY rule if checking out before 7:00 PM (19:00) Asia/Kolkata
    */
   private async updateCheckOut(
     attendance: any,
@@ -523,41 +561,64 @@ export class AttendanceService {
     const totalMinutes = differenceInMinutes(checkOutTime, checkInTime);
     const workingHours = totalMinutes / 60;
 
-    // Get shift details for half-day calculation
+    // Get shift details for calculations
     const shift = attendance.shift;
     
     // Determine status based on checkout time
     let status = attendance.status;
     
-    if (shift) {
-      // Parse official end time (e.g., "19:00" for 7 PM)
-      const [endHour, endMinute] = shift.endTime.split(':').map(Number);
-      
-      // Create official end time in IST
-      const zonedCheckOutTime = toZonedTime(checkOutTime, 'Asia/Kolkata');
-      const officialEndTime = new Date(zonedCheckOutTime);
-      officialEndTime.setHours(endHour, endMinute, 0, 0);
-      
-      // HALF DAY RULE: If checkout is BEFORE official end time => HALF_DAY
-      // Unless already marked as HOLIDAY, WEEK_OFF, or LEAVE
-      if (zonedCheckOutTime < officialEndTime) {
-        if (!['HOLIDAY', 'WEEK_OFF', 'LEAVE'].includes(status)) {
-          status = AttendanceStatus.HALF_DAY;
-          this.logger.log(`[ATTENDANCE-CHECKOUT] Early checkout detected - Status: HALF_DAY`);
-        }
+    // ============================================
+    // FIXED 7:00 PM (19:00) CHECKOUT RULE
+    // ============================================
+    // Convert checkout time to Asia/Kolkata timezone
+    const zonedCheckOutTime = toZonedTime(checkOutTime, 'Asia/Kolkata');
+    
+    // Extract hour and minute in IST
+    const checkoutHour = zonedCheckOutTime.getHours();
+    const checkoutMinute = zonedCheckOutTime.getMinutes();
+    
+    // Convert to total minutes for comparison
+    const checkoutMinutes = checkoutHour * 60 + checkoutMinute;
+    const officeCheckoutMinutes = 19 * 60; // 7:00 PM = 19:00 = 1140 minutes
+    
+    // BUSINESS RULE: Checkout BEFORE 7:00 PM => HALF_DAY
+    // Examples:
+    // - 18:59 (6:59 PM) = 1139 minutes < 1140 => HALF_DAY
+    // - 18:30 (6:30 PM) = 1110 minutes < 1140 => HALF_DAY
+    // - 17:26 (5:26 PM) = 1046 minutes < 1140 => HALF_DAY
+    // - 19:00 (7:00 PM) = 1140 minutes = 1140 => NOT HALF_DAY
+    // - 19:01 (7:01 PM) = 1141 minutes > 1140 => NOT HALF_DAY
+    if (checkoutMinutes < officeCheckoutMinutes) {
+      // Do not override HOLIDAY, WEEK_OFF, or LEAVE status
+      if (!['HOLIDAY', 'WEEK_OFF', 'LEAVE', 'ON_LEAVE'].includes(status)) {
+        status = AttendanceStatus.HALF_DAY;
+        this.logger.log(
+          `[ATTENDANCE-CHECKOUT] Early checkout detected - ` +
+          `Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST ` +
+          `(${checkoutMinutes} minutes < ${officeCheckoutMinutes} minutes) - ` +
+          `Status: HALF_DAY`
+        );
       }
-      
+    } else {
+      this.logger.log(
+        `[ATTENDANCE-CHECKOUT] On-time or late checkout - ` +
+        `Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST ` +
+        `(${checkoutMinutes} minutes >= ${officeCheckoutMinutes} minutes) - ` +
+        `Status: ${status}`
+      );
+    }
+    
+    // Calculate early exit minutes (for reference)
+    let earlyExitBy = 0;
+    if (checkoutMinutes < officeCheckoutMinutes) {
+      earlyExitBy = officeCheckoutMinutes - checkoutMinutes;
+    }
+    
+    if (shift) {
       // Calculate overtime if applicable
       const netWorkingHours = Math.max(0, workingHours - (shift.breakTime || 0) / 60);
       const minimumHours = shift.minimumWorkingHours || 8;
       const overtime = shift.overtimeApplicable ? Math.max(0, netWorkingHours - minimumHours) : 0;
-      
-      // Calculate early exit
-      let earlyExitBy = 0;
-      const minutesEarly = differenceInMinutes(officialEndTime, zonedCheckOutTime);
-      if (minutesEarly > 0) {
-        earlyExitBy = minutesEarly;
-      }
 
       return await this.prisma.attendance.update({
         where: { id: attendance.id },
@@ -588,6 +649,7 @@ export class AttendanceService {
       data: {
         checkOutTime,
         workingHours,
+        earlyExitBy,
         status,
         remarks: remarks || attendance.remarks,
       },

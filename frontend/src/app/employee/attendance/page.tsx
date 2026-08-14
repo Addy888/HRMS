@@ -341,18 +341,32 @@ export default function EmployeeAttendancePage() {
         {days.map((day) => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayAttendance = attendanceMap.get(dateKey);
-          const status = dayAttendance?.status || 'NOT_MARKED';
           const isToday = isSameDay(day, new Date());
+          
+          // ============================================
+          // BUSINESS RULE: MONDAY = WEEK OFF
+          // ============================================
+          const dayOfWeek = getDay(day); // 0 = Sunday, 1 = Monday
+          const isMonday = dayOfWeek === 1;
+          
+          // If it's Monday and no attendance record, show WEEK_OFF
+          // If there IS an attendance record for Monday, respect backend status
+          const status = dayAttendance?.status || (isMonday ? 'WEEK_OFF' : 'NOT_MARKED');
 
           return (
             <div
               key={dateKey}
               className={`relative border rounded-lg p-2 min-h-[100px] ${
                 isToday ? 'border-blue-500 bg-blue-500/5' : 'border-neutral-800'
-              } ${dayAttendance ? STATUS_COLORS[status] : 'bg-neutral-900'}`}
+              } ${dayAttendance || isMonday ? STATUS_COLORS[status] : 'bg-neutral-900'}`}
             >
               <div className="text-[11px] font-bold mb-1">{format(day, 'd')}</div>
-              {dayAttendance && (
+              {/* Show WEEK OFF for Monday even without attendance record */}
+              {isMonday && !dayAttendance ? (
+                <div className="text-[8px] font-bold uppercase">
+                  WEEK OFF
+                </div>
+              ) : dayAttendance ? (
                 <>
                   <div className="text-[8px] font-bold uppercase mb-1">
                     {status.replace(/_/g, ' ')}
@@ -373,7 +387,7 @@ export default function EmployeeAttendancePage() {
                     </div>
                   )}
                 </>
-              )}
+              ) : null}
             </div>
           );
         })}
@@ -460,32 +474,42 @@ export default function EmployeeAttendancePage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleCheckIn}
-                  disabled={!canCheckIn || checkInMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
-                >
-                  {checkInMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <LogIn className="w-5 h-5" />
-                  )}
-                  {!canCheckIn && attendance?.checkInTime ? 'Checked In' : 'Check In'}
-                </button>
-                <button
-                  onClick={handleCheckOut}
-                  disabled={!canCheckOut || checkOutMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
-                >
-                  {checkOutMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <LogOut className="w-5 h-5" />
-                  )}
-                  {attendance?.checkOutTime ? 'Checked Out' : 'Check Out'}
-                </button>
-              </div>
+              {todayData?.isMonday ? (
+                <div className="p-4 bg-neutral-800/50 border border-neutral-700 rounded-xl">
+                  <p className="text-sm text-neutral-400 text-center font-medium">
+                    📅 Today is a weekly off.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleCheckIn}
+                      disabled={!canCheckIn || checkInMutation.isPending}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
+                    >
+                      {checkInMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <LogIn className="w-5 h-5" />
+                      )}
+                      {!canCheckIn && attendance?.checkInTime ? 'Checked In' : 'Check In'}
+                    </button>
+                    <button
+                      onClick={handleCheckOut}
+                      disabled={!canCheckOut || checkOutMutation.isPending}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
+                    >
+                      {checkOutMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <LogOut className="w-5 h-5" />
+                      )}
+                      {attendance?.checkOutTime ? 'Checked Out' : 'Check Out'}
+                    </button>
+                  </div>
+                </>
+              )}
 
               {/* Location Warning */}
               {settings?.locationVerificationEnabled && !location && !locationError && (
