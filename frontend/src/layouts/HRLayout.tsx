@@ -19,7 +19,8 @@ import {
   ChevronDown,
   ChevronRight,
   AlertTriangle,
-  History
+  History,
+  Clock
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -147,6 +148,7 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
   const commonLinks = [
     { href: '/hr', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/hr/employees', label: 'Employees', icon: <Users className="w-5 h-5" /> },
+    { href: '/hr/attendance', label: 'Attendance', icon: <Clock className="w-5 h-5" /> },
   ];
 
   const adminOnlyLinks = [

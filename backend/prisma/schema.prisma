@@ -89,6 +89,7 @@ model User {
   hrActionsResolved       HRAction[]              @relation("HRActionsResolved")
   hrActionsCancelled      HRAction[]              @relation("HRActionsCancelled")
   hrActionAudits          HRActionAuditLog[]      @relation("HRActionAudits")
+  attendanceHistories     AttendanceHistory[]
 
   @@index([organizationId])
 }
@@ -122,21 +123,21 @@ model Designation {
 }
 
 model Employee {
-  id             String       @id @default(uuid())
-  employeeId     String       @unique // Custom format e.g. FCS-YYYY-XXXX
-  userId         String       @unique
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organizationId String // ✅ Multi-tenant: Employees belong to organizations
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdByUserId String?     // ✅ HR Ownership: Which HR user created this employee
-  createdByUser   User?       @relation("EmployeeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  firstName      String
-  lastName       String
-  phone          String?
-  dob            DateTime?
-  gender         String?
-  bloodGroup     String?
-  address        String? // Deprecated in favor of currentAddress/permanentAddress
+  id              String       @id @default(uuid())
+  employeeId      String       @unique // Custom format e.g. FCS-YYYY-XXXX
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId  String // ✅ Multi-tenant: Employees belong to organizations
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUserId String? // ✅ HR Ownership: Which HR user created this employee
+  createdByUser   User?        @relation("EmployeeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  firstName       String
+  lastName        String
+  phone           String?
+  dob             DateTime?
+  gender          String?
+  bloodGroup      String?
+  address         String? // Deprecated in favor of currentAddress/permanentAddress
 
   // Personal Info
   fatherName    String?
@@ -207,7 +208,7 @@ model Employee {
 
   // Company Policy Acceptances
   companyPolicyAcceptances CompanyPolicyAcceptance[]
-  
+
   // HR Disciplinary Actions
   hrActions HRAction[] @relation("EmployeeHRActions")
 
@@ -792,15 +793,18 @@ model AttendanceHistory {
   attendanceId String
   attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
 
-  field        String
-  oldValue     String?
-  newValue     String?
-  changedBy    String // User ID
-  changeReason String?
+  field         String // MANUAL_CREATE, MANUAL_UPDATE, UPDATE, CHECK_IN, CHECK_OUT, STATUS_CHANGE
+  oldValue      String?  @db.Text
+  newValue      String?  @db.Text
+  reason        String?  @db.Text
+  changedBy     String? // User ID
+  changedByUser User?    @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+  changedAt     DateTime @default(now())
 
   createdAt DateTime @default(now())
 
   @@index([attendanceId])
+  @@index([changedBy])
 }
 
 model AttendanceProvider {
@@ -2431,9 +2435,9 @@ model HRAction {
   cancelledById       String?
   cancelledBy         User?        @relation("HRActionsCancelled", fields: [cancelledById], references: [id], onDelete: SetNull)
   cancelledReason     String?      @db.Text
-  
+
   auditLogs HRActionAuditLog[]
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

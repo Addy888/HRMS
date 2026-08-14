@@ -32,9 +32,12 @@ import { DatabaseModule } from '../../database/database.module.js';
 // Services
 import { AttendanceService } from './services/attendance.service';
 import { ShiftService } from './services/shift.service';
+import { AttendanceSettingsService } from './services/attendance-settings.service';
+import { AttendanceSchedulerService } from './services/attendance-scheduler.service';
 
 // Controllers
 import { AttendanceController } from './controllers/attendance.controller';
+import { AttendanceSettingsController } from './controllers/attendance-settings.controller';
 
 // Providers
 import { AttendanceProviderRegistry } from './providers/provider.registry';
@@ -53,6 +56,7 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
   imports: [DatabaseModule],
   controllers: [
     AttendanceController,
+    AttendanceSettingsController,
     // Additional controllers can be added here:
     // ShiftController,
     // HolidayController,
@@ -64,6 +68,8 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     // Core Services
     AttendanceService,
     ShiftService,
+    AttendanceSettingsService,
+    AttendanceSchedulerService,
 
     // Provider Registry (Factory)
     AttendanceProviderRegistry,
@@ -86,6 +92,6 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     // AttendanceCalculationService,
     // AttendanceReportService,
   ],
-  exports: [AttendanceService, ShiftService, AttendanceProviderRegistry],
+  exports: [AttendanceService, ShiftService, AttendanceSettingsService, AttendanceProviderRegistry],
 })
 export class AttendanceModule {}

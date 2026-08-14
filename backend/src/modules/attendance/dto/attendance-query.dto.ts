@@ -54,6 +54,16 @@ export class GetAttendanceQueryDto {
   @IsEnum(AttendanceSource)
   source?: AttendanceSource;
 
+  @ApiPropertyOptional({ description: 'Search by employee name or ID', example: 'John' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Specific date', example: '2026-08-13' })
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
   @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
