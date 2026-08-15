@@ -203,8 +203,8 @@ export class AttendanceService {
     // BUSINESS RULE: MONDAY = WEEK OFF
     // ============================================
     // Check if today is Monday using Asia/Kolkata timezone
-    const timestamp = dto.timestamp ? parseISO(dto.timestamp) : new Date();
-    const zonedDate = toZonedTime(timestamp, 'Asia/Kolkata');
+    const checkoutTimestamp = dto.timestamp ? parseISO(dto.timestamp) : new Date();
+    const zonedDate = toZonedTime(checkoutTimestamp, 'Asia/Kolkata');
     const dayOfWeek = zonedDate.getDay(); // 0 = Sunday, 1 = Monday, 2 = Tuesday, ...
     
     if (dayOfWeek === 1) { // Monday
@@ -234,12 +234,11 @@ export class AttendanceService {
     const provider = await this.providerRegistry.getActiveProvider();
     this.logger.log(`Using provider: ${provider.getName()}`);
 
-    // Prepare attendance event
-    const timestamp = dto.timestamp ? parseISO(dto.timestamp) : new Date();
+    // Prepare attendance event using the same timestamp
     const attendanceEvent: Partial<IAttendanceEvent> = {
       employeeId,
       eventType: AttendanceEventType.CHECK_OUT,
-      timestamp,
+      timestamp: checkoutTimestamp,
       source: provider.getSource(),
       deviceType: dto.deviceType,
       location: dto.location,
@@ -548,6 +547,12 @@ export class AttendanceService {
    * UPDATE CHECK-OUT
    * Private method to update attendance with check-out
    * Applies HALF_DAY rule if checking out before 7:00 PM (19:00) Asia/Kolkata
+   * 
+   * CRITICAL BUSINESS RULES:
+   * 1. Checkout before 7:00 PM => HALF_DAY (overrides PRESENT/LATE)
+   * 2. Checkout at/after 7:00 PM => Keep original status (PRESENT/LATE)
+   * 3. Never override WEEK_OFF, HOLIDAY, LEAVE
+   * 4. All time calculations use Asia/Kolkata timezone
    */
   private async updateCheckOut(
     attendance: any,
@@ -564,11 +569,8 @@ export class AttendanceService {
     // Get shift details for calculations
     const shift = attendance.shift;
     
-    // Determine status based on checkout time
-    let status = attendance.status;
-    
     // ============================================
-    // FIXED 7:00 PM (19:00) CHECKOUT RULE
+    // FIXED 7:00 PM (19:00) CHECKOUT RULE - PRIORITY 1
     // ============================================
     // Convert checkout time to Asia/Kolkata timezone
     const zonedCheckOutTime = toZonedTime(checkOutTime, 'Asia/Kolkata');
@@ -581,30 +583,53 @@ export class AttendanceService {
     const checkoutMinutes = checkoutHour * 60 + checkoutMinute;
     const officeCheckoutMinutes = 19 * 60; // 7:00 PM = 19:00 = 1140 minutes
     
+    // Get current status from database
+    let status = attendance.status;
+    
     // BUSINESS RULE: Checkout BEFORE 7:00 PM => HALF_DAY
+    // This rule MUST override PRESENT and LATE status
     // Examples:
-    // - 18:59 (6:59 PM) = 1139 minutes < 1140 => HALF_DAY
-    // - 18:30 (6:30 PM) = 1110 minutes < 1140 => HALF_DAY
+    // - 16:38 (4:38 PM) = 998 minutes < 1140 => HALF_DAY
     // - 17:26 (5:26 PM) = 1046 minutes < 1140 => HALF_DAY
-    // - 19:00 (7:00 PM) = 1140 minutes = 1140 => NOT HALF_DAY
-    // - 19:01 (7:01 PM) = 1141 minutes > 1140 => NOT HALF_DAY
+    // - 18:30 (6:30 PM) = 1110 minutes < 1140 => HALF_DAY
+    // - 18:59 (6:59 PM) = 1139 minutes < 1140 => HALF_DAY
+    // - 19:00 (7:00 PM) = 1140 minutes = 1140 => NOT HALF_DAY (keep original)
+    // - 19:01 (7:01 PM) = 1141 minutes > 1140 => NOT HALF_DAY (keep original)
+    
+    this.logger.log(
+      `[ATTENDANCE-CHECKOUT] Processing checkout - ` +
+      `Employee: ${attendance.employeeId} | ` +
+      `Current Status: ${status} | ` +
+      `Checkout Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST | ` +
+      `Minutes: ${checkoutMinutes} | ` +
+      `Threshold: ${officeCheckoutMinutes}`
+    );
+    
     if (checkoutMinutes < officeCheckoutMinutes) {
-      // Do not override HOLIDAY, WEEK_OFF, or LEAVE status
-      if (!['HOLIDAY', 'WEEK_OFF', 'LEAVE', 'ON_LEAVE'].includes(status)) {
-        status = AttendanceStatus.HALF_DAY;
+      // Early checkout detected - apply HALF_DAY rule
+      // ONLY override if current status is PRESENT or LATE
+      const overridableStatuses = ['PRESENT', 'LATE'];
+      
+      if (overridableStatuses.includes(status)) {
         this.logger.log(
-          `[ATTENDANCE-CHECKOUT] Early checkout detected - ` +
+          `[ATTENDANCE-CHECKOUT] ⚠️ EARLY CHECKOUT - ` +
           `Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST ` +
           `(${checkoutMinutes} minutes < ${officeCheckoutMinutes} minutes) - ` +
-          `Status: HALF_DAY`
+          `Changing status from ${status} to HALF_DAY`
+        );
+        status = AttendanceStatus.HALF_DAY;
+      } else {
+        this.logger.log(
+          `[ATTENDANCE-CHECKOUT] Early checkout but status is ${status} - not overriding`
         );
       }
     } else {
+      // On-time or late checkout - keep original status
       this.logger.log(
-        `[ATTENDANCE-CHECKOUT] On-time or late checkout - ` +
+        `[ATTENDANCE-CHECKOUT] ✓ ON-TIME CHECKOUT - ` +
         `Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST ` +
         `(${checkoutMinutes} minutes >= ${officeCheckoutMinutes} minutes) - ` +
-        `Status: ${status}`
+        `Keeping status: ${status}`
       );
     }
     
@@ -614,11 +639,19 @@ export class AttendanceService {
       earlyExitBy = officeCheckoutMinutes - checkoutMinutes;
     }
     
+    // Update database with ALL fields including status
     if (shift) {
-      // Calculate overtime if applicable
+      // Calculate net working hours after break deduction
       const netWorkingHours = Math.max(0, workingHours - (shift.breakTime || 0) / 60);
       const minimumHours = shift.minimumWorkingHours || 8;
       const overtime = shift.overtimeApplicable ? Math.max(0, netWorkingHours - minimumHours) : 0;
+
+      this.logger.log(
+        `[ATTENDANCE-CHECKOUT] Updating DB - ` +
+        `Status: ${status} | ` +
+        `Working Hours: ${netWorkingHours.toFixed(2)}h | ` +
+        `Early Exit: ${earlyExitBy} mins`
+      );
 
       return await this.prisma.attendance.update({
         where: { id: attendance.id },
@@ -628,7 +661,7 @@ export class AttendanceService {
           breakTime: shift.breakTime,
           overtime,
           earlyExitBy,
-          status,
+          status, // CRITICAL: Update status in database
           remarks: remarks || attendance.remarks,
         },
         include: {
@@ -644,13 +677,20 @@ export class AttendanceService {
     }
 
     // No shift assigned - simple calculation
+    this.logger.log(
+      `[ATTENDANCE-CHECKOUT] Updating DB (no shift) - ` +
+      `Status: ${status} | ` +
+      `Working Hours: ${workingHours.toFixed(2)}h | ` +
+      `Early Exit: ${earlyExitBy} mins`
+    );
+
     return await this.prisma.attendance.update({
       where: { id: attendance.id },
       data: {
         checkOutTime,
         workingHours,
         earlyExitBy,
-        status,
+        status, // CRITICAL: Update status in database
         remarks: remarks || attendance.remarks,
       },
       include: {
@@ -807,30 +847,39 @@ export class AttendanceService {
       },
     });
 
-    const totalPresent = attendances.filter((a) =>
-      [AttendanceStatus.PRESENT, AttendanceStatus.LATE].includes(
-        a.status as AttendanceStatus,
-      ),
+    // ============================================
+    // CRITICAL: Count each status separately
+    // HALF_DAY must NOT be counted as PRESENT
+    // LATE must NOT be counted as PRESENT
+    // ============================================
+    const totalPresent = attendances.filter(
+      (a) => a.status === AttendanceStatus.PRESENT,
     ).length;
 
     const totalAbsent = attendances.filter(
       (a) => a.status === AttendanceStatus.ABSENT,
     ).length;
+    
     const totalLate = attendances.filter(
       (a) => a.status === AttendanceStatus.LATE,
     ).length;
+    
     const totalHalfDay = attendances.filter(
       (a) => a.status === AttendanceStatus.HALF_DAY,
     ).length;
+    
     const totalHolidays = attendances.filter(
       (a) => a.status === AttendanceStatus.HOLIDAY,
     ).length;
+    
     const totalWeekOffs = attendances.filter(
       (a) => a.status === AttendanceStatus.WEEK_OFF,
     ).length;
+    
     const totalWFH = attendances.filter(
       (a) => a.status === AttendanceStatus.WFH,
     ).length;
+    
     const totalOnDuty = attendances.filter(
       (a) => a.status === AttendanceStatus.ON_DUTY,
     ).length;
@@ -851,9 +900,16 @@ export class AttendanceService {
         ),
     ).length;
 
+    // Attendance percentage calculation
+    // Consider PRESENT, LATE, WFH, ON_DUTY as "attended"
+    // HALF_DAY counts as partial attendance (0.5)
+    const fullAttendance = totalPresent + totalLate + totalWFH + totalOnDuty;
+    const partialAttendance = totalHalfDay * 0.5;
+    const totalAttendance = fullAttendance + partialAttendance;
+    
     const attendancePercentage =
       workingDays > 0
-        ? ((totalPresent + totalWFH + totalOnDuty) / workingDays) * 100
+        ? (totalAttendance / workingDays) * 100
         : 0;
 
     return {
@@ -1016,10 +1072,13 @@ export class AttendanceService {
       },
     });
 
+    // ============================================
+    // CRITICAL: Count each status separately
+    // Do NOT count LATE as PRESENT
+    // HALF_DAY is separate from PRESENT
+    // ============================================
     const present = attendances.filter(
-      (a) =>
-        a.status === AttendanceStatus.PRESENT ||
-        a.status === AttendanceStatus.LATE,
+      (a) => a.status === AttendanceStatus.PRESENT,
     ).length;
 
     const late = attendances.filter(
