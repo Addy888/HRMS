@@ -160,6 +160,11 @@ export class EmployeesController {
     @Body() updateEmployeeDto: UpdateEmployeeDto,
     @GetUser('id') userId: string,
   ) {
+    console.log('[EMPLOYEE-UPDATE] Controller received:', {
+      employeeId: id,
+      departmentId: updateEmployeeDto.departmentId,
+      fullBody: updateEmployeeDto,
+    });
     return this.employeesService.update(id, updateEmployeeDto, userId);
   }
 

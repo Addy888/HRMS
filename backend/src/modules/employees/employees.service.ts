@@ -75,37 +75,58 @@ export class EmployeesService {
       );
     }
 
-    // 3. Resolve department: Accept UUID or name/code, convert to UUID
+    // 3. Resolve department: Accept UUID or free text
+    // If free text, find or create a department with that name
     let resolvedDepartmentId: string | null = null;
     if (createEmployeeDto.departmentId) {
       const inputDeptId = createEmployeeDto.departmentId.trim();
       
-      // First try to find by UUID within the organization
-      let department = await this.prisma.department.findFirst({
-        where: {
-          id: inputDeptId,
-          organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
-        },
-      });
-
-      // If not found by UUID, try to find by name within the organization
-      if (!department) {
-        department = await this.prisma.department.findFirst({
+      // Check if it's a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (uuidRegex.test(inputDeptId)) {
+        // It's a UUID, try to find the department within the organization
+        const department = await this.prisma.department.findFirst({
           where: {
-            organizationId: requestingUser.organizationId, // ✅ Multi-tenant: Filter by org
-            name: inputDeptId,
+            id: inputDeptId,
+            organizationId: requestingUser.organizationId,
           },
         });
-      }
 
-      if (!department) {
-        throw new BadRequestException(
-          `Selected department "${inputDeptId}" does not exist in your organization. Please select a valid department.`,
-        );
+        if (department) {
+          resolvedDepartmentId = department.id;
+          console.log('✅ Department resolved by UUID:', inputDeptId, '→', department.name);
+        } else {
+          console.log('⚠️ Department UUID not found, setting to null');
+        }
+      } else {
+        // Not a UUID - it's free text like "Sales", "VTP", "Agent"
+        // Try to find existing department with this name, or create it
+        console.log('ℹ️ Free-text process name provided:', inputDeptId);
+        
+        let department = await this.prisma.department.findFirst({
+          where: {
+            name: inputDeptId,
+            organizationId: requestingUser.organizationId,
+          },
+        });
+        
+        if (!department) {
+          // Create new department with this name
+          console.log('📝 Creating new department:', inputDeptId);
+          department = await this.prisma.department.create({
+            data: {
+              name: inputDeptId,
+              organizationId: requestingUser.organizationId,
+            },
+          });
+          console.log('✅ Department created:', department.id);
+        } else {
+          console.log('✅ Found existing department:', department.id);
+        }
+        
+        resolvedDepartmentId = department.id;
       }
-
-      resolvedDepartmentId = department.id;
-      console.log('✅ Department resolved:', inputDeptId, '→', department.name, '(', department.id, ')');
     }
 
     // 4. Resolve designation: Accept UUID or name/code, convert to UUID
@@ -638,8 +659,20 @@ export class EmployeesService {
   }
 
   async update(id: string, updateEmployeeDto: UpdateEmployeeDto, requestUserId: string) {
+    console.log('[EMPLOYEE-UPDATE] Service received:', {
+      employeeId: id,
+      departmentId: updateEmployeeDto.departmentId,
+      designationId: updateEmployeeDto.designationId,
+    });
+
     // ✅ findOne already verifies ownership (organizationId + createdByUserId)
     const employee = await this.findOne(id, requestUserId);
+
+    console.log('[EMPLOYEE-UPDATE] Current employee data:', {
+      employeeId: employee.employeeId,
+      currentDepartmentId: employee.departmentId,
+      currentDesignationId: employee.designationId,
+    });
 
     const updateData: any = {
       firstName: updateEmployeeDto.firstName,
@@ -659,18 +692,110 @@ export class EmployeesService {
       updateData.joiningDate = new Date(updateEmployeeDto.joiningDate);
     }
 
+    // Handle departmentId: Accept UUID or free text
+    // If free text, try to find or create a department with that name
     if (updateEmployeeDto.departmentId !== undefined) {
-      updateData.departmentId = updateEmployeeDto.departmentId || null;
+      const deptValue = updateEmployeeDto.departmentId;
+      console.log('[EMPLOYEE-UPDATE] Processing departmentId:', deptValue);
+      
+      if (!deptValue) {
+        // Empty value - set to null
+        updateData.departmentId = null;
+        console.log('[EMPLOYEE-UPDATE] Empty value, setting to null');
+      } else {
+        // Check if it's a valid UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (uuidRegex.test(deptValue)) {
+          // It's a UUID - verify it exists
+          const existingDept = await this.prisma.department.findFirst({
+            where: {
+              id: deptValue,
+              organizationId: employee.organizationId,
+            },
+          });
+          
+          if (existingDept) {
+            updateData.departmentId = deptValue;
+            console.log('[EMPLOYEE-UPDATE] Valid department UUID:', deptValue);
+          } else {
+            updateData.departmentId = null;
+            console.log('[EMPLOYEE-UPDATE] Department UUID not found, setting to null');
+          }
+        } else {
+          // Free text like "VTP", "Sales", "Agent" - find or create department
+          console.log('[EMPLOYEE-UPDATE] Free text process name:', deptValue);
+          
+          let department = await this.prisma.department.findFirst({
+            where: {
+              name: deptValue.trim(),
+              organizationId: employee.organizationId,
+            },
+          });
+          
+          if (!department) {
+            // Create new department with this name
+            console.log('[EMPLOYEE-UPDATE] Creating new department:', deptValue);
+            department = await this.prisma.department.create({
+              data: {
+                name: deptValue.trim(),
+                organizationId: employee.organizationId,
+              },
+            });
+            console.log('[EMPLOYEE-UPDATE] Department created:', department.id);
+          } else {
+            console.log('[EMPLOYEE-UPDATE] Found existing department:', department.id);
+          }
+          
+          updateData.departmentId = department.id;
+        }
+      }
     }
 
     if (updateEmployeeDto.designationId !== undefined) {
       updateData.designationId = updateEmployeeDto.designationId || null;
     }
 
+    console.log('[EMPLOYEE-UPDATE] Final update data:', {
+      departmentId: updateData.departmentId,
+      designationId: updateData.designationId,
+      ...updateData,
+    });
+
     return this.prisma.$transaction(async (tx) => {
       const updatedEmp = await tx.employee.update({
         where: { id },
         data: updateData,
+        // ✅ Include relations so frontend gets department/designation names
+        include: {
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          designation: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              email: true,
+              isActive: true,
+            },
+          },
+        },
+      });
+
+      console.log('[EMPLOYEE-UPDATE] Prisma updated employee:', {
+        employeeId: updatedEmp.employeeId,
+        departmentId: updatedEmp.departmentId,
+        departmentName: updatedEmp.department?.name,
+        designationId: updatedEmp.designationId,
+        designationName: updatedEmp.designation?.name,
       });
 
       // Recalculate Completion after update

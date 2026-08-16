@@ -221,9 +221,11 @@ export async function seedAttendance() {
   console.log(`✔ Holidays seeded: ${holidays.length} holidays`);
 
   // 3. Seed Week-Offs (Company-wide)
+  // IMPORTANT: Only MONDAY is the official weekly off
+  // Sunday, Saturday, and all other days are WORKING DAYS
   const weekOffs = [
     {
-      dayOfWeek: 'SUNDAY',
+      dayOfWeek: 'MONDAY',
       effectiveFrom: new Date('2026-01-01'),
       effectiveTo: null,
       isActive: true,

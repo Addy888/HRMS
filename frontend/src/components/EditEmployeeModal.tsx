@@ -71,6 +71,9 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[EMPLOYEE-EDIT] Process value:', form.departmentId);
+    console.log('[EMPLOYEE-EDIT] Full form state:', form);
+    console.log('[EMPLOYEE-EDIT] Update payload:', form);
     updateMutation.mutate(form);
   };
 
@@ -124,12 +127,15 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Department</label>
-              <select name="departmentId" value={form.departmentId} onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
-                <option value="">Select Department</option>
-                {(departments as any[]).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Process</label>
+              <input
+                type="text"
+                name="departmentId"
+                value={form.departmentId}
+                onChange={handleChange}
+                placeholder="Enter process name"
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+              />
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">

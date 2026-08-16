@@ -255,33 +255,19 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                 </select>
               </div>
 
-              {/* Department Select */}
+              {/* Process Text Input */}
               <div className="space-y-1.5">
                 <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
-                  Department {loadingDepartments && '(Loading...)'}
+                  Process
                 </label>
-                <select
+                <input
+                  type="text"
                   name="departmentId"
                   value={form.departmentId}
-                  onChange={(e) => {
-                    console.log('🏢 Department selected:', {
-                      value: e.target.value,
-                      option: departments.find((d: any) => d.id === e.target.value)
-                    });
-                    handleChange(e);
-                  }}
-                  disabled={loadingDepartments}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((d: any) => {
-                    console.log('🏢 Department option:', { id: d.id, name: d.name });
-                    return <option key={d.id} value={d.id}>{d.name}</option>;
-                  })}
-                </select>
-                {departments.length === 0 && !loadingDepartments && (
-                  <p className="text-xs text-red-400">No departments found. Please create departments first.</p>
-                )}
+                  onChange={handleChange}
+                  placeholder="Enter process name"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                />
               </div>
 
               {/* Designation Select */}
