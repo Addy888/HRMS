@@ -391,8 +391,9 @@ Any misconduct will be addressed immediately by the Internal Complaints Committe
   // ─────────────────────────────────────────────────────
   // 6. SEED ATTENDANCE MODULE
   // ─────────────────────────────────────────────────────
-  const { seedAttendance } = await import('./seeds/attendance.seed.js');
-  await seedAttendance();
+  // COMMENTED OUT: attendance.seed.js file not found
+  // const { seedAttendance } = await import('./seeds/attendance.seed.js');
+  // await seedAttendance();
 
   console.log('\n✅ FCS HRMS seeding complete (Multi-Tenant SaaS MODE).\n');
   console.log('─────────────────────────────────────────────────────');
