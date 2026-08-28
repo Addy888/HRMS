@@ -82,7 +82,33 @@ export default function EmployeesPage() {
     }
   });
 
-  const employees: any[] = empResponse?.data || [];
+  const rawEmployees: any[] = empResponse?.data || [];
+
+  // Client-side filtering as a safety net — handles combined full name searches
+  // (e.g. "NupurS", "nupur", "NUPUR") that the API may not catch perfectly.
+  const employees: any[] = React.useMemo(() => {
+    const searchTerm = search.toLowerCase().trim();
+    if (!searchTerm) return rawEmployees;
+
+    return rawEmployees.filter((emp: any) => {
+      const searchableText = [
+        emp.firstName,
+        emp.lastName,
+        `${emp.firstName || ''} ${emp.lastName || ''}`,
+        `${emp.firstName || ''}${emp.lastName || ''}`,
+        emp.employeeId,
+        emp.user?.email,
+        emp.email,
+        emp.phone,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return searchableText.includes(searchTerm);
+    });
+  }, [rawEmployees, search]);
+
   const meta = empResponse?.meta || { total: 0, page: 1, totalPages: 1 };
 
   const resetPasswordMutation = useMutation({

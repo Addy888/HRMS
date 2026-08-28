@@ -350,12 +350,30 @@ export class EmployeesService {
     });
 
     if (query.search) {
-      whereClause.OR = [
-        { firstName: { contains: query.search, mode: 'insensitive' } },
-        { lastName: { contains: query.search, mode: 'insensitive' } },
-        { employeeId: { contains: query.search, mode: 'insensitive' } },
-        { user: { email: { contains: query.search, mode: 'insensitive' } } },
+      const searchTerm = query.search.trim();
+      const searchWords = searchTerm.split(/\s+/).filter(Boolean);
+
+      // NOTE: MySQL's default collation is case-insensitive — 'mode: insensitive' is PostgreSQL-only
+      // and must NOT be used with MySQL. 'contains' on MySQL is already case-insensitive by default.
+      const baseOrConditions: any[] = [
+        { firstName: { contains: searchTerm } },
+        { lastName: { contains: searchTerm } },
+        { employeeId: { contains: searchTerm } },
+        { phone: { contains: searchTerm } },
+        { user: { email: { contains: searchTerm } } },
       ];
+
+      // Support multi-word full name search (e.g. "Nupur S" → firstName contains "Nupur" AND lastName contains "S")
+      if (searchWords.length >= 2) {
+        baseOrConditions.push({
+          AND: [
+            { firstName: { contains: searchWords[0] } },
+            { lastName: { contains: searchWords.slice(1).join(' ') } },
+          ],
+        });
+      }
+
+      whereClause.OR = baseOrConditions;
     }
 
     if (query.departmentId) {
