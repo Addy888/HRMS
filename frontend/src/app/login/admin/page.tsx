@@ -15,9 +15,9 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Redirect if already logged in as Super Admin
-    if (isAuthenticated && user?.role === 'Super Admin') {
-      router.push('/admin');
+    // Redirect if already logged in as SUPER_ADMIN
+    if (isAuthenticated && user?.role === 'SUPER_ADMIN') {
+      router.push('/super-admin');
     }
   }, [isAuthenticated, user, router]);
 
@@ -32,10 +32,18 @@ export default function AdminLoginPage() {
         password,
       });
 
-      const { accessToken, user: userData } = res.data;
+      console.log('[SUPER ADMIN LOGIN] Full response:', res);
+      console.log('[SUPER ADMIN LOGIN] Response.data:', res.data);
+      
+      // Extract auth data from envelope: res.data.data
+      const authData = res.data.data || res.data;
+      const { accessToken, user: userData } = authData;
 
-      // Check if user is Super Admin
-      if (userData.role !== 'Super Admin') {
+      console.log('[SUPER ADMIN LOGIN] Auth data:', authData);
+      console.log('[SUPER ADMIN LOGIN] User role:', userData?.role);
+
+      // Check if user is SUPER_ADMIN
+      if (userData?.role !== 'SUPER_ADMIN') {
         setError('Access denied. Only Super Admin can login here.');
         setLoading(false);
         return;
@@ -49,8 +57,11 @@ export default function AdminLoginPage() {
       // Store auth in Zustand (single source of truth)
       setAuth(accessToken, userData);
 
-      // Navigate to admin dashboard
-      router.push('/admin');
+      // Set authorization header for immediate API requests
+      api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+      // Navigate to super admin dashboard
+      router.push('/super-admin');
     } catch (err: any) {
       setError(
         err.response?.data?.message || 'Login failed. Please check your credentials.'

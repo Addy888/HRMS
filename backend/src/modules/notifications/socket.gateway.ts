@@ -255,4 +255,19 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit(event, data);
     this.logger.log(`Broadcasted event "${event}" to all connected clients`);
   }
+
+  /**
+   * Helper to emit event to specific user
+   */
+  emitToUser(userId: string, event: string, data: any) {
+    this.sendToUser(userId, event, data);
+  }
+
+  /**
+   * Helper to emit event to all users in an organization
+   */
+  emitToOrganization(organizationId: string, event: string, data: any) {
+    this.server.to(`org_${organizationId}`).emit(event, data);
+    this.logger.log(`Emitted event "${event}" to organization "${organizationId}"`);
+  }
 }

@@ -68,6 +68,41 @@ export class HRActionsController {
   }
 
   /**
+   * Get my HR actions (current logged-in employee)
+   * MUST be defined before :id route to avoid path collision
+   */
+  @Get('my/actions')
+  @ApiOperation({ summary: 'Get my HR Actions (Employee)' })
+  @ApiResponse({ status: 200, description: 'My HR Actions retrieved' })
+  async getMyActions(@Request() req) {
+    return this.hrActionsService.getMyActions(req.user.id);
+  }
+
+  /**
+   * Get HR Actions statistics
+   * MUST be defined before :id route to avoid path collision
+   */
+  @Get('stats/overview')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @ApiOperation({ summary: 'Get HR Actions statistics (HR only)' })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved' })
+  async getStatistics(@Request() req) {
+    return this.hrActionsService.getStatistics(req.user.id);
+  }
+
+  /**
+   * Get employee's HR actions
+   * MUST be defined before :id route to avoid path collision
+   */
+  @Get('employee/:employeeId')
+  @ApiOperation({ summary: 'Get employee HR Actions' })
+  @ApiResponse({ status: 200, description: 'Employee HR Actions retrieved' })
+  async findByEmployee(@Request() req, @Param('employeeId') employeeId: string) {
+    return this.hrActionsService.findByEmployee(employeeId, req.user.id);
+  }
+
+  /**
    * Get single HR Action by ID
    */
   @Get(':id')
@@ -178,15 +213,5 @@ export class HRActionsController {
     @Body() dto: CancelHRActionDto,
   ) {
     return this.hrActionsService.cancel(id, dto, req.user.id);
-  }
-
-  /**
-   * Get employee's HR actions
-   */
-  @Get('employee/:employeeId')
-  @ApiOperation({ summary: 'Get employee HR Actions' })
-  @ApiResponse({ status: 200, description: 'Employee HR Actions retrieved' })
-  async findByEmployee(@Request() req, @Param('employeeId') employeeId: string) {
-    return this.hrActionsService.findByEmployee(employeeId, req.user.id);
   }
 }

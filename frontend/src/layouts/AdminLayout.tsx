@@ -54,13 +54,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.push('/login/admin');
       return;
     }
-    if (user.role !== 'Super Admin') {
+    if (user.role !== 'SUPER_ADMIN') {
       router.push('/');
       return;
     }
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || !user || user.role !== 'Super Admin') {
+  if (!isAuthenticated || !user || user.role !== 'SUPER_ADMIN') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-purple-500 rounded-full animate-spin"></div>

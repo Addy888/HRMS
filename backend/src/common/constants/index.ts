@@ -1,10 +1,10 @@
 // User Roles
 export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN', // Company Owner - Full access across organization
   HR_ADMIN = 'HR_ADMIN',
   HR_USER = 'HR_USER',
   HR = 'HR', // Deprecated - kept for backward compatibility, maps to HR_USER
   EMPLOYEE = 'EMPLOYEE',
-  SUPER_ADMIN = 'Super Admin',
 }
 
 // Employee Onboarding Status

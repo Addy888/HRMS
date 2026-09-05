@@ -1190,7 +1190,118 @@ export class EmployeesService {
     const nextId = await this.generateProductionEmployeeId(requestingUser.organizationId);
     return { nextEmployeeId: nextId };
   }
+
+  /**
+   * Bulk assign employees to a department/process
+   */
+  async bulkAssignDepartment(employeeIds: string[], departmentId: string, requestUserId: string) {
+    console.log('[BULK ASSIGN DEPT] Starting bulk department assignment');
+    console.log('[BULK ASSIGN DEPT] Employee IDs count:', employeeIds.length);
+    console.log('[BULK ASSIGN DEPT] Department ID:', departmentId);
+
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true, role: { select: { name: true } } },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      throw new UnauthorizedException('User organization not found');
+    }
+
+    // Validate department exists and belongs to organization
+    const department = await this.prisma.department.findUnique({
+      where: { id: departmentId },
+    });
+
+    if (!department) {
+      throw new NotFoundException('Department/Process not found');
+    }
+
+    if (department.organizationId !== requestingUser.organizationId) {
+      throw new ForbiddenException('Access denied to this department/process');
+    }
+
+    // Validate employees exist and belong to organization (and HR has access)
+    const employees = await this.prisma.employee.findMany({
+      where: {
+        id: { in: employeeIds },
+        organizationId: requestingUser.organizationId,
+        createdByUserId: requestUserId, // HR can only bulk-assign their own employees
+      },
+      select: {
+        id: true,
+        employeeId: true,
+        firstName: true,
+        lastName: true,
+        departmentId: true,
+        department: { select: { name: true } },
+        user: { select: { id: true } },
+      },
+    });
+
+    if (employees.length === 0) {
+      throw new BadRequestException('No employees found or access denied to selected employees');
+    }
+
+    if (employees.length !== employeeIds.length) {
+      throw new BadRequestException(`Only ${employees.length} out of ${employeeIds.length} employees are accessible. You can only assign employees you created.`);
+    }
+
+    console.log('[BULK ASSIGN DEPT] Found employees:', employees.length);
+
+    // Perform bulk update in transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.employee.updateMany({
+        where: {
+          id: { in: employeeIds },
+          organizationId: requestingUser.organizationId,
+        },
+        data: {
+          departmentId: departmentId,
+        },
+      });
+
+      // Create audit log for bulk operation
+      const employeeNames = employees.map(e => `${e.firstName} ${e.lastName}`).join(', ');
+      await tx.auditLog.create({
+        data: {
+          userId: requestUserId,
+          action: 'BULK_PROCESS_ASSIGNMENT',
+          details: `Bulk assigned ${updated.count} employees (${employeeNames.substring(0, 200)}${employeeNames.length > 200 ? '...' : ''}) to process/department "${department.name}"`,
+        },
+      });
+
+      // Create individual audit logs for tracking
+      for (const employee of employees) {
+        const oldDeptName = employee.department?.name || 'Unassigned';
+        await tx.auditLog.create({
+          data: {
+            userId: requestUserId,
+            action: 'EMPLOYEE_PROCESS_CHANGED',
+            details: `Employee ${employee.employeeId} (${employee.firstName} ${employee.lastName}) moved from "${oldDeptName}" to "${department.name}"`,
+          },
+        });
+      }
+
+      return { updated: updated.count, employees };
+    });
+
+    console.log('[BULK ASSIGN DEPT] Updated count:', result.updated);
+
+    // Emit real-time events to each affected employee
+    // Note: Socket events will be handled by the departments service
+    // Here we just return the result
+
+    return {
+      message: `Successfully assigned ${result.updated} employees to ${department.name}`,
+      updated: result.updated,
+      departmentId: departmentId,
+      departmentName: department.name,
+      employees: result.employees.map(e => ({
+        id: e.id,
+        employeeId: e.employeeId,
+        name: `${e.firstName} ${e.lastName}`,
+      })),
+    };
+  }
 }
-
-
-

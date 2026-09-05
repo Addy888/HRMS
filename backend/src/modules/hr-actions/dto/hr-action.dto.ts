@@ -1,35 +1,18 @@
 import {
   IsString,
   IsNotEmpty,
-  IsEnum,
-  IsBoolean,
   IsOptional,
+  IsBoolean,
+  IsEnum,
   IsDateString,
-  MaxLength,
+  IsUUID,
+  IsInt,
+  Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 
-export enum HRActionType {
-  LATE_LOGIN_WARNING = 'LATE_LOGIN_WARNING',
-  ATTENDANCE_WARNING = 'ATTENDANCE_WARNING',
-  UNAUTHORIZED_ABSENCE = 'UNAUTHORIZED_ABSENCE',
-  LEAVE_VIOLATION = 'LEAVE_VIOLATION',
-  POLICY_VIOLATION = 'POLICY_VIOLATION',
-  MISCONDUCT = 'MISCONDUCT',
-  PERFORMANCE_WARNING = 'PERFORMANCE_WARNING',
-  REPEATED_LATE_LOGIN = 'REPEATED_LATE_LOGIN',
-  SHOW_CAUSE_NOTICE = 'SHOW_CAUSE_NOTICE',
-  FINAL_WARNING = 'FINAL_WARNING',
-  GENERAL_WARNING = 'GENERAL_WARNING',
-  CUSTOM_NOTICE = 'CUSTOM_NOTICE',
-}
-
-export enum HRActionSeverity {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
-}
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
 export enum HRActionStatus {
   DRAFT = 'DRAFT',
@@ -43,65 +26,87 @@ export enum HRActionStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum HRActionType {
+  WARNING = 'WARNING',
+  WRITTEN_WARNING = 'WRITTEN_WARNING',
+  SUSPENSION = 'SUSPENSION',
+  TERMINATION = 'TERMINATION',
+  COUNSELLING = 'COUNSELLING',
+  PERFORMANCE_IMPROVEMENT_PLAN = 'PERFORMANCE_IMPROVEMENT_PLAN',
+  COMMENDATION = 'COMMENDATION',
+  OTHER = 'OTHER',
+}
+
+export enum HRActionSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
+// ─── Create DTO ───────────────────────────────────────────────────────────────
+
 export class CreateHRActionDto {
-  @ApiProperty({ description: 'Employee ID', example: 'emp-uuid' })
-  @IsString()
+  @ApiProperty({ description: 'Target employee ID (UUID)', example: 'uuid-of-employee' })
+  @IsUUID()
   @IsNotEmpty()
   employeeId: string;
 
-  @ApiProperty({ enum: HRActionType })
+  @ApiProperty({ enum: HRActionType, description: 'Type of HR action', example: HRActionType.WARNING })
   @IsEnum(HRActionType)
   @IsNotEmpty()
   actionType: HRActionType;
 
-  @ApiProperty({ enum: HRActionSeverity })
+  @ApiProperty({ enum: HRActionSeverity, description: 'Severity level', example: HRActionSeverity.MEDIUM })
   @IsEnum(HRActionSeverity)
   @IsNotEmpty()
   severity: HRActionSeverity;
 
-  @ApiProperty({ description: 'Subject', maxLength: 200 })
+  @ApiProperty({ description: 'Subject / title of the HR action', example: 'Repeated tardiness' })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(200)
   subject: string;
 
-  @ApiProperty({ description: 'Detailed reason/description' })
+  @ApiProperty({ description: 'Detailed reason / description', example: 'Employee was late 5 times in the last month.' })
   @IsString()
   @IsNotEmpty()
   reason: string;
 
-  @ApiProperty({ description: 'Incident date' })
+  @ApiProperty({ description: 'Date the incident occurred (ISO 8601)', example: '2026-09-01T00:00:00.000Z' })
   @IsDateString()
   @IsNotEmpty()
   incidentDate: string;
 
-  @ApiPropertyOptional({ description: 'Required corrective action' })
+  @ApiPropertyOptional({ description: 'Corrective action required from the employee' })
   @IsString()
   @IsOptional()
   correctiveAction?: string;
 
-  @ApiPropertyOptional({ description: 'Additional remarks' })
+  @ApiPropertyOptional({ description: 'Any additional remarks' })
   @IsString()
   @IsOptional()
   additionalRemarks?: string;
 
-  @ApiProperty({ description: 'Response required from employee' })
+  @ApiPropertyOptional({ description: 'Whether the employee is required to respond', default: false })
   @IsBoolean()
-  responseRequired: boolean;
-
-  @ApiPropertyOptional({ description: 'Response deadline date (ISO 8601 format, e.g., 2024-12-31T23:59:59Z)' })
-  @IsDateString({}, { message: 'responseDeadline must be a valid ISO 8601 date string' })
   @IsOptional()
-  responseDeadline?: string | null;
+  responseRequired?: boolean;
+
+  @ApiPropertyOptional({ description: 'Deadline for the employee to respond (ISO 8601)' })
+  @IsDateString()
+  @IsOptional()
+  responseDeadline?: string;
 }
 
+// ─── Update DTO ───────────────────────────────────────────────────────────────
+
 export class UpdateHRActionDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: HRActionType })
   @IsEnum(HRActionType)
   @IsOptional()
   actionType?: HRActionType;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: HRActionSeverity })
   @IsEnum(HRActionSeverity)
   @IsOptional()
   severity?: HRActionSeverity;
@@ -136,85 +141,93 @@ export class UpdateHRActionDto {
   @IsOptional()
   responseRequired?: boolean;
 
-  @ApiPropertyOptional({ description: 'Response deadline date (ISO 8601 format)' })
-  @IsDateString({}, { message: 'responseDeadline must be a valid ISO 8601 date string' })
+  @ApiPropertyOptional()
+  @IsDateString()
   @IsOptional()
-  responseDeadline?: string | null;
+  responseDeadline?: string;
 }
 
-export class AcknowledgeHRActionDto {
-  // No additional fields needed - acknowledgement is implicit
-}
+// ─── Respond DTO ──────────────────────────────────────────────────────────────
 
 export class RespondHRActionDto {
-  @ApiProperty({ description: 'Employee response' })
+  @ApiProperty({ description: "Employee's written response to the HR action" })
   @IsString()
   @IsNotEmpty()
   responseText: string;
 }
 
+// ─── Resolve DTO ──────────────────────────────────────────────────────────────
+
 export class ResolveHRActionDto {
-  @ApiProperty({ description: 'Resolution remarks' })
+  @ApiPropertyOptional({ description: "HR's closing remarks when resolving the action" })
   @IsString()
-  @IsNotEmpty()
-  resolvedRemarks: string;
+  @IsOptional()
+  resolvedRemarks?: string;
 }
 
+// ─── Cancel DTO ───────────────────────────────────────────────────────────────
+
 export class CancelHRActionDto {
-  @ApiProperty({ description: 'Cancellation reason' })
+  @ApiProperty({ description: 'Reason for cancelling the HR action' })
   @IsString()
   @IsNotEmpty()
   cancelledReason: string;
 }
 
-export class QueryHRActionsDto {
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  search?: string;
+// ─── Query / Filter DTO ───────────────────────────────────────────────────────
 
-  @ApiPropertyOptional()
-  @IsString()
+export class QueryHRActionsDto {
+  @ApiPropertyOptional({ description: 'Filter by employee ID' })
+  @IsUUID()
   @IsOptional()
   employeeId?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: HRActionType, description: 'Filter by action type' })
   @IsEnum(HRActionType)
   @IsOptional()
   actionType?: HRActionType;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: HRActionSeverity, description: 'Filter by severity' })
   @IsEnum(HRActionSeverity)
   @IsOptional()
   severity?: HRActionSeverity;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: HRActionStatus, description: 'Filter by status' })
   @IsEnum(HRActionStatus)
   @IsOptional()
   status?: HRActionStatus;
 
-  @ApiPropertyOptional()
-  @IsString()
+  @ApiPropertyOptional({ description: 'Filter by department ID' })
+  @IsUUID()
   @IsOptional()
   departmentId?: string;
 
-  @ApiPropertyOptional()
-  @IsString()
+  @ApiPropertyOptional({ description: 'Filter by incident date range start (ISO 8601)' })
+  @IsDateString()
   @IsOptional()
   fromDate?: string;
 
-  @ApiPropertyOptional()
-  @IsString()
+  @ApiPropertyOptional({ description: 'Filter by incident date range end (ISO 8601)' })
+  @IsDateString()
   @IsOptional()
   toDate?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Search by action number, subject, or employee name' })
   @IsString()
   @IsOptional()
-  page?: string;
+  search?: string;
 
-  @ApiPropertyOptional()
-  @IsString()
+  @ApiPropertyOptional({ description: 'Page number (1-indexed)', default: 1 })
   @IsOptional()
-  limit?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Number of records per page', default: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
 }

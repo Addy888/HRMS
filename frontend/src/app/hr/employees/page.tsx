@@ -58,8 +58,22 @@ export default function EmployeesPage() {
   const { data: departments = [] } = useQuery({
     queryKey: ['departments-list'],
     queryFn: async () => {
-      try { const r = await api.get('/departments'); return Array.isArray(r.data) ? r.data : r.data?.data || []; }
-      catch { return [{ id: 'd1', name: 'Engineering' }, { id: 'd2', name: 'Human Resources' }, { id: 'd3', name: 'Sales & Growth' }]; }
+      try { 
+        const r = await api.get('/departments');
+        // Handle different response structures
+        if (Array.isArray(r.data)) return r.data;
+        if (r.data?.data && Array.isArray(r.data.data)) return r.data.data;
+        if (typeof r.data === 'object' && !Array.isArray(r.data)) {
+          // If it's an object but not an array, it might be a single department
+          console.warn('Departments API returned unexpected format:', r.data);
+          return [];
+        }
+        return [];
+      }
+      catch (error) { 
+        console.error('Failed to fetch departments:', error);
+        return [];
+      }
     }
   });
 
@@ -180,7 +194,7 @@ export default function EmployeesPage() {
               className="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
             >
               <option value="">All Departments</option>
-              {(departments as any[]).map((d: any) => (
+              {Array.isArray(departments) && departments.map((d: any) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>

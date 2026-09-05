@@ -200,4 +200,20 @@ export class EmployeesController {
   remove(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.employeesService.remove(id, userId);
   }
+
+  @Post('bulk/assign-department')
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Bulk assign employees to department/process (HR Only)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Employees assigned successfully',
+  })
+  bulkAssignDepartment(
+    @Body() dto: { employeeIds: string[]; departmentId: string },
+    @GetUser('id') userId: string,
+  ) {
+    return this.employeesService.bulkAssignDepartment(dto.employeeIds, dto.departmentId, userId);
+  }
 }

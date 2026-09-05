@@ -8,8 +8,8 @@ import useAuthStore from '@/store/authStore';
 import { Eye, EyeOff, Loader2, ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-// HR portal accepts: HR_ADMIN, HR_USER, and Super Admin roles (all are administrative roles)
-const HR_PORTAL_ROLES = ['HR_ADMIN', 'HR_USER', 'HR', 'Super Admin'];
+// HR portal accepts: HR_ADMIN, HR_USER, and SUPER_ADMIN roles (all are administrative roles)
+const HR_PORTAL_ROLES = ['HR_ADMIN', 'HR_USER', 'HR', 'SUPER_ADMIN'];
 
 export default function HRLoginPage() {
   const router = useRouter();
@@ -49,9 +49,11 @@ export default function HRLoginPage() {
       // ✅ Set authorization header for immediate API requests
       api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
 
-      // Redirect
+      // Redirect based on role and first login status
       if (data.mustChangePassword) {
         router.push('/change-password');
+      } else if (data.user?.role === 'SUPER_ADMIN') {
+        router.push('/super-admin');
       } else {
         router.push('/hr');
       }

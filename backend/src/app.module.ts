@@ -17,6 +17,7 @@ import { PayrollModule } from './modules/payroll/payroll.module.js';
 import { HRUsersModule } from './modules/hr-users/hr-users.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { HRActionsModule } from './modules/hr-actions/hr-actions.module.js';
+import { SuperAdminModule } from './modules/super-admin/super-admin.module.js';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { HRActionsModule } from './modules/hr-actions/hr-actions.module.js';
     HRUsersModule,
     AdminModule,
     HRActionsModule,
+    SuperAdminModule,
   ],
   controllers: [HealthController],
 })

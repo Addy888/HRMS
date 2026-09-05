@@ -73,6 +73,7 @@ model User {
   updatedAt               DateTime                @updatedAt
   employee                Employee?
   employeesCreated        Employee[]              @relation("EmployeeCreatedBy") // ✅ HR Ownership: Employees created by this HR user
+  departmentsCreated      Department[]            @relation("DepartmentCreatedBy") // ✅ Departments/Processes created by this HR user
   passwordResets          PasswordReset[]
   otpVerifications        OtpVerification[]
   auditLogs               AuditLog[]
@@ -99,13 +100,18 @@ model Department {
   organizationId String // ✅ Multi-tenant: Departments belong to organizations
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
+  code           String? // Process/Department code (e.g., VTP, SALES, OPS)
   description    String?
+  isActive       Boolean      @default(true) // Active/Inactive status
+  createdByUserId String? // HR user who created this department/process
+  createdByUser   User?        @relation("DepartmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   employees      Employee[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, name]) // Same department name allowed across organizations
   @@index([organizationId])
+  @@index([createdByUserId])
 }
 
 model Designation {
