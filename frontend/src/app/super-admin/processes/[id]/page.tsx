@@ -58,7 +58,7 @@ export default function ProcessDetailPage() {
   const { data: processResponse, isLoading, error } = useQuery({
     queryKey: ['super-admin-process-detail', processId],
     queryFn: async () => {
-      const res = await api.get(`/super-admin/processes/${processId}`);
+      const res = await api.get(`/departments/${processId}`);
       return res.data.data || res.data;
     },
     enabled: !!processId && typeof processId === 'string',

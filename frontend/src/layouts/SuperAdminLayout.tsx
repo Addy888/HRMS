@@ -56,34 +56,31 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const isSuperAdmin = Boolean(user && user.role === 'SUPER_ADMIN');
 
   React.useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated || !user) {
-      router.push('/login');
+      router.replace('/login/admin');
       return;
     }
-    // ✅ Only SUPER_ADMIN can access this layout
-    if (user.role !== 'SUPER_ADMIN') {
-      // Redirect non-super-admin users to their respective dashboards
-      if (user.role === 'HR_ADMIN' || user.role === 'HR_USER' || user.role === 'HR') {
-        router.push('/hr');
+
+    if (!isSuperAdmin) {
+      if (['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role)) {
+        router.replace('/hr');
+      } else if (user.role === 'EMPLOYEE') {
+        router.replace('/employee');
       } else {
-        router.push('/employee');
+        router.replace('/login');
       }
       return;
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, isHydrated, isSuperAdmin, router]);
 
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="h-6 w-6 border-2 border-t-transparent border-purple-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // ✅ Verify Super Admin role
-  if (user.role !== 'SUPER_ADMIN') {
+  if (!isHydrated || !isAuthenticated || !user || !isSuperAdmin) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-purple-500 rounded-full animate-spin"></div>

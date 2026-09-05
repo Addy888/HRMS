@@ -109,31 +109,31 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const isHRRole = Boolean(user && ['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role));
 
   React.useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated || !user) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
-    // ✅ Allow HR_ADMIN, HR_USER, and legacy HR role
-    const isHRRole = ['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role);
+
     if (!isHRRole) {
-      router.push('/employee');
+      if (user.role === 'SUPER_ADMIN') {
+        router.replace('/super-admin');
+      } else if (user.role === 'EMPLOYEE') {
+        router.replace('/employee');
+      } else {
+        router.replace('/login');
+      }
       return;
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, isHydrated, isHRRole, router]);
 
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // ✅ Check if user is HR role
-  const isHRRole = ['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role);
-  if (!isHRRole) {
+  if (!isHydrated || !isAuthenticated || !user || !isHRRole) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>

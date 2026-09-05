@@ -101,6 +101,16 @@ export class SuperAdminController {
     return this.superAdminService.getAllEmployees(userId, filters);
   }
 
+  @Get('employees/:id')
+  @ApiOperation({ summary: 'Get single employee details (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Employee details retrieved' })
+  getEmployeeDetails(
+    @GetUser('id') userId: string,
+    @Param('id') employeeId: string,
+  ) {
+    return this.superAdminService.getEmployeeDetails(userId, employeeId);
+  }
+
   // ==========================================
   // PROCESS MANAGEMENT
   // ==========================================

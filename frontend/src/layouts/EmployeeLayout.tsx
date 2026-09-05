@@ -52,28 +52,31 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const isEmployee = Boolean(user && user.role === 'EMPLOYEE');
 
   React.useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated || !user) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
-    // Only allow EMPLOYEE role
-    if (user.role !== 'EMPLOYEE') {
-      router.push('/hr');
+
+    if (!isEmployee) {
+      if (user.role === 'SUPER_ADMIN') {
+        router.replace('/super-admin');
+      } else if (['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role)) {
+        router.replace('/hr');
+      } else {
+        router.replace('/login');
+      }
       return;
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, isHydrated, isEmployee, router]);
 
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (user.role !== 'EMPLOYEE') {
+  if (!isHydrated || !isAuthenticated || !user || !isEmployee) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>

@@ -557,6 +557,115 @@ export class SuperAdminService {
     }));
   }
 
+  async getEmployeeDetails(requestUserId: string, employeeId: string) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId: user.organizationId,
+        user: { role: { name: UserRole.EMPLOYEE } },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            isActive: true,
+            isFirstLogin: true,
+            createdAt: true,
+          },
+        },
+        department: {
+          select: { id: true, name: true, description: true },
+        },
+        designation: {
+          select: { id: true, name: true },
+        },
+        createdByUser: {
+          select: {
+            id: true,
+            email: true,
+            employee: { select: { firstName: true, lastName: true } },
+          },
+        },
+        attendances: {
+          orderBy: { date: 'desc' },
+          take: 30,
+          select: {
+            id: true,
+            date: true,
+            status: true,
+            checkInTime: true,
+            checkOutTime: true,
+          },
+        },
+        payslips: {
+          orderBy: { createdAt: 'desc' },
+          take: 6,
+          select: {
+            id: true,
+            month: true,
+            year: true,
+            payslipNumber: true,
+            pdfUrl: true,
+            sentToEmployee: true,
+            createdAt: true,
+          },
+        },
+        hrActions: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            actionNumber: true,
+            actionType: true,
+            severity: true,
+            subject: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    // Compute attendance summary for last 30 records
+    const attendanceSummary = {
+      present: employee.attendances.filter((a) => a.status === 'PRESENT').length,
+      absent: employee.attendances.filter((a) => a.status === 'ABSENT').length,
+      late: employee.attendances.filter((a) => a.status === 'LATE').length,
+      halfDay: employee.attendances.filter((a) => a.status === 'HALF_DAY').length,
+      total: employee.attendances.length,
+    };
+
+    return {
+      ...employee,
+      fullName: `${employee.firstName} ${employee.lastName}`,
+      email: employee.user?.email,
+      isActive: employee.user?.isActive,
+      departmentName: employee.department?.name || null,
+      designationTitle: employee.designation?.name || null,
+      totalSalary: employee.monthlySalary || 0,
+      createdByName: employee.createdByUser?.employee
+        ? `${employee.createdByUser.employee.firstName} ${employee.createdByUser.employee.lastName}`
+        : 'N/A',
+      attendanceSummary,
+    };
+  }
+
   // ==========================================
   // PROCESS MANAGEMENT
   // ==========================================

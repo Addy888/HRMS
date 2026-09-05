@@ -2,6 +2,7 @@
 
 import React from 'react';
 import SuperAdminLayout from '@/layouts/SuperAdminLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import {
@@ -88,13 +89,19 @@ const ProcessRow = ({ process }: any) => {
   );
 };
 
+import useAuthStore from '@/store/authStore';
+
 export default function SuperAdminDashboard() {
+  const { isAuthenticated, user, isHydrated } = useAuthStore();
+  const isSuperAdmin = Boolean(user && user.role === 'SUPER_ADMIN');
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['super-admin-dashboard-stats'],
     queryFn: async () => {
       const res = await api.get('/super-admin/dashboard/stats');
       return res.data.data || res.data;
     },
+    enabled: Boolean(isHydrated && isAuthenticated && isSuperAdmin),
   });
 
   const { data: processOverview, isLoading: processLoading } = useQuery({
@@ -103,6 +110,7 @@ export default function SuperAdminDashboard() {
       const res = await api.get('/super-admin/dashboard/process-overview');
       return res.data.data || res.data;
     },
+    enabled: Boolean(isHydrated && isAuthenticated && isSuperAdmin),
   });
 
   if (statsLoading || processLoading) {
@@ -116,8 +124,9 @@ export default function SuperAdminDashboard() {
   }
 
   return (
-    <SuperAdminLayout>
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <ProtectedRoute allowedRoles={['SUPER_ADMIN']} redirectTo="/login">
+      <SuperAdminLayout>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Header */}
         <div>
           <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
@@ -312,5 +321,6 @@ export default function SuperAdminDashboard() {
         </div>
       </div>
     </SuperAdminLayout>
+    </ProtectedRoute>
   );
 }

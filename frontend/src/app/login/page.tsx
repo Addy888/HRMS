@@ -1,11 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Users, ArrowRight } from 'lucide-react';
+import useAuthStore from '@/store/authStore';
 
 export default function LoginRoleSelectionPage() {
   const router = useRouter();
+  const { isAuthenticated, user, isHydrated } = useAuthStore();
+
+  useEffect(() => {
+    // Only redirect if hydration is complete and a valid authenticated session already exists
+    if (isHydrated && isAuthenticated && user) {
+      if (user.role === 'SUPER_ADMIN') {
+        router.replace('/super-admin');
+      } else if (['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role)) {
+        router.replace('/hr');
+      } else if (user.role === 'EMPLOYEE') {
+        router.replace('/employee');
+      }
+    }
+  }, [isHydrated, isAuthenticated, user, router]);
 
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">

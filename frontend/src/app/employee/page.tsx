@@ -2,6 +2,7 @@
 
 import React from 'react';
 import EmployeeLayout from '@/layouts/EmployeeLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import {
@@ -9,8 +10,12 @@ import {
   CheckCircle2, Clock, FileText, ChevronRight, Sparkles, Building
 } from 'lucide-react';
 import Link from 'next/link';
+import useAuthStore from '@/store/authStore';
 
 export default function EmployeeDashboard() {
+  const { isAuthenticated, user, isHydrated } = useAuthStore();
+  const isEmployee = Boolean(user && user.role === 'EMPLOYEE');
+
   // Fetch detailed profile completion
   const { data: profileCompletionResponse, isLoading: loadingCompletion } = useQuery({
     queryKey: ['employee-profile-completion'],
@@ -18,6 +23,7 @@ export default function EmployeeDashboard() {
       const res = await api.get('/employees/profile/completion');
       return res.data?.data ?? res.data;
     },
+    enabled: Boolean(isHydrated && isAuthenticated && isEmployee),
   });
 
   // Fetch full profile info
@@ -27,6 +33,7 @@ export default function EmployeeDashboard() {
       const res = await api.get('/employees/profile');
       return res.data?.data ?? res.data;
     },
+    enabled: Boolean(isHydrated && isAuthenticated && isEmployee),
   });
 
   const completion = profileCompletionResponse || { percentage: 0, sections: {} };

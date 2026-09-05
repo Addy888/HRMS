@@ -2,6 +2,7 @@
 
 import React from 'react';
 import HRLayout from '@/layouts/HRLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { MetricCard } from '@/components/MetricCard';
 import { 
   Users, 
@@ -18,8 +19,12 @@ import {
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import useAuthStore from '@/store/authStore';
 
 export default function HRDashboard() {
+  const { isAuthenticated, user, isHydrated } = useAuthStore();
+  const isHRRole = Boolean(user && ['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role));
+
   const { data: stats, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['hr-dashboard-stats'],
     queryFn: async () => {
@@ -27,6 +32,7 @@ export default function HRDashboard() {
       // TransformInterceptor wraps: { success, statusCode, data: <actual payload> }
       return response.data?.data ?? response.data;
     },
+    enabled: Boolean(isHydrated && isAuthenticated && isHRRole),
     retry: 1,
   });
 
@@ -64,7 +70,8 @@ export default function HRDashboard() {
   }
 
   return (
-    <HRLayout>
+    <ProtectedRoute allowedRoles={['HR_ADMIN', 'HR_USER', 'HR']} redirectTo="/login">
+      <HRLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Dashboard Header */}
         <div className="flex flex-col gap-2">
@@ -169,5 +176,6 @@ export default function HRDashboard() {
         </div>
       </div>
     </HRLayout>
+    </ProtectedRoute>
   );
 }

@@ -48,19 +48,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const isSuperAdmin = Boolean(user && user.role === 'SUPER_ADMIN');
 
   React.useEffect(() => {
-    if (!isAuthenticated || !user) {
-      router.push('/login/admin');
-      return;
-    }
-    if (user.role !== 'SUPER_ADMIN') {
-      router.push('/');
-      return;
-    }
-  }, [isAuthenticated, user, router]);
+    if (!isHydrated) return;
 
-  if (!isAuthenticated || !user || user.role !== 'SUPER_ADMIN') {
+    if (!isAuthenticated || !user) {
+      router.replace('/login/admin');
+      return;
+    }
+    if (!isSuperAdmin) {
+      if (['HR_ADMIN', 'HR_USER', 'HR'].includes(user.role)) {
+        router.replace('/hr');
+      } else if (user.role === 'EMPLOYEE') {
+        router.replace('/employee');
+      } else {
+        router.replace('/login');
+      }
+      return;
+    }
+  }, [isAuthenticated, user, isHydrated, isSuperAdmin, router]);
+
+  if (!isHydrated || !isAuthenticated || !user || !isSuperAdmin) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-purple-500 rounded-full animate-spin"></div>

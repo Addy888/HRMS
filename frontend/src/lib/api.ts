@@ -21,67 +21,62 @@ const api = axios.create({
   },
 });
 
-console.log('🌐 API Client initialized');
-console.log('   Environment:', process.env.NODE_ENV);
-console.log('   Base URL:', api.defaults.baseURL);
-
-// Attach token from Zustand-persisted localStorage on every request
+// Attach token from authStore or localStorage on every request
 api.interceptors.request.use((config) => {
-  console.log("🟡 REQUEST INTERCEPTOR - START");
-  console.log("   URL:", config.url);
-  console.log("   baseURL:", config.baseURL);
-  console.log("   Full URL:", `${config.baseURL}${config.url}`);
-  
   if (typeof window !== 'undefined') {
     try {
-      // Zustand persist stores under 'fcs-auth-storage'
-      const storage = localStorage.getItem('fcs-auth-storage');
-      if (storage) {
-        const parsed = JSON.parse(storage);
-        const token = parsed?.state?.token;
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`;
-          console.log("   Token attached:", token.substring(0, 20) + "...");
+      let token: string | null = null;
+      try {
+        const useAuthStore = require('@/store/authStore').default;
+        token = useAuthStore.getState().token;
+      } catch {}
+
+      if (!token) {
+        const storage = localStorage.getItem('fcs-auth-storage');
+        if (storage) {
+          token = JSON.parse(storage)?.state?.token;
         }
+      }
+
+      if (!token) {
+        token = localStorage.getItem('fcs_token');
+      }
+
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     } catch {
       // ignore parse errors
     }
   }
-  
-  console.log("🟢 REQUEST INTERCEPTOR - RETURNING CONFIG");
   return config;
 });
 
 // Response interceptor — unwrap transform envelope + normalize errors
 api.interceptors.response.use(
   (response) => {
-    console.log("🟢 RESPONSE INTERCEPTOR - SUCCESS");
-    console.log("   Status:", response.status);
-    console.log("   Data keys:", Object.keys(response.data || {}));
-    
     // If backend returns { success, statusCode, data, message } envelope
     if (response.data && typeof response.data.success === 'boolean') {
-      console.log("   Returning full response (envelope detected)");
-      return response; // return full response; callers use .data
+      return response;
     }
-    console.log("   Returning response as-is");
     return response;
   },
   (error) => {
-    console.log("🔴 RESPONSE INTERCEPTOR - ERROR");
-    console.log("   Error:", error.message);
-    console.log("   Status:", error.response?.status);
-    
     const message =
       error.response?.data?.message || error.message || 'An unexpected error occurred';
 
-    // Auto-redirect to login on 401
+    // Auto-redirect to login on 401 only if not already on a login route
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      const isLoginPage = window.location.pathname === '/login';
+      const isLoginPage = window.location.pathname.startsWith('/login');
       if (!isLoginPage) {
-        console.log("🔴 401 ERROR - REDIRECTING TO LOGIN");
-        localStorage.removeItem('fcs-auth-storage');
+        try {
+          const useAuthStore = require('@/store/authStore').default;
+          useAuthStore.getState().logout();
+        } catch {
+          localStorage.removeItem('fcs_token');
+          localStorage.removeItem('fcs_user');
+          localStorage.removeItem('fcs-auth-storage');
+        }
         window.location.href = '/login';
       }
     }

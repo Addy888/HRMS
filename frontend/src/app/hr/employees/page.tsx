@@ -6,9 +6,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { CreateEmployeeModal } from '@/components/CreateEmployeeModal';
 import { EditEmployeeModal } from '@/components/EditEmployeeModal';
+import { BulkAssignProcessModal } from '@/components/BulkAssignProcessModal';
+import { AssignProcessModal } from '@/components/AssignProcessModal';
 import {
   Users, Plus, Search, Eye, Edit2, KeyRound,
-  UserX, UserCheck, Trash2, ChevronLeft, ChevronRight, Loader2, AlertTriangle
+  UserX, UserCheck, Trash2, ChevronLeft, ChevronRight, Loader2, AlertTriangle, Layers
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,6 +51,9 @@ export default function EmployeesPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = React.useState(false);
   const [editEmployee, setEditEmployee] = React.useState<any>(null);
+  const [selectedEmployees, setSelectedEmployees] = React.useState<any[]>([]);
+  const [showBulkAssign, setShowBulkAssign] = React.useState(false);
+  const [assignProcessEmployee, setAssignProcessEmployee] = React.useState<any>(null);
   const [search, setSearch] = React.useState('');
   const [deptFilter, setDeptFilter] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('');
@@ -148,6 +153,33 @@ export default function EmployeesPage() {
   });
 
   const onboardingStatuses = ['PENDING', 'PROFILE_COMPLETED', 'DOCUMENTS_UPLOADED', 'POLICIES_ACCEPTED', 'COMPLETED', 'VERIFIED'];
+
+  const handleSelectAll = () => {
+    if (selectedEmployees.length === employees.length) {
+      setSelectedEmployees([]);
+    } else {
+      setSelectedEmployees([...employees]);
+    }
+  };
+
+  const handleSelectEmployee = (emp: any) => {
+    if (selectedEmployees.find(e => e.id === emp.id)) {
+      setSelectedEmployees(selectedEmployees.filter(e => e.id !== emp.id));
+    } else {
+      setSelectedEmployees([...selectedEmployees, emp]);
+    }
+  };
+
+  const isSelected = (emp: any) => selectedEmployees.some(e => e.id === emp.id);
+
+  const handleBulkAssignSuccess = () => {
+    setSelectedEmployees([]);
+    setShowBulkAssign(false);
+  };
+
+  const handleAssignProcessSuccess = () => {
+    setAssignProcessEmployee(null);
+  };
 
   return (
     <HRLayout>
