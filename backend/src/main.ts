@@ -19,11 +19,58 @@ async function bootstrap() {
     app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   }
 
-  // CORS config
+  // CORS config - Support localhost and LAN IP ranges
+  const getAllowedOrigins = () => {
+    const envOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [];
+    
+    if (process.env.NODE_ENV === 'production') {
+      return envOrigins.length > 0 ? envOrigins : false;
+    }
+    
+    // Development: Support localhost and LAN IP addresses
+    const defaultOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+    ];
+    
+    // Merge with environment origins
+    return [...defaultOrigins, ...envOrigins];
+  };
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(',')
-      : (process.env.NODE_ENV === 'production' ? false : 'http://localhost:3000'),
+    origin: (origin, callback) => {
+      const allowedOrigins = getAllowedOrigins();
+      
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // In production with no CORS_ORIGIN set, block all origins
+      if (allowedOrigins === false) {
+        return callback(new Error('CORS not configured for production'), false);
+      }
+      
+      // In development, allow localhost and LAN IPs (192.168.x.x, 10.x.x.x)
+      if (process.env.NODE_ENV === 'development') {
+        const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+        const isLAN = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(origin);
+        
+        if (isLocalhost || isLAN || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+      }
+      
+      // Check if origin is in allowed list
+      if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Reject origin
+      callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Accept,Authorization',

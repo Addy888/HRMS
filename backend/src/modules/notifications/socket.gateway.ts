@@ -14,9 +14,37 @@ import { PrismaService } from '../../database/prisma.service.js';
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(',')
-      : (process.env.NODE_ENV === 'production' ? false : ['http://localhost:3000', 'http://localhost:3001']),
+    origin: (origin, callback) => {
+      const envOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [];
+      
+      // Allow requests with no origin
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // In development, allow localhost and LAN IPs
+      if (process.env.NODE_ENV === 'development') {
+        const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+        const isLAN = /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(origin);
+        
+        if (isLocalhost || isLAN || envOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+      }
+      
+      // In production, only allow configured origins
+      if (process.env.NODE_ENV === 'production' && envOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Default development origins
+      const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'];
+      if (defaultOrigins.includes(origin) || envOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     credentials: true,
   },
   namespace: '/notifications',

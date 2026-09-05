@@ -29,8 +29,8 @@ export const useSocket = () => {
         return null;
       }
       
-      // Default to localhost for development
-      return socketUrl || 'http://localhost:4000/notifications';
+      // Default to localhost for development - backend Socket.IO is at root with /notifications namespace
+      return socketUrl || 'http://localhost:4000';
     };
 
     const socketUrl = getSocketUrl();
@@ -45,37 +45,54 @@ export const useSocket = () => {
     console.log('🔌 Initializing socket connection');
     console.log('   Environment:', process.env.NODE_ENV);
     console.log('   Socket URL:', socketUrl);
+    console.log('   Namespace: /notifications');
 
-    const socket = io(socketUrl, {
+    const socket = io(`${socketUrl}/notifications`, {
       auth: {
         token: `Bearer ${token}`,
       },
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
+      reconnection: true,
     });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Socket connected successfully:', socket.id);
+      console.log('✅ Socket connected successfully');
+      console.log('   Socket ID:', socket.id);
+      console.log('   Transport:', socket.io.engine.transport.name);
       setConnected(true);
     });
 
     socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
+      console.log('🔌 Socket disconnected:', reason);
       setConnected(false);
     });
 
     socket.on('connect_error', (err) => {
-      console.error('Socket connection error:', err.message);
+      console.error('❌ Socket connection error:', err.message);
+      console.error('   Description:', err.description);
+      console.error('   Type:', err.type);
       setConnected(false);
+    });
+
+    socket.on('connected', (data) => {
+      console.log('✅ Socket authenticated:', data);
     });
 
     // Cleanup on unmount/token change
     return () => {
-      if (socket.connected) {
-        socket.disconnect();
+      if (socket) {
+        console.log('🧹 Cleaning up socket connection');
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.off('connect_error');
+        socket.off('connected');
+        if (socket.connected) {
+          socket.disconnect();
+        }
       }
       socketRef.current = null;
       setConnected(false);

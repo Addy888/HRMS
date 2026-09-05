@@ -266,6 +266,256 @@ export class SuperAdminService {
     }));
   }
 
+  async getAdminDetails(requestUserId: string, adminId: string) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('[SUPER ADMIN HR DETAIL] Fetching HR admin details');
+    console.log('  Super Admin User ID:', requestUserId);
+    console.log('  Organization ID:', user.organizationId);
+    console.log('  Target HR Admin ID:', adminId);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // Get HR admin basic info
+    const admin = await this.prisma.user.findFirst({
+      where: {
+        id: adminId,
+        organizationId: user.organizationId,
+        role: {
+          name: { in: [UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
+        },
+      },
+      include: {
+        role: {
+          select: { name: true, displayName: true },
+        },
+        employee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            joiningDate: true,
+          },
+        },
+      },
+    });
+
+    if (!admin) {
+      throw new NotFoundException('HR Admin not found');
+    }
+
+    console.log('[SUPER ADMIN HR DETAIL] HR Admin found:');
+    console.log('  Name:', admin.employee ? `${admin.employee.firstName} ${admin.employee.lastName}` : 'N/A');
+    console.log('  Email:', admin.email);
+    console.log('  Role:', admin.role.name);
+
+    // Get all employees created by this HR (SAME as getAllAdmins uses)
+    console.log('[SUPER ADMIN HR DETAIL] Querying employees created by this HR...');
+    console.log('  Query: Employee.createdByUserId =', adminId);
+    console.log('  Query: Employee.organizationId =', user.organizationId);
+    
+    const employeesCreated = await this.prisma.employee.findMany({
+      where: {
+        createdByUserId: adminId,
+        organizationId: user.organizationId,
+        user: {
+          role: { name: UserRole.EMPLOYEE },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            isActive: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        designation: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    console.log('[SUPER ADMIN HR DETAIL] Employees created by this HR:', employeesCreated.length);
+    if (employeesCreated.length > 0) {
+      employeesCreated.forEach((emp, idx) => {
+        console.log(`  [${idx + 1}] ${emp.firstName} ${emp.lastName} (${emp.employeeId})`);
+        console.log(`      Email: ${emp.user?.email}`);
+        console.log(`      Department: ${emp.department?.name || 'None'}`);
+        console.log(`      Active: ${emp.user?.isActive}`);
+        console.log(`      Salary: ₹${emp.monthlySalary || 0}`);
+      });
+    }
+
+    // Get all departments/processes created by this HR
+    console.log('[SUPER ADMIN HR DETAIL] Querying departments/processes created by this HR...');
+    console.log('  Query: Department.createdByUserId =', adminId);
+    
+    const processesCreated = await this.prisma.department.findMany({
+      where: {
+        createdByUserId: adminId,
+        organizationId: user.organizationId,
+      },
+      include: {
+        employees: {
+          where: {
+            user: {
+              role: { name: UserRole.EMPLOYEE },
+            },
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                isActive: true,
+              },
+            },
+            designation: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    console.log('[SUPER ADMIN HR DETAIL] Processes created by this HR:', processesCreated.length);
+    if (processesCreated.length > 0) {
+      processesCreated.forEach((proc, idx) => {
+        console.log(`  [${idx + 1}] ${proc.name} (${proc.code || 'N/A'})`);
+        console.log(`      Employees in process: ${proc.employees.length}`);
+        proc.employees.forEach((emp) => {
+          console.log(`        - ${emp.firstName} ${emp.lastName} (${emp.employeeId})`);
+        });
+      });
+    }
+
+    // Calculate totals from ALL employees created by this HR (not just those in processes)
+    let totalEmployees = employeesCreated.length;
+    let activeEmployees = employeesCreated.filter((e) => e.user.isActive).length;
+    let inactiveEmployees = employeesCreated.filter((e) => !e.user.isActive).length;
+    let totalBasicSalary = 0;
+    let totalIncentive = 0;
+
+    employeesCreated.forEach((emp) => {
+      totalBasicSalary += emp.monthlySalary || 0;
+      // Incentive calculation can be added here if available
+    });
+
+    console.log('[SUPER ADMIN HR DETAIL] Calculated Summary:');
+    console.log('  Total Employees:', totalEmployees);
+    console.log('  Active Employees:', activeEmployees);
+    console.log('  Inactive Employees:', inactiveEmployees);
+    console.log('  Total Basic Salary: ₹', totalBasicSalary);
+    console.log('  Total Processes:', processesCreated.length);
+
+    const processStats = processesCreated.map((process) => {
+      const employees = process.employees;
+      const activeInProcess = employees.filter((e) => e.user.isActive).length;
+      const inactiveInProcess = employees.filter((e) => !e.user.isActive).length;
+
+      let processBasicSalary = 0;
+      let processIncentive = 0;
+
+      employees.forEach((emp) => {
+        processBasicSalary += emp.monthlySalary || 0;
+        // Incentive calculation can be added here if available
+      });
+
+      const totalPayroll = processBasicSalary + processIncentive;
+      const avgSalary = employees.length > 0 ? totalPayroll / employees.length : 0;
+
+      return {
+        id: process.id,
+        name: process.name,
+        description: process.description,
+        code: process.code,
+        isActive: process.isActive,
+        totalEmployees: employees.length,
+        activeEmployees: activeInProcess,
+        inactiveEmployees: inactiveInProcess,
+        basicSalary: processBasicSalary,
+        incentive: processIncentive,
+        totalPayroll,
+        avgSalary: Math.round(avgSalary),
+        employees: employees.map((emp) => ({
+          id: emp.id,
+          employeeId: emp.employeeId,
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+          fullName: `${emp.firstName} ${emp.lastName}`,
+          email: emp.user?.email,
+          phone: emp.phone,
+          designation: emp.designation?.name || 'N/A',
+          designationId: emp.designation?.id,
+          status: emp.user?.isActive ? 'Active' : 'Inactive',
+          isActive: emp.user?.isActive,
+          basicSalary: emp.monthlySalary || 0,
+          incentive: 0, // Add incentive logic if available
+          totalSalary: (emp.monthlySalary || 0) + 0,
+          joiningDate: emp.joiningDate,
+        })),
+        createdAt: process.createdAt,
+      };
+    });
+
+    const totalPayroll = totalBasicSalary + totalIncentive;
+
+    console.log('[SUPER ADMIN HR DETAIL] Response prepared successfully');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    return {
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        role: admin.role.name,
+        roleDisplay: admin.role.displayName || admin.role.name,
+        isActive: admin.isActive,
+        isFirstLogin: admin.isFirstLogin,
+        firstName: admin.employee?.firstName || 'N/A',
+        lastName: admin.employee?.lastName || '',
+        fullName: admin.employee
+          ? `${admin.employee.firstName} ${admin.employee.lastName}`
+          : 'N/A',
+        phone: admin.employee?.phone || 'N/A',
+        joiningDate: admin.employee?.joiningDate,
+        createdAt: admin.createdAt,
+      },
+      summary: {
+        totalProcesses: processesCreated.length,
+        totalEmployees,
+        activeEmployees,
+        inactiveEmployees,
+        totalBasicSalary,
+        totalIncentive,
+        totalPayroll,
+      },
+      processes: processStats,
+    };
+  }
+
   async createAdmin(requestUserId: string, dto: any) {
     await this.verifySuperAdmin(requestUserId);
 

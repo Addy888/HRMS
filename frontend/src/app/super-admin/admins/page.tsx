@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import SuperAdminLayout from '@/layouts/SuperAdminLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -173,6 +174,7 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
 
 export default function AdminsPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [showCreate, setShowCreate] = React.useState(false);
   const [search, setSearch] = React.useState('');
 
@@ -275,14 +277,18 @@ export default function AdminsPage() {
                   ))
                 ) : filteredAdmins.length > 0 ? (
                   filteredAdmins.map((admin: any) => (
-                    <tr key={admin.id} className="hover:bg-neutral-900/30 transition-colors text-sm">
+                    <tr 
+                      key={admin.id} 
+                      className="hover:bg-neutral-900/30 transition-colors text-sm cursor-pointer" 
+                      onClick={() => router.push(`/super-admin/admins/${admin.id}`)}
+                    >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center font-heading text-xs font-bold text-white uppercase">
                             {admin.firstName?.charAt(0)}{admin.lastName?.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">{admin.firstName} {admin.lastName}</div>
+                            <div className="font-semibold text-white hover:text-purple-400 transition-colors">{admin.firstName} {admin.lastName}</div>
                             <div className="text-[10px] text-neutral-500 mt-0.5">ID: {admin.id.substring(0, 8)}</div>
                           </div>
                         </div>
@@ -311,7 +317,7 @@ export default function AdminsPage() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex justify-end items-center gap-1">
+                        <div className="flex justify-end items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => {
                               if (confirm('Reset password to 123456?')) {

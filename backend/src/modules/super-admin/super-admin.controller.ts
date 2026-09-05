@@ -56,6 +56,16 @@ export class SuperAdminController {
     return this.superAdminService.getAllAdmins(userId);
   }
 
+  @Get('admins/:id')
+  @ApiOperation({ summary: 'Get HR admin details with processes and employees (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Admin details retrieved' })
+  getAdminDetails(
+    @GetUser('id') userId: string,
+    @Param('id') adminId: string,
+  ) {
+    return this.superAdminService.getAdminDetails(userId, adminId);
+  }
+
   @Post('admins')
   @ApiOperation({ summary: 'Create new HR admin (Super Admin Only)' })
   @ApiResponse({ status: 201, description: 'Admin created successfully' })
