@@ -30,7 +30,20 @@ const SEVERITIES = [
   { value: 'CRITICAL', label: 'Critical', color: 'text-red-400', bg: 'bg-red-500/10' },
 ];
 
-const ACTION_TYPES = [
+const ACTION_TYPES_ATTENDANCE = [
+  'LATE_LOGIN',
+  'LATE_ATTENDANCE',
+  'REPEATED_LATE_ATTENDANCE',
+  'EARLY_CHECKOUT',
+  'ABSENT_WITHOUT_NOTICE',
+  'UNAUTHORIZED_ABSENCE',
+  'LOW_WORKING_HOURS',
+  'MISSED_CHECK_IN',
+  'MISSED_CHECK_OUT',
+  'ATTENDANCE_IRREGULARITY',
+];
+
+const ACTION_TYPES_DISCIPLINARY = [
   'WARNING',
   'WRITTEN_WARNING',
   'SUSPENSION',
@@ -40,6 +53,15 @@ const ACTION_TYPES = [
   'COMMENDATION',
   'OTHER',
 ];
+
+const ACTION_TYPES = [...ACTION_TYPES_ATTENDANCE, ...ACTION_TYPES_DISCIPLINARY];
+
+// Format action type for display
+const formatActionType = (type: string) => {
+  return type.split('_').map(word => 
+    word.charAt(0) + word.slice(1).toLowerCase()
+  ).join(' ');
+};
 
 const StatusBadge = ({ status }: { status: string }) => {
   const config = STATUSES.find(s => s.value === status);
@@ -216,9 +238,16 @@ export default function HRActionsPage() {
               className="px-4 py-2 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Types</option>
-              {ACTION_TYPES.map(type => (
-                <option key={type} value={type}>{type.replace(/_/g, ' ')}</option>
-              ))}
+              <optgroup label="Attendance Related">
+                {ACTION_TYPES_ATTENDANCE.map(type => (
+                  <option key={type} value={type}>{formatActionType(type)}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Disciplinary / HR">
+                {ACTION_TYPES_DISCIPLINARY.map(type => (
+                  <option key={type} value={type}>{formatActionType(type)}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
         </div>

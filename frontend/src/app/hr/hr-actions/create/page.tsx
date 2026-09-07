@@ -13,7 +13,21 @@ import { toast } from '@/lib/toast';
 
 // Action type mappings with user-friendly labels
 // These MUST match the backend HRActionType enum values exactly
-const ACTION_TYPES = [
+// Organized by category: Attendance-Related and Disciplinary/HR
+const ACTION_TYPES_ATTENDANCE = [
+  { value: 'LATE_LOGIN', label: 'Late Login' },
+  { value: 'LATE_ATTENDANCE', label: 'Late Attendance' },
+  { value: 'REPEATED_LATE_ATTENDANCE', label: 'Repeated Late Attendance' },
+  { value: 'EARLY_CHECKOUT', label: 'Early Checkout' },
+  { value: 'ABSENT_WITHOUT_NOTICE', label: 'Absent Without Notice' },
+  { value: 'UNAUTHORIZED_ABSENCE', label: 'Unauthorized Absence' },
+  { value: 'LOW_WORKING_HOURS', label: 'Low Working Hours' },
+  { value: 'MISSED_CHECK_IN', label: 'Missed Check-in' },
+  { value: 'MISSED_CHECK_OUT', label: 'Missed Check-out' },
+  { value: 'ATTENDANCE_IRREGULARITY', label: 'Attendance Irregularity' },
+];
+
+const ACTION_TYPES_DISCIPLINARY = [
   { value: 'WARNING', label: 'Warning' },
   { value: 'WRITTEN_WARNING', label: 'Written Warning' },
   { value: 'SUSPENSION', label: 'Suspension' },
@@ -23,6 +37,14 @@ const ACTION_TYPES = [
   { value: 'COMMENDATION', label: 'Commendation' },
   { value: 'OTHER', label: 'Other' },
 ];
+
+// Combined list for backward compatibility
+const ACTION_TYPES = [...ACTION_TYPES_ATTENDANCE, ...ACTION_TYPES_DISCIPLINARY];
+
+// Helper to check if action type is attendance-related
+const isAttendanceRelated = (actionType: string) => {
+  return ACTION_TYPES_ATTENDANCE.some(type => type.value === actionType);
+};
 
 const SEVERITIES = [
   { value: 'LOW', label: 'Low', color: 'text-blue-400' },
@@ -48,7 +70,63 @@ export default function CreateHRActionPage() {
     additionalRemarks: '',
     responseRequired: false,
     responseDeadline: '',
+    selectedAttendanceDate: '', // For attendance-related actions
   });
+
+  // State for attendance data
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
+  const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
+  const [lateCount, setLateCount] = useState<number>(0);
+
+  // Fetch attendance history when employee changes or attendance action type is selected
+  const { data: attendanceHistory, isLoading: loadingAttendance } = useQuery({
+    queryKey: ['employee-attendance', employeeId, formData.actionType],
+    queryFn: async () => {
+      if (!employeeId || !isAttendanceRelated(formData.actionType)) return null;
+      
+      // Fetch last 30 days of attendance
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      
+      const res = await api.get(`/attendance/employee/${employeeId}`, {
+        params: {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+        }
+      });
+      return res.data;
+    },
+    enabled: !!employeeId && isAttendanceRelated(formData.actionType),
+  });
+
+  // Update attendance records when data is fetched
+  useEffect(() => {
+    if (attendanceHistory?.data) {
+      setAttendanceRecords(attendanceHistory.data);
+      
+      // Calculate late count for repeated late attendance
+      const lateRecords = attendanceHistory.data.filter((record: any) => 
+        record.status === 'LATE' || record.lateBy > 0
+      );
+      setLateCount(lateRecords.length);
+    }
+  }, [attendanceHistory]);
+
+  // When a specific attendance date is selected, load its details
+  useEffect(() => {
+    if (formData.selectedAttendanceDate && attendanceRecords.length > 0) {
+      const selected = attendanceRecords.find(
+        (record: any) => record.date.split('T')[0] === formData.selectedAttendanceDate
+      );
+      setSelectedAttendance(selected);
+      
+      // Auto-populate incident date with selected attendance date
+      if (selected && !formData.incidentDate) {
+        handleChange('incidentDate', formData.selectedAttendanceDate);
+      }
+    }
+  }, [formData.selectedAttendanceDate, attendanceRecords]);
 
   // Fetch employee details
   const { data: employee, isLoading: loadingEmployee, error: employeeError } = useQuery({
@@ -263,11 +341,22 @@ export default function CreateHRActionPage() {
                   className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select action type</option>
-                  {ACTION_TYPES.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
+                  
+                  <optgroup label="📅 Attendance Related">
+                    {ACTION_TYPES_ATTENDANCE.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  
+                  <optgroup label="⚠️ Disciplinary / HR">
+                    {ACTION_TYPES_DISCIPLINARY.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
 
@@ -338,6 +427,208 @@ export default function CreateHRActionPage() {
                 />
               </div>
             </div>
+
+            {/* Attendance Context Section - Only for attendance-related actions */}
+            {isAttendanceRelated(formData.actionType) && (
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                  <h4 className="text-lg font-bold text-white">Attendance Context</h4>
+                  {formData.actionType === 'REPEATED_LATE_ATTENDANCE' && lateCount > 0 && (
+                    <span className="ml-auto px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full">
+                      {lateCount} Late Records in Last 30 Days
+                    </span>
+                  )}
+                </div>
+
+                {loadingAttendance ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+                    <span className="ml-2 text-neutral-400">Loading attendance records...</span>
+                  </div>
+                ) : attendanceRecords.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Attendance Date Selector */}
+                    <div>
+                      <label className="block text-sm font-semibold text-neutral-300 mb-2">
+                        Select Attendance Date
+                      </label>
+                      <select
+                        value={formData.selectedAttendanceDate}
+                        onChange={(e) => handleChange('selectedAttendanceDate', e.target.value)}
+                        className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a date</option>
+                        {attendanceRecords.map((record: any) => {
+                          const date = new Date(record.date).toLocaleDateString('en-GB');
+                          const status = record.status || '—';
+                          const late = record.lateBy > 0 ? ` (Late by ${record.lateBy} min)` : '';
+                          return (
+                            <option key={record.id} value={record.date.split('T')[0]}>
+                              {date} - {status}{late}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Selected Attendance Details */}
+                    {selectedAttendance && (
+                      <div className="bg-black/40 border border-neutral-800 rounded-lg p-4 space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          <div>
+                            <div className="text-xs text-neutral-500 mb-1">Date</div>
+                            <div className="text-white font-semibold">
+                              {new Date(selectedAttendance.date).toLocaleDateString('en-GB')}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-neutral-500 mb-1">Status</div>
+                            <div className={`font-semibold ${
+                              selectedAttendance.status === 'PRESENT' ? 'text-green-400' :
+                              selectedAttendance.status === 'LATE' ? 'text-amber-400' :
+                              selectedAttendance.status === 'ABSENT' ? 'text-red-400' :
+                              'text-neutral-400'
+                            }`}>
+                              {selectedAttendance.status || '—'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-neutral-500 mb-1">Working Hours</div>
+                            <div className="text-white font-semibold">
+                              {selectedAttendance.workingHours?.toFixed(2) || '0.00'} hrs
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-neutral-800">
+                          {selectedAttendance.checkInTime && (
+                            <div>
+                              <div className="text-xs text-neutral-500 mb-1">Check In</div>
+                              <div className="text-white font-mono text-sm">
+                                {new Date(selectedAttendance.checkInTime).toLocaleTimeString('en-GB', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {selectedAttendance.checkOutTime && (
+                            <div>
+                              <div className="text-xs text-neutral-500 mb-1">Check Out</div>
+                              <div className="text-white font-mono text-sm">
+                                {new Date(selectedAttendance.checkOutTime).toLocaleTimeString('en-GB', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {selectedAttendance.lateBy > 0 && (
+                            <div>
+                              <div className="text-xs text-neutral-500 mb-1">Late By</div>
+                              <div className="text-red-400 font-semibold">
+                                {selectedAttendance.lateBy} min
+                              </div>
+                            </div>
+                          )}
+                          {selectedAttendance.earlyExitBy > 0 && (
+                            <div>
+                              <div className="text-xs text-neutral-500 mb-1">Early Exit By</div>
+                              <div className="text-orange-400 font-semibold">
+                                {selectedAttendance.earlyExitBy} min
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {selectedAttendance.remarks && (
+                          <div className="pt-3 border-t border-neutral-800">
+                            <div className="text-xs text-neutral-500 mb-1">Remarks</div>
+                            <div className="text-neutral-300 text-sm">
+                              {selectedAttendance.remarks}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Attendance History Table */}
+                    <div className="pt-4">
+                      <div className="text-sm font-semibold text-neutral-400 mb-2">
+                        Recent Attendance History (Last 30 Days)
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-neutral-800">
+                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Date</th>
+                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Check In</th>
+                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Check Out</th>
+                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Hours</th>
+                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Status</th>
+                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Late</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {attendanceRecords.slice(0, 10).map((record: any) => (
+                              <tr 
+                                key={record.id} 
+                                className={`border-b border-neutral-800/50 hover:bg-neutral-800/30 cursor-pointer transition-colors ${
+                                  formData.selectedAttendanceDate === record.date.split('T')[0] ? 'bg-blue-500/10' : ''
+                                }`}
+                                onClick={() => handleChange('selectedAttendanceDate', record.date.split('T')[0])}
+                              >
+                                <td className="py-2 px-3 text-white">
+                                  {new Date(record.date).toLocaleDateString('en-GB')}
+                                </td>
+                                <td className="py-2 px-3 text-neutral-300 font-mono text-xs">
+                                  {record.checkInTime 
+                                    ? new Date(record.checkInTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                                    : '—'}
+                                </td>
+                                <td className="py-2 px-3 text-neutral-300 font-mono text-xs">
+                                  {record.checkOutTime 
+                                    ? new Date(record.checkOutTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                                    : '—'}
+                                </td>
+                                <td className="py-2 px-3 text-neutral-300">
+                                  {record.workingHours?.toFixed(1) || '0.0'}h
+                                </td>
+                                <td className="py-2 px-3">
+                                  <span className={`text-xs font-semibold ${
+                                    record.status === 'PRESENT' ? 'text-green-400' :
+                                    record.status === 'LATE' ? 'text-amber-400' :
+                                    record.status === 'ABSENT' ? 'text-red-400' :
+                                    'text-neutral-400'
+                                  }`}>
+                                    {record.status || '—'}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3">
+                                  {record.lateBy > 0 ? (
+                                    <span className="text-red-400 font-semibold text-xs">
+                                      {record.lateBy}m
+                                    </span>
+                                  ) : (
+                                    <span className="text-neutral-600">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-neutral-500">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No attendance records found for the last 30 days</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Corrective Action */}
             <div>
