@@ -317,10 +317,16 @@ export class AuthService implements OnModuleInit {
   // ─────────────────────────────────────────────────────────────────
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Development-only debug logging
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.debug(`[AUTH DEBUG] Login attempt for: ${normalizedEmail}`);
+    }
 
     // 1. Find user in database
     const user = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
       include: {
         role: true,
         employee: {
@@ -339,10 +345,25 @@ export class AuthService implements OnModuleInit {
     });
 
     if (!user) {
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.debug(`[AUTH DEBUG] User not found: ${normalizedEmail}`);
+      }
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    // Development-only debug logging
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.debug(`[AUTH DEBUG] User found: ${user.id}`);
+      this.logger.debug(`[AUTH DEBUG] Role: ${user.role.name}`);
+      this.logger.debug(`[AUTH DEBUG] Is Active: ${user.isActive}`);
+      this.logger.debug(`[AUTH DEBUG] Organization ID: ${user.organizationId}`);
+      this.logger.debug(`[AUTH DEBUG] Password hash exists: ${!!user.password}`);
+    }
+
     if (!user.isActive) {
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.debug(`[AUTH DEBUG] Account inactive: ${normalizedEmail}`);
+      }
       throw new ForbiddenException(
         'Your account has been deactivated. Please contact HR.',
       );
@@ -350,6 +371,11 @@ export class AuthService implements OnModuleInit {
 
     // 2. Verify password using bcrypt
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.debug(`[AUTH DEBUG] Password valid: ${isPasswordValid}`);
+    }
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }

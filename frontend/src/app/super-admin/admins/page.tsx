@@ -32,6 +32,7 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
     email: '',
     phone: '',
     password: '123456',
+    role: 'HR_ADMIN', // Default to HR_ADMIN
     isActive: true,
   });
 
@@ -48,6 +49,7 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
         email: '',
         phone: '',
         password: '123456',
+        role: 'HR_ADMIN',
         isActive: true,
       });
     },
@@ -121,6 +123,24 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
             />
+          </div>
+
+          <div>
+            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
+              Role <span className="text-red-400">*</span>
+            </label>
+            <select
+              required
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+            >
+              <option value="HR_ADMIN">HR Admin</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
+            </select>
+            <p className="text-xs text-neutral-500 mt-1">
+              HR Admin: Access to HR Panel only | Super Admin: Full system access
+            </p>
           </div>
 
           <div>
@@ -298,9 +318,17 @@ export default function AdminsPage() {
                         <div className="text-neutral-500 text-[10px] mt-0.5">{admin.phone || 'N/A'}</div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-                          {admin.roleDisplay || admin.role}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          {admin.role === 'SUPER_ADMIN' ? (
+                            <span className="text-[10px] bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
+                              Super Admin
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
+                              {admin.roleDisplay || admin.role}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <span className="text-neutral-300 text-sm">{admin.employeesManaged || 0}</span>

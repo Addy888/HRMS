@@ -71,7 +71,7 @@ export const useSocket = () => {
       setConnected(false);
     });
 
-    socket.on('connect_error', (err) => {
+    socket.on('connect_error', (err: any) => {
       console.error('❌ Socket connection error:', err.message);
       console.error('   Description:', err.description);
       console.error('   Type:', err.type);

@@ -33,21 +33,6 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
 
   const nextEmployeeId = nextIdData?.nextEmployeeId || 'FCS0160';
 
-  // Fetch real departments from API
-  const { data: departmentsData, isLoading: loadingDepartments } = useQuery({
-    queryKey: ['departments-list-modal'],
-    queryFn: async () => {
-      console.log('🔍 Fetching departments from API...');
-      const res = await api.get('/departments');
-      const departments = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      console.log('📊 Departments loaded:', departments.length, 'items');
-      console.log('📋 Departments data:', departments);
-      return departments;
-    },
-    enabled: isOpen, // Only fetch when modal is open
-    staleTime: 0, // Always fetch fresh data
-  });
-
   // Fetch real designations from API
   const { data: designationsData, isLoading: loadingDesignations } = useQuery({
     queryKey: ['designations-list-modal'],
@@ -63,7 +48,6 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
     staleTime: 0, // Always fetch fresh data
   });
 
-  const departments: any[] = departmentsData || [];
   const designations: any[] = designationsData || [];
 
   const createMutation = useMutation({
@@ -129,8 +113,8 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
     console.log('📤 Submitting employee creation with:', {
       ...form,
       employeeIdMode,
-      departmentId: form.departmentId || 'NOT SET',
-      designationId: form.designationId || 'NOT SET',
+      processName: form.departmentId || 'NOT SET (will be empty)',
+      designationId: form.designationId || 'NOT SET (optional)',
     });
     createMutation.mutate(form);
   };
@@ -264,10 +248,16 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                   type="text"
                   name="departmentId"
                   value={form.departmentId}
-                  onChange={handleChange}
-                  placeholder="Enter process name"
+                  onChange={(e) => {
+                    console.log('📂 Process typed:', e.target.value);
+                    handleChange(e);
+                  }}
+                  placeholder="IT, Manager, VTP, Administration, etc."
                   className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
+                <p className="text-xs text-neutral-500">
+                  Type the process/department name (e.g., IT, VTP, Sales)
+                </p>
               </div>
 
               {/* Designation Select */}
@@ -295,7 +285,7 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                   })}
                 </select>
                 {designations.length === 0 && !loadingDesignations && (
-                  <p className="text-xs text-red-400">No designations found. Please create designations first.</p>
+                  <p className="text-xs text-amber-400">No designations found. You can create one or leave empty.</p>
                 )}
               </div>
 

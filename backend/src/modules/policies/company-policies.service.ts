@@ -27,6 +27,16 @@ export class CompanyPoliciesService {
       mimetype: file.mimetype,
     });
     
+    // ✅ STEP 1: Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+    
     // Validate file is actually a PDF by reading header
     const fs = await import('fs');
     const buffer = Buffer.alloc(5);
@@ -58,6 +68,7 @@ export class CompanyPoliciesService {
       // Create new policy as ACTIVE (do NOT archive previous policies)
       const newPolicy = await tx.companyPolicy.create({
         data: {
+          organizationId: user.organizationId, // ✅ Multi-tenant: Assign to organization
           policyName: dto.policyName,
           fileName: file.originalname,
           fileUrl: file.path,
@@ -71,13 +82,15 @@ export class CompanyPoliciesService {
       
       console.log('Created policy in DB:', {
         id: newPolicy.id,
+        organizationId: newPolicy.organizationId,
         fileUrl: newPolicy.fileUrl,
         fileSize: newPolicy.fileSize,
       });
 
-      // Auto-assign to ALL ACTIVE employees
+      // Auto-assign to ALL ACTIVE employees IN THIS ORGANIZATION
       const activeEmployees = await tx.employee.findMany({
         where: {
+          organizationId: user.organizationId, // ✅ Multi-tenant: Only this organization's employees
           user: {
             isActive: true,
             role: { name: 'EMPLOYEE' },
@@ -98,7 +111,7 @@ export class CompanyPoliciesService {
         });
       }
 
-      console.log('✅ Auto-assigned to', activeEmployees.length, 'employees');
+      console.log('✅ Auto-assigned to', activeEmployees.length, 'employees in organization', user.organizationId);
 
       return {
         policy: newPolicy,
@@ -123,8 +136,19 @@ export class CompanyPoliciesService {
     };
   }
 
-  async listPolicies() {
+  async listPolicies(requestUserId: string) {
+    // ✅ Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+
     const policies = await this.prisma.companyPolicy.findMany({
+      where: { organizationId: user.organizationId }, // ✅ Multi-tenant: Filter by organization
       orderBy: { createdAt: 'desc' },
     });
 
@@ -134,9 +158,22 @@ export class CompanyPoliciesService {
     };
   }
 
-  async getActivePolicy() {
+  async getActivePolicy(requestUserId: string) {
+    // ✅ Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+
     const policy = await this.prisma.companyPolicy.findFirst({
-      where: { status: 'ACTIVE' },
+      where: { 
+        organizationId: user.organizationId, // ✅ Multi-tenant: Filter by organization
+        status: 'ACTIVE',
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -161,12 +198,25 @@ export class CompanyPoliciesService {
     }
 
     try {
-      console.log('🔍 Querying ALL ACTIVE CompanyPolicies...');
+      // ✅ STEP 1: Get employee's organizationId
+      const employee = await this.prisma.employee.findUnique({
+        where: { id: employeeId },
+        select: { organizationId: true },
+      });
+
+      if (!employee?.organizationId) {
+        console.log('⚠️  Employee not found or no organization, returning empty array');
+        return [];
+      }
+
+      console.log('✅ Employee organizationId:', employee.organizationId);
+      console.log('🔍 Querying ACTIVE CompanyPolicies for this organization...');
       
-      // FIX: Return ALL ACTIVE company policies (they apply to all employees)
+      // FIX: Return ALL ACTIVE company policies FOR THIS ORGANIZATION
       // Then include THIS employee's acceptance status for each
       const policies = await this.prisma.companyPolicy.findMany({
         where: { 
+          organizationId: employee.organizationId, // ✅ Multi-tenant: Filter by organization
           status: 'ACTIVE',
         },
         orderBy: { createdAt: 'desc' }, // Newest first
@@ -274,9 +324,22 @@ export class CompanyPoliciesService {
     };
   }
 
-  async getPolicyById(id: string) {
-    const policy = await this.prisma.companyPolicy.findUnique({
-      where: { id },
+  async getPolicyById(id: string, requestUserId: string) {
+    // ✅ Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+
+    const policy = await this.prisma.companyPolicy.findFirst({
+      where: { 
+        id,
+        organizationId: user.organizationId, // ✅ Multi-tenant: Verify ownership
+      },
     });
 
     if (!policy) {
@@ -286,9 +349,22 @@ export class CompanyPoliciesService {
     return policy;
   }
 
-  async deletePolicy(id: string) {
-    const policy = await this.prisma.companyPolicy.findUnique({
-      where: { id },
+  async deletePolicy(id: string, requestUserId: string) {
+    // ✅ Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+
+    const policy = await this.prisma.companyPolicy.findFirst({
+      where: { 
+        id,
+        organizationId: user.organizationId, // ✅ Multi-tenant: Verify ownership
+      },
     });
 
     if (!policy) {
@@ -313,16 +389,42 @@ export class CompanyPoliciesService {
     };
   }
 
-  async getVersionHistory() {
+  async getVersionHistory(requestUserId: string) {
+    // ✅ Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+
     return this.prisma.companyPolicy.findMany({
-      where: { status: 'ARCHIVED' },
+      where: { 
+        organizationId: user.organizationId, // ✅ Multi-tenant: Filter by organization
+        status: 'ARCHIVED',
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async getAcceptanceTracking() {
+  async getAcceptanceTracking(requestUserId: string) {
+    // ✅ Get user's organizationId
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with an organization');
+    }
+
     const activePolicy = await this.prisma.companyPolicy.findFirst({
-      where: { status: 'ACTIVE' },
+      where: { 
+        organizationId: user.organizationId, // ✅ Multi-tenant: Filter by organization
+        status: 'ACTIVE',
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         acceptances: {

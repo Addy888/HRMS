@@ -44,6 +44,7 @@ model Organization {
   AdvanceSalary    AdvanceSalary[]
   hrActions        HRAction[]
   attendanceImports AttendanceImportHistory[]
+  companyPolicies  CompanyPolicy[]
 }
 
 model Role {
@@ -219,6 +220,9 @@ model Employee {
 
   // HR Disciplinary Actions
   hrActions HRAction[] @relation("EmployeeHRActions")
+
+  // Performance Management Relations
+  performanceReviews PerformanceReview[] @relation("EmployeePerformanceReviews")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1361,6 +1365,7 @@ model PerformanceReview {
   cycle   PerformanceCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
 
   employeeId String // Employee being reviewed
+  employee   Employee @relation("EmployeePerformanceReviews", fields: [employeeId], references: [id], onDelete: Cascade)
 
   // Review Status
   status String @default("NOT_STARTED") // NOT_STARTED, SELF_APPRAISAL_PENDING, SELF_APPRAISAL_SUBMITTED, MANAGER_REVIEW_PENDING, MANAGER_REVIEW_SUBMITTED, HR_REVIEW_PENDING, HR_REVIEW_COMPLETED, FINALIZED
@@ -2398,7 +2403,9 @@ model FeatureFlag {
 
 // Company Policy Documents (PDF Upload Feature)
 model CompanyPolicy {
-  id             String  @id @default(uuid())
+  id             String       @id @default(uuid())
+  organizationId String // ✅ Multi-tenant: Company policies belong to organizations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   policyName     String
   fileName       String // Original filename
   fileUrl        String // Stored file path/URL
@@ -2413,6 +2420,7 @@ model CompanyPolicy {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([organizationId])
   @@index([status])
   @@index([createdAt])
 }

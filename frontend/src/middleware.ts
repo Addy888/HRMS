@@ -57,9 +57,13 @@ export function middleware(request: NextRequest) {
     }
 
     // Authenticated -> redirect strictly according to role
+    if (userRole === 'PLATFORM_SUPER_ADMIN') {
+      return NextResponse.redirect(new URL('/platform-admin', request.url));
+    }
     if (userRole === 'SUPER_ADMIN') {
       return NextResponse.redirect(new URL('/super-admin', request.url));
     }
+    // HR_ADMIN goes to /hr (along with HR_USER and HR)
     if (HR_ROLES.includes(userRole)) {
       return NextResponse.redirect(new URL('/hr', request.url));
     }
@@ -123,7 +127,36 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 6. Protected Route: /super-admin and /admin
+  // 6. Protected Route: /platform-admin (PLATFORM_SUPER_ADMIN only)
+  if (pathname.startsWith('/platform-admin')) {
+    if (!isAuthenticated || !userRole) {
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      if (token && isExpired) {
+        response.cookies.delete('fcs_token');
+        response.cookies.delete('fcs_role');
+      }
+      return response;
+    }
+
+    if (userRole === 'PLATFORM_SUPER_ADMIN') {
+      return NextResponse.next();
+    }
+
+    // Role mismatch -> redirect to actual dashboard
+    if (userRole === 'SUPER_ADMIN') {
+      return NextResponse.redirect(new URL('/super-admin', request.url));
+    }
+    if (HR_ROLES.includes(userRole)) {
+      return NextResponse.redirect(new URL('/hr', request.url));
+    }
+    if (userRole === 'EMPLOYEE') {
+      return NextResponse.redirect(new URL('/employee', request.url));
+    }
+
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // 7. Protected Route: /super-admin and /admin (Company SUPER_ADMIN only)
   if (pathname.startsWith('/super-admin') || pathname.startsWith('/admin')) {
     if (!isAuthenticated || !userRole) {
       const response = NextResponse.redirect(new URL('/login', request.url));
@@ -138,9 +171,14 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Role mismatch -> redirect to actual dashboard
+    // HR_ADMIN trying to access Super Admin routes -> redirect to HR Panel
     if (HR_ROLES.includes(userRole)) {
       return NextResponse.redirect(new URL('/hr', request.url));
+    }
+
+    // Role mismatch -> redirect to actual dashboard
+    if (userRole === 'PLATFORM_SUPER_ADMIN') {
+      return NextResponse.redirect(new URL('/platform-admin', request.url));
     }
     if (userRole === 'EMPLOYEE') {
       return NextResponse.redirect(new URL('/employee', request.url));
@@ -149,7 +187,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 7. Protected Route: /change-password
+  // 8. Protected Route: /change-password
   if (pathname === '/change-password') {
     if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/login', request.url));

@@ -229,7 +229,7 @@ export class SuperAdminService {
       where: {
         organizationId: user.organizationId,
         role: {
-          name: { in: [UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
+          name: { in: [UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
         },
       },
       include: {
@@ -291,7 +291,7 @@ export class SuperAdminService {
         id: adminId,
         organizationId: user.organizationId,
         role: {
-          name: { in: [UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
+          name: { in: [UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
         },
       },
       include: {
@@ -537,13 +537,58 @@ export class SuperAdminService {
       throw new BadRequestException('Email already exists');
     }
 
-    // Get HR_ADMIN role
-    const hrAdminRole = await this.prisma.role.findUnique({
-      where: { name: UserRole.HR_ADMIN },
+    // Determine which role to assign based on dto.role
+    // Valid roles: 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'
+    // Default to HR_ADMIN if not specified
+    let roleName: string;
+    if (dto.role === 'SUPER_ADMIN') {
+      roleName = UserRole.SUPER_ADMIN;
+    } else if (dto.role === 'HR_USER') {
+      roleName = UserRole.HR_USER;
+    } else {
+      roleName = UserRole.HR_ADMIN;
+    }
+
+    // Get the specified role
+    const targetRole = await this.prisma.role.findUnique({
+      where: { name: roleName },
     });
 
-    if (!hrAdminRole) {
-      throw new BadRequestException('HR_ADMIN role not found');
+    if (!targetRole) {
+      throw new BadRequestException(`${roleName} role not found`);
+    }
+
+    // ✅ CRITICAL: Determine organization assignment
+    // If creating Super Admin for NEW company → create new organization
+    // If creating HR Admin/User → use current organization
+    let targetOrganizationId: string;
+    let newOrganization: any = null;
+
+    if (roleName === UserRole.SUPER_ADMIN && dto.createNewOrganization === true) {
+      // ✅ NEW COMPANY FLOW: Create new organization for the new Super Admin
+      if (!dto.companyName || dto.companyName.trim() === '') {
+        throw new BadRequestException('Company name is required when creating a new organization');
+      }
+
+      // Generate unique organization code
+      const orgCode = `ORG-${Date.now()}`;
+
+      newOrganization = await this.prisma.organization.create({
+        data: {
+          name: dto.companyName,
+          code: orgCode,
+          email: dto.email,
+          phone: dto.phone || null,
+          isActive: true,
+        },
+      });
+
+      targetOrganizationId = newOrganization.id;
+      console.log(`✅ NEW ORGANIZATION CREATED: ${dto.companyName} (${orgCode})`);
+    } else {
+      // ✅ SAME COMPANY FLOW: Use current organization
+      targetOrganizationId = user.organizationId;
+      console.log(`✅ USING CURRENT ORGANIZATION: ${user.organizationId}`);
     }
 
     // Hash password
@@ -555,8 +600,8 @@ export class SuperAdminService {
         data: {
           email: dto.email,
           password: hashedPassword,
-          roleId: hrAdminRole.id,
-          organizationId: user.organizationId,
+          roleId: targetRole.id,
+          organizationId: targetOrganizationId, // ✅ Multi-tenant: Assign to correct organization
           isFirstLogin: true,
           isActive: dto.isActive !== undefined ? dto.isActive : true,
         },
@@ -565,10 +610,10 @@ export class SuperAdminService {
       // Create employee profile for the admin
       const employeeProfile = await tx.employee.create({
         data: {
-          employeeId: `HR-${Date.now()}`,
+          employeeId: roleName === UserRole.SUPER_ADMIN ? `SA-${Date.now()}` : `HR-${Date.now()}`,
           userId: adminUser.id,
-          organizationId: user.organizationId,
-          firstName: dto.firstName || 'HR',
+          organizationId: targetOrganizationId, // ✅ Multi-tenant: Assign to correct organization
+          firstName: dto.firstName || (roleName === UserRole.SUPER_ADMIN ? 'Super' : 'HR'),
           lastName: dto.lastName || 'Admin',
           phone: dto.phone || null,
           joiningDate: new Date(),
@@ -579,13 +624,22 @@ export class SuperAdminService {
     });
 
     return {
-      message: 'Admin created successfully',
+      message: newOrganization 
+        ? `New company "${dto.companyName}" and Super Admin created successfully` 
+        : 'Admin created successfully',
       admin: {
         id: newAdmin.adminUser.id,
         email: newAdmin.adminUser.email,
+        role: roleName,
         firstName: newAdmin.employeeProfile.firstName,
         lastName: newAdmin.employeeProfile.lastName,
+        organizationId: targetOrganizationId,
       },
+      organization: newOrganization ? {
+        id: newOrganization.id,
+        name: newOrganization.name,
+        code: newOrganization.code,
+      } : null,
     };
   }
 

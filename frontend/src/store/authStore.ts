@@ -5,7 +5,7 @@ import { isTokenExpired } from '@/lib/jwt';
 export interface AuthUser {
   id: string;
   email: string;
-  role: 'HR_ADMIN' | 'HR_USER' | 'HR' | 'EMPLOYEE' | 'SUPER_ADMIN';
+  role: 'HR_ADMIN' | 'HR_USER' | 'HR' | 'EMPLOYEE' | 'SUPER_ADMIN' | 'PLATFORM_SUPER_ADMIN';
   mustChangePassword: boolean;
   employee?: {
     id: string;

@@ -37,20 +37,30 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
     }
   }, [employee]);
 
-  const { data: departments = [] } = useQuery({
-    queryKey: ['departments-list'],
+  const { data: departments = [], isLoading: loadingDepartments } = useQuery({
+    queryKey: ['departments-list-edit'],
     queryFn: async () => {
-      try { const r = await api.get('/departments'); return Array.isArray(r.data) ? r.data : r.data?.data || []; }
-      catch { return [{ id: '1', name: 'Engineering' }, { id: '2', name: 'HR' }]; }
-    }
+      console.log('🔍 [EDIT] Fetching departments from API...');
+      const res = await api.get('/departments');
+      const departments = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      console.log('📊 [EDIT] Departments loaded:', departments.length, 'items');
+      return departments;
+    },
+    enabled: isOpen,
+    staleTime: 0,
   });
 
-  const { data: designations = [] } = useQuery({
-    queryKey: ['designations-list'],
+  const { data: designations = [], isLoading: loadingDesignations } = useQuery({
+    queryKey: ['designations-list-edit'],
     queryFn: async () => {
-      try { const r = await api.get('/designations'); return Array.isArray(r.data) ? r.data : r.data?.data || []; }
-      catch { return [{ id: '1', name: 'Software Engineer' }]; }
-    }
+      console.log('🔍 [EDIT] Fetching designations from API...');
+      const res = await api.get('/designations');
+      const designations = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      console.log('📊 [EDIT] Designations loaded:', designations.length, 'items');
+      return designations;
+    },
+    enabled: isOpen,
+    staleTime: 0,
   });
 
   const updateMutation = useMutation({
@@ -127,24 +137,43 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Process</label>
-              <input
-                type="text"
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                Process {loadingDepartments && '(Loading...)'}
+              </label>
+              <select
                 name="departmentId"
                 value={form.departmentId}
                 onChange={handleChange}
-                placeholder="Enter process name"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
-              />
+                disabled={loadingDepartments}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+              >
+                <option value="">Select Process</option>
+                {(departments as any[]).map((d: any) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              {departments.length === 0 && !loadingDepartments && (
+                <p className="text-xs text-amber-400">No processes found. You can create one or leave empty.</p>
+              )}
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Designation</label>
-              <select name="designationId" value={form.designationId} onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
+              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                Designation {loadingDesignations && '(Loading...)'}
+              </label>
+              <select
+                name="designationId"
+                value={form.designationId}
+                onChange={handleChange}
+                disabled={loadingDesignations}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+              >
                 <option value="">Select Designation</option>
                 {(designations as any[]).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
+              {designations.length === 0 && !loadingDesignations && (
+                <p className="text-xs text-amber-400">No designations found. You can create one or leave empty.</p>
+              )}
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">

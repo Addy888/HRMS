@@ -1,6 +1,7 @@
 // User Roles
 export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN', // Company Owner - Full access across organization
+  PLATFORM_SUPER_ADMIN = 'PLATFORM_SUPER_ADMIN', // Platform Owner - Can manage multiple companies
+  SUPER_ADMIN = 'SUPER_ADMIN', // Company Owner - Full access within ONE organization
   HR_ADMIN = 'HR_ADMIN',
   HR_USER = 'HR_USER',
   HR = 'HR', // Deprecated - kept for backward compatibility, maps to HR_USER

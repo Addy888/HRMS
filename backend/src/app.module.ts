@@ -18,6 +18,7 @@ import { HRUsersModule } from './modules/hr-users/hr-users.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { HRActionsModule } from './modules/hr-actions/hr-actions.module.js';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module.js';
+import { PlatformModule } from './modules/platform/platform.module.js';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module.js';
     AdminModule,
     HRActionsModule,
     SuperAdminModule,
+    PlatformModule, // ✅ Platform Super Admin module
   ],
   controllers: [HealthController],
 })

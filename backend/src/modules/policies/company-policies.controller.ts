@@ -72,8 +72,8 @@ export class CompanyPoliciesController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'List all company policies (HR Only)' })
-  async listPolicies() {
-    return this.companyPoliciesService.listPolicies();
+  async listPolicies(@GetUser('id') userId: string) {
+    return this.companyPoliciesService.listPolicies(userId);
   }
 
   @Get('active')
@@ -81,8 +81,8 @@ export class CompanyPoliciesController {
   @ApiOperation({
     summary: 'Get active company policy (All authenticated users)',
   })
-  async getActivePolicy() {
-    return this.companyPoliciesService.getActivePolicy();
+  async getActivePolicy(@GetUser('id') userId: string) {
+    return this.companyPoliciesService.getActivePolicy(userId);
   }
 
   @Get('employee/active')
@@ -119,8 +119,8 @@ export class CompanyPoliciesController {
   @ApiOperation({
     summary: 'Get company policy by ID (All authenticated users)',
   })
-  async getPolicyById(@Param('id') id: string) {
-    return this.companyPoliciesService.getPolicyById(id);
+  async getPolicyById(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.companyPoliciesService.getPolicyById(id, userId);
   }
 
   @Get(':id/view')
@@ -128,13 +128,14 @@ export class CompanyPoliciesController {
   @ApiOperation({ summary: 'View/stream company policy PDF securely' })
   async viewPolicy(
     @Param('id') id: string,
+    @GetUser('id') userId: string,
     @Res() res: Response, // Take full control - no passthrough
   ) {
     try {
       console.log('\n=== PDF VIEW REQUEST ===');
       console.log('Policy ID:', id);
       
-      const policy = await this.companyPoliciesService.getPolicyById(id);
+      const policy = await this.companyPoliciesService.getPolicyById(id, userId);
 
       if (!policy.fileUrl) {
         return res.status(404).json({ message: 'Policy file URL not found in database' });
@@ -249,9 +250,10 @@ export class CompanyPoliciesController {
   @ApiOperation({ summary: 'Download company policy PDF (HR Only)' })
   async downloadPolicy(
     @Param('id') id: string,
+    @GetUser('id') userId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const policy = await this.companyPoliciesService.getPolicyById(id);
+    const policy = await this.companyPoliciesService.getPolicyById(id, userId);
 
     const filePath = join(process.cwd(), policy.fileUrl);
     const file = createReadStream(filePath);
@@ -268,8 +270,8 @@ export class CompanyPoliciesController {
   @UseGuards(JwtAuthGuard)
   @Roles(UserRole.HR)
   @ApiOperation({ summary: 'Delete company policy (HR Only)' })
-  async deletePolicy(@Param('id') id: string) {
-    return this.companyPoliciesService.deletePolicy(id);
+  async deletePolicy(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.companyPoliciesService.deletePolicy(id, userId);
   }
 
   @Get('tracking/acceptance')
@@ -278,7 +280,7 @@ export class CompanyPoliciesController {
   @ApiOperation({
     summary: 'Get company policy acceptance tracking (HR Only)',
   })
-  async getAcceptanceTracking() {
-    return this.companyPoliciesService.getAcceptanceTracking();
+  async getAcceptanceTracking(@GetUser('id') userId: string) {
+    return this.companyPoliciesService.getAcceptanceTracking(userId);
   }
 }
