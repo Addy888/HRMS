@@ -9,15 +9,20 @@ import {
   ProcessPayrollDto,
   BulkProcessPayrollDto,
 } from '../dto/process-payroll.dto';
+import { PayrollCalculationEngine } from '../engine/payroll-calculation.engine';
 
 @Injectable()
 export class PayrollProcessingService {
   private readonly logger = new Logger(PayrollProcessingService.name);
 
-  constructor(private readonly database: PrismaService) {}
+  constructor(
+    private readonly database: PrismaService,
+    private readonly calculationEngine: PayrollCalculationEngine,
+  ) {}
 
   /**
    * PROCESS PAYROLL FOR SINGLE EMPLOYEE
+   * Uses PayrollCalculationEngine for accurate calculations based on real data
    */
   async processForEmployee(
     employeeId: string,
@@ -25,122 +30,65 @@ export class PayrollProcessingService {
     year: number,
     processedBy?: string,
   ) {
+    this.logger.log(`Processing payroll for employee ${employeeId} - ${year}-${month}`);
+    
     // Get employee with organization
     const employee = await this.database.employee.findUnique({
       where: { id: employeeId },
-      select: { id: true, organizationId: true },
+      select: { id: true, organizationId: true, firstName: true, lastName: true },
     });
 
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
 
-    // Check if already processed
+    // Check if already processed and paid
     const existing = await this.database.payrollRun.findFirst({
       where: { employeeId, month, year, organizationId: employee.organizationId },
     });
 
     if (existing && existing.status === 'PAID') {
-      throw new BadRequestException('Payroll already paid for this period');
+      throw new BadRequestException('Payroll already paid for this period. Cannot reprocess.');
     }
 
-    // Get active salary structure
-    const salaryStructure = await this.database.salaryStructure.findFirst({
-      where: {
-        employeeId,
-        isActive: true,
-        effectiveFrom: { lte: new Date(year, month - 1, 1) },
-      },
-      orderBy: { effectiveFrom: 'desc' },
-    });
-
-    if (!salaryStructure) {
-      throw new NotFoundException(
-        `No active salary structure found for employee`,
-      );
-    }
-
-    // Get attendance data for the month
-    const attendanceData = await this.getAttendanceImpact(
+    // Use calculation engine to calculate payroll
+    const calculation = await this.calculationEngine.calculateEmployeePayroll(
       employeeId,
       month,
       year,
     );
 
-    // Get leave impact
-    const leaveImpact = await this.getLeaveImpact(employeeId, month, year);
-
-    // Calculate components
-    const workingDays = attendanceData.totalWorkingDays;
-    const presentDays =
-      attendanceData.presentDays + attendanceData.paidLeaveDays;
-    const absentDays = attendanceData.absentDays + attendanceData.lwpDays;
-    const halfDays = attendanceData.halfDays;
-
-    // Per day salary
-    const perDaySalary = salaryStructure.grossSalary / workingDays;
-
-    // Calculate deductions
-    let absentDeduction = 0;
-    let halfDayDeduction = 0;
-    let lateDeduction = 0;
-
-    if (absentDays > 0) {
-      absentDeduction = perDaySalary * absentDays;
+    if (!calculation.hasActiveSalaryStructure) {
+      this.logger.warn(`No active salary structure for employee ${employeeId}`);
+      // Optionally throw error or continue with zero salary
+      // For now, we continue to allow processing
     }
 
-    if (halfDays > 0) {
-      halfDayDeduction = (perDaySalary * halfDays) / 2;
-    }
-
-    if (attendanceData.lateDays > 0) {
-      // Late mark deduction (example: 200 per late mark)
-      lateDeduction = attendanceData.lateDays * 200;
-    }
-
-    // Calculate overtime
-    const overtimeAmount = attendanceData.overtimeHours * 100; // 100 per hour
-
-    // Final calculations
-    const basicSalary = salaryStructure.basicSalary;
-    const allowances =
-      salaryStructure.hra +
-      salaryStructure.conveyance +
-      salaryStructure.medicalAllowance +
-      salaryStructure.specialAllowance +
-      salaryStructure.otherAllowances;
-
-    const grossSalary = basicSalary + allowances + overtimeAmount;
-
-    const totalDeductions =
-      salaryStructure.pf +
-      salaryStructure.esi +
-      salaryStructure.professionalTax +
-      salaryStructure.tds +
-      salaryStructure.otherDeductions +
-      absentDeduction +
-      halfDayDeduction +
-      lateDeduction +
-      leaveImpact.deductionAmount;
-
-    const netSalary = grossSalary - totalDeductions;
-
+    // Prepare payroll data with detailed breakdown
     const payrollData = {
       employeeId,
       organizationId: employee.organizationId,
       month,
       year,
-      basicSalary,
-      allowances: allowances + overtimeAmount,
-      deductions: totalDeductions,
-      grossSalary,
-      netSalary,
-      status: 'PENDING',
+      basicSalary: calculation.basicSalary,
+      allowances: calculation.hra + calculation.conveyance + calculation.medicalAllowance + 
+                  calculation.specialAllowance + calculation.otherAllowances + calculation.overtimeAmount,
+      deductions: calculation.totalDeductions,
+      grossSalary: calculation.grossSalary,
+      netSalary: calculation.netSalary,
+      status: 'PENDING' as const,
       processedBy,
       processedAt: new Date(),
+      remarks: calculation.calculationNotes.length > 0 
+        ? calculation.calculationNotes.join('; ') 
+        : null,
     };
 
+    this.logger.log(`Payroll calculated for ${employee.firstName} ${employee.lastName}: Net Salary = ₹${calculation.netSalary}`);
+
+    // Create or update payroll run
     if (existing) {
+      this.logger.log(`Updating existing payroll run ${existing.id}`);
       return await this.database.payrollRun.update({
         where: { id: existing.id },
         data: payrollData,
@@ -156,6 +104,7 @@ export class PayrollProcessingService {
       });
     }
 
+    this.logger.log(`Creating new payroll run`);
     return await this.database.payrollRun.create({
       data: payrollData,
       include: {
@@ -172,8 +121,11 @@ export class PayrollProcessingService {
 
   /**
    * PROCESS BULK PAYROLL
+   * Processes payroll for multiple employees based on filters
    */
   async processBulkPayroll(dto: ProcessPayrollDto) {
+    this.logger.log(`Processing bulk payroll for ${dto.month}/${dto.year}`);
+    
     let employees: any[] = [];
 
     // Build filter
@@ -194,34 +146,48 @@ export class PayrollProcessingService {
       },
     });
 
+    this.logger.log(`Found ${employees.length} employees to process`);
+
     const results: Array<{
       employeeId: string;
       success: boolean;
+      netSalary?: number;
       error?: string;
     }> = [];
 
     for (const employee of employees) {
       try {
-        await this.processForEmployee(
+        const payrollRun = await this.processForEmployee(
           employee.id,
           dto.month,
           dto.year,
           dto.processedBy,
         );
-        results.push({ employeeId: employee.employeeId, success: true });
+        results.push({ 
+          employeeId: employee.employeeId, 
+          success: true,
+          netSalary: payrollRun.netSalary,
+        });
+        this.logger.log(`✓ Processed ${employee.employeeId}: ₹${payrollRun.netSalary}`);
       } catch (error: any) {
         results.push({
           employeeId: employee.employeeId,
           success: false,
           error: error.message,
         });
+        this.logger.error(`✗ Failed ${employee.employeeId}: ${error.message}`);
       }
     }
 
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
+    
+    this.logger.log(`Bulk processing complete: ${successCount} succeeded, ${failureCount} failed`);
+
     return {
       totalEmployees: employees.length,
-      successCount: results.filter((r) => r.success).length,
-      failureCount: results.filter((r) => !r.success).length,
+      successCount,
+      failureCount,
       results,
     };
   }
@@ -247,88 +213,6 @@ export class PayrollProcessingService {
         paymentDate: paymentDate || new Date(),
       },
     });
-  }
-
-  /**
-   * GET ATTENDANCE IMPACT
-   */
-  private async getAttendanceImpact(
-    employeeId: string,
-    month: number,
-    year: number,
-  ) {
-    // Get total working days in month
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month - 1, daysInMonth);
-
-    // Get attendance summary if exists
-    const summary = await this.database.attendanceSummary.findFirst({
-      where: { employeeId, month, year },
-    });
-
-    if (summary) {
-      return {
-        totalWorkingDays: summary.totalWorkingDays,
-        presentDays: summary.presentDays,
-        absentDays: summary.absentDays,
-        lateDays: summary.lateDays,
-        halfDays: summary.halfDays,
-        paidLeaveDays: summary.leaveDays,
-        lwpDays: 0, // Calculate separately if needed
-        overtimeHours: summary.overtimeHours,
-      };
-    }
-
-    // Fallback: Calculate from attendance records
-    const attendances = await this.database.attendance.findMany({
-      where: {
-        employeeId,
-        date: {
-          gte: firstDay,
-          lte: lastDay,
-        },
-      },
-    });
-
-    const presentDays = attendances.filter(
-      (a) => a.status === 'PRESENT',
-    ).length;
-    const absentDays = attendances.filter((a) => a.status === 'ABSENT').length;
-    const lateDays = attendances.filter((a) => a.status === 'LATE').length;
-    const halfDays = attendances.filter((a) => a.status === 'HALF_DAY').length;
-    const leaveDays = attendances.filter((a) => a.status === 'LEAVE').length;
-    const overtimeHours = attendances.reduce(
-      (sum, a) => sum + (a.overtime || 0),
-      0,
-    );
-
-    return {
-      totalWorkingDays: daysInMonth,
-      presentDays,
-      absentDays,
-      lateDays,
-      halfDays,
-      paidLeaveDays: leaveDays,
-      lwpDays: 0,
-      overtimeHours,
-    };
-  }
-
-  /**
-   * GET LEAVE IMPACT
-   */
-  private async getLeaveImpact(
-    employeeId: string,
-    month: number,
-    year: number,
-  ) {
-    // This would integrate with Leave module when available
-    // For now, returning zero impact
-    return {
-      deductionAmount: 0,
-      lwpDays: 0,
-    };
   }
 
   /**
@@ -419,155 +303,50 @@ export class PayrollProcessingService {
    * GET PAYROLL DASHBOARD STATS
    */
   async getDashboardStats(month?: number, year?: number) {
-    console.log('╔════════════════════════════════════════════════════════════╗');
-    console.log('║  PAYROLL DASHBOARD STATS - SERVICE                         ║');
-    console.log('╚════════════════════════════════════════════════════════════╝');
-    console.log('📥 Service Input:');
-    console.log('   month (parameter):', month);
-    console.log('   year (parameter):', year);
-    
     const currentDate = new Date();
     const currentMonth = month || currentDate.getMonth() + 1;
     const currentYear = year || currentDate.getFullYear();
-    
-    console.log('📅 Calculated Values:');
-    console.log('   currentMonth:', currentMonth);
-    console.log('   currentYear:', currentYear);
 
     const where = { month: currentMonth, year: currentYear };
-    console.log('🔍 Prisma where clause:', where);
 
-    try {
-      console.log('\n🔄 Starting Prisma queries...\n');
+    const [
+      totalEmployees,
+      pendingPayroll,
+      processedPayroll,
+      paidPayroll,
+      monthlySalary,
+      avgSalary,
+    ] = await Promise.all([
+      this.database.employee.count(),
+      this.database.payrollRun.count({
+        where: { ...where, status: 'PENDING' },
+      }),
+      this.database.payrollRun.count({
+        where: { ...where, status: 'PROCESSED' },
+      }),
+      this.database.payrollRun.count({
+        where: { ...where, status: 'PAID' },
+      }),
+      this.database.payrollRun.aggregate({
+        where,
+        _sum: { netSalary: true },
+      }),
+      this.database.payrollRun.aggregate({
+        where,
+        _avg: { netSalary: true },
+      }),
+    ]);
 
-      // Query 1: Total Employees
-      console.log('1️⃣  QUERY: database.employee.count()');
-      let totalEmployees = 0;
-      try {
-        totalEmployees = await this.database.employee.count();
-        console.log('   ✅ Result:', totalEmployees);
-      } catch (err) {
-        console.error('   ❌ ERROR in employee.count():');
-        console.error('      Error:', err);
-        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
-        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
-        throw err;
-      }
-
-      // Query 2: Pending Payroll
-      console.log('\n2️⃣  QUERY: database.payrollRun.count({ where: { ...where, status: PENDING } })');
-      console.log('   Where:', { ...where, status: 'PENDING' });
-      let pendingPayroll = 0;
-      try {
-        pendingPayroll = await this.database.payrollRun.count({
-          where: { ...where, status: 'PENDING' },
-        });
-        console.log('   ✅ Result:', pendingPayroll);
-      } catch (err) {
-        console.error('   ❌ ERROR in payrollRun.count(PENDING):');
-        console.error('      Error:', err);
-        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
-        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
-        throw err;
-      }
-
-      // Query 3: Processed Payroll
-      console.log('\n3️⃣  QUERY: database.payrollRun.count({ where: { ...where, status: PROCESSED } })');
-      console.log('   Where:', { ...where, status: 'PROCESSED' });
-      let processedPayroll = 0;
-      try {
-        processedPayroll = await this.database.payrollRun.count({
-          where: { ...where, status: 'PROCESSED' },
-        });
-        console.log('   ✅ Result:', processedPayroll);
-      } catch (err) {
-        console.error('   ❌ ERROR in payrollRun.count(PROCESSED):');
-        console.error('      Error:', err);
-        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
-        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
-        throw err;
-      }
-
-      // Query 4: Paid Payroll
-      console.log('\n4️⃣  QUERY: database.payrollRun.count({ where: { ...where, status: PAID } })');
-      console.log('   Where:', { ...where, status: 'PAID' });
-      let paidPayroll = 0;
-      try {
-        paidPayroll = await this.database.payrollRun.count({
-          where: { ...where, status: 'PAID' },
-        });
-        console.log('   ✅ Result:', paidPayroll);
-      } catch (err) {
-        console.error('   ❌ ERROR in payrollRun.count(PAID):');
-        console.error('      Error:', err);
-        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
-        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
-        throw err;
-      }
-
-      // Query 5: Monthly Salary Sum
-      console.log('\n5️⃣  QUERY: database.payrollRun.aggregate({ where, _sum: { netSalary: true } })');
-      console.log('   Where:', where);
-      let monthlySalary: any = { _sum: { netSalary: 0 } };
-      try {
-        monthlySalary = await this.database.payrollRun.aggregate({
-          where,
-          _sum: { netSalary: true },
-        });
-        console.log('   ✅ Result:', monthlySalary);
-      } catch (err) {
-        console.error('   ❌ ERROR in payrollRun.aggregate(_sum):');
-        console.error('      Error:', err);
-        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
-        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
-        throw err;
-      }
-
-      // Query 6: Average Salary
-      console.log('\n6️⃣  QUERY: database.payrollRun.aggregate({ where, _avg: { netSalary: true } })');
-      console.log('   Where:', where);
-      let avgSalary: any = { _avg: { netSalary: 0 } };
-      try {
-        avgSalary = await this.database.payrollRun.aggregate({
-          where,
-          _avg: { netSalary: true },
-        });
-        console.log('   ✅ Result:', avgSalary);
-      } catch (err) {
-        console.error('   ❌ ERROR in payrollRun.aggregate(_avg):');
-        console.error('      Error:', err);
-        console.error('      Message:', err instanceof Error ? err.message : 'Unknown');
-        console.error('      Stack:', err instanceof Error ? err.stack : 'No stack');
-        throw err;
-      }
-
-      console.log('\n✅ ALL QUERIES COMPLETED SUCCESSFULLY\n');
-
-      const result = {
-        totalEmployees,
-        pendingPayroll,
-        processedPayroll,
-        paidEmployees: paidPayroll,
-        pendingPayments: processedPayroll,
-        monthlySalaryExpense: monthlySalary._sum.netSalary || 0,
-        averageSalary: avgSalary._avg.netSalary || 0,
-        month: currentMonth,
-        year: currentYear,
-      };
-
-      console.log('📊 Final Result Object:');
-      console.log(result);
-      console.log('╚════════════════════════════════════════════════════════════╝\n');
-
-      return result;
-    } catch (error) {
-      console.error('\n❌ FATAL ERROR IN getDashboardStats():');
-      console.error('   Error:', error);
-      console.error('   Error name:', error instanceof Error ? error.name : 'Unknown');
-      console.error('   Error message:', error instanceof Error ? error.message : 'Unknown');
-      console.error('   Error stack:', error instanceof Error ? error.stack : 'No stack');
-      console.error('╚════════════════════════════════════════════════════════════╝\n');
-      throw error;
-    }
+    return {
+      totalEmployees,
+      pendingPayroll,
+      processedPayroll,
+      paidEmployees: paidPayroll,
+      pendingPayments: processedPayroll,
+      monthlySalaryExpense: monthlySalary._sum.netSalary || 0,
+      averageSalary: avgSalary._avg.netSalary || 0,
+      month: currentMonth,
+      year: currentYear,
+    };
   }
 }
