@@ -30,18 +30,14 @@ const SEVERITIES = [
 ];
 
 const ACTION_TYPES = [
-  { value: 'LATE_LOGIN_WARNING', label: 'Late Login Warning' },
-  { value: 'ATTENDANCE_WARNING', label: 'Attendance Warning' },
-  { value: 'UNAUTHORIZED_ABSENCE', label: 'Unauthorized Absence' },
-  { value: 'LEAVE_VIOLATION', label: 'Leave Violation' },
-  { value: 'POLICY_VIOLATION', label: 'Policy Violation' },
-  { value: 'MISCONDUCT', label: 'Misconduct' },
-  { value: 'PERFORMANCE_WARNING', label: 'Performance Warning' },
-  { value: 'REPEATED_LATE_LOGIN', label: 'Repeated Late Login' },
-  { value: 'SHOW_CAUSE_NOTICE', label: 'Show Cause Notice' },
-  { value: 'FINAL_WARNING', label: 'Final Warning' },
-  { value: 'GENERAL_WARNING', label: 'General Warning' },
-  { value: 'CUSTOM_NOTICE', label: 'Custom HR Notice' },
+  { value: 'WARNING', label: 'Warning' },
+  { value: 'WRITTEN_WARNING', label: 'Written Warning' },
+  { value: 'SUSPENSION', label: 'Suspension' },
+  { value: 'TERMINATION', label: 'Termination' },
+  { value: 'COUNSELLING', label: 'Counselling' },
+  { value: 'PERFORMANCE_IMPROVEMENT_PLAN', label: 'Performance Improvement Plan' },
+  { value: 'COMMENDATION', label: 'Commendation' },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 const StatusBadge = ({ status }: { status: string }) => {

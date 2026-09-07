@@ -28,16 +28,19 @@
 
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../database/database.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 // Services
 import { AttendanceService } from './services/attendance.service';
 import { ShiftService } from './services/shift.service';
 import { AttendanceSettingsService } from './services/attendance-settings.service';
 import { AttendanceSchedulerService } from './services/attendance-scheduler.service';
+import { AttendanceImportService } from './services/attendance-import.service';
 
 // Controllers
 import { AttendanceController } from './controllers/attendance.controller';
 import { AttendanceSettingsController } from './controllers/attendance-settings.controller';
+import { AttendanceImportController } from './controllers/attendance-import.controller';
 
 // Providers
 import { AttendanceProviderRegistry } from './providers/provider.registry';
@@ -53,10 +56,11 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
 // import { WebhookAttendanceProvider } from './providers/webhook/webhook-attendance.provider';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, NotificationsModule],
   controllers: [
     AttendanceController,
     AttendanceSettingsController,
+    AttendanceImportController,
     // Additional controllers can be added here:
     // ShiftController,
     // HolidayController,
@@ -70,6 +74,7 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     ShiftService,
     AttendanceSettingsService,
     AttendanceSchedulerService,
+    AttendanceImportService,
 
     // Provider Registry (Factory)
     AttendanceProviderRegistry,

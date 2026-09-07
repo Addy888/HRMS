@@ -15,6 +15,7 @@ import {
   Search,
   Filter,
   Loader2,
+  Upload,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -98,13 +99,31 @@ export default function HRAttendancePage() {
     <HRLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <Clock className="w-8 h-8 text-blue-500" /> Attendance Management
-          </h1>
-          <p className="text-sm text-neutral-400 mt-1">
-            Track and manage employee attendance records
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+              <Clock className="w-8 h-8 text-blue-500" /> Attendance Management
+            </h1>
+            <p className="text-sm text-neutral-400 mt-1">
+              Track and manage employee attendance records
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/hr/attendance/import/history')}
+              className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl text-sm font-semibold text-white transition-colors flex items-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              Import History
+            </button>
+            <button
+              onClick={() => router.push('/hr/attendance/import')}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Import Excel
+            </button>
+          </div>
         </div>
 
         {/* Date Selector */}

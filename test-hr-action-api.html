@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Action API Diagnostic</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .section {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .success {
+            color: #00ff00;
+        }
+        .warning {
+            color: #ffaa00;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            border: 1px solid #333;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        input, button {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background: #003300;
+        }
+        .field-check {
+            display: inline-block;
+            margin: 5px 10px;
+            padding: 5px 10px;
+            border: 1px solid;
+        }
+        .field-exists {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        .field-missing {
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 HR ACTION API DIAGNOSTIC TOOL</h1>
+        
+        <div class="section">
+            <h2>📋 Instructions</h2>
+            <ol>
+                <li>Enter an HR Action ID from your database</li>
+                <li>Click "Test API"</li>
+                <li>Check the results below</li>
+                <li>Copy ALL results and send to developer</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Configuration</h2>
+            <label>HR Action ID:</label>
+            <input type="text" id="actionId" placeholder="e.g., 782e564a-a61b-4aaf-9f5a-0b72f5fa4f90" style="width: 400px;">
+            <br><br>
+            <label>API Base URL:</label>
+            <input type="text" id="apiUrl" value="http://localhost:4000/api/v1" style="width: 400px;">
+            <br><br>
+            <button onclick="runDiagnostic()">🚀 Test API</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+
+        <div class="section">
+            <h2>📊 Results</h2>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h2>📝 Console Output</h2>
+            <pre id="console"></pre>
+        </div>
+    </div>
+
+    <script>
+        let consoleOutput = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logMessage = `[${timestamp}] ${message}`;
+            consoleOutput.push(logMessage);
+            console.log(logMessage);
+            updateConsole();
+        }
+
+        function updateConsole() {
+            document.getElementById('console').textContent = consoleOutput.join('\n');
+        }
+
+        function clearResults() {
+            consoleOutput = [];
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('console').textContent = '';
+        }
+
+        async function runDiagnostic() {
+            clearResults();
+            const actionId = document.getElementById('actionId').value.trim();
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+
+            if (!actionId) {
+                alert('Please enter an HR Action ID');
+                return;
+            }
+
+            log('🚀 Starting diagnostic...');
+            log(`Action ID: ${actionId}`);
+            log(`API URL: ${apiUrl}`);
+
+            const results = {
+                actionId,
+                apiUrl,
+                timestamp: new Date().toISOString(),
+                tests: {}
+            };
+
+            // Test 1: Check Authentication
+            log('\n📋 TEST 1: Checking authentication...');
+            const token = localStorage.getItem('fcs_token') || 
+                         localStorage.getItem('fcs-auth-storage');
+            results.tests.auth = {
+                hasToken: !!token,
+                tokenPreview: token ? token.substring(0, 20) + '...' : 'NO TOKEN'
+            };
+            log(`Has token: ${!!token}`);
+
+            // Test 2: Call API
+            log('\n📋 TEST 2: Calling API...');
+            const endpoint = `${apiUrl}/hr-actions/${actionId}`;
+            log(`Endpoint: ${endpoint}`);
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+
+                log(`HTTP Status: ${response.status} ${response.statusText}`);
+
+                const data = await response.json();
+                
+                results.tests.apiCall = {
+                    success: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data,
+                    dataType: typeof data,
+                    isArray: Array.isArray(data),
+                    dataKeys: data ? Object.keys(data) : []
+                };
+
+                // Test 3: Check Required Fields
+                log('\n📋 TEST 3: Checking required fields...');
+                const requiredFields = [
+                    'id', 'actionNumber', 'actionType', 'severity', 
+                    'subject', 'reason', 'incidentDate', 'createdAt', 
+                    'issuedAt', 'status', 'employee', 'issuedBy'
+                ];
+
+                results.tests.fieldCheck = {};
+                requiredFields.forEach(field => {
+                    const exists = data[field] !== undefined;
+                    results.tests.fieldCheck[field] = exists;
+                    log(`${field}: ${exists ? '✅ EXISTS' : '❌ MISSING'}`);
+                });
+
+                log('\n✅ Diagnostic complete!');
+                displayResults(results);
+
+            } catch (error) {
+                log(`\n❌ ERROR: ${error.message}`, 'error');
+                results.tests.apiCall = {
+                    success: false,
+                    error: error.message
+                };
+                displayResults(results);
+            }
+        }
+
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<h3 class="success">✅ Diagnostic Complete</h3>';
+
+            // Auth Status
+            html += '<h4>🔐 Authentication</h4>';
+            html += `<p>${results.tests.auth.hasToken ? 
+                '<span class="success">✅ Token found</span>' : 
+                '<span class="error">❌ No token found</span>'}</p>`;
+
+            // API Call Status
+            if (results.tests.apiCall) {
+                html += '<h4>🌐 API Call</h4>';
+                html += `<p>Status: <span class="${results.tests.apiCall.success ? 'success' : 'error'}">
+                    ${results.tests.apiCall.status} ${results.tests.apiCall.statusText || ''}</span></p>`;
+
+                if (results.tests.apiCall.data) {
+                    html += `<p>Data Type: ${results.tests.apiCall.dataType}</p>`;
+                    html += `<p>Data Keys: ${results.tests.apiCall.dataKeys.length} fields</p>`;
+                    html += `<p>Keys: ${results.tests.apiCall.dataKeys.join(', ')}</p>`;
+                }
+            }
+
+            // Field Check
+            if (results.tests.fieldCheck) {
+                html += '<h4>📋 Field Check</h4>';
+                html += '<div>';
+                Object.entries(results.tests.fieldCheck).forEach(([field, exists]) => {
+                    html += `<span class="field-check ${exists ? 'field-exists' : 'field-missing'}">
+                        ${exists ? '✅' : '❌'} ${field}
+                    </span>`;
+                });
+                html += '</div>';
+            }
+
+            // Full Response
+            html += '<h4>📄 Full API Response</h4>';
+            html += '<pre>' + JSON.stringify(results, null, 2) + '</pre>';
+
+            // Instructions
+            html += '<h4 class="warning">⚠️ IMPORTANT: Send This to Developer</h4>';
+            html += '<p>Copy the entire "Full API Response" JSON above and send it.</p>';
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -16,6 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatDate, formatActionType, formatStatus } from '@/lib/dateUtils';
 
 const SeverityBadge = ({ severity }: { severity: string }) => {
   const styles: Record<string, string> = {
@@ -50,13 +51,13 @@ const StatusBadge = ({ status }: { status: string }) => {
   return (
     <span className={`text-[10px] font-bold uppercase tracking-wider border px-2 py-0.5 rounded flex items-center gap-1 w-max ${style.bg}`}>
       {style.icon}
-      {status.replace(/_/g, ' ')}
+      {formatStatus(status)}
     </span>
   );
 };
 
 export default function EmployeeHRActionsPage() {
-  const { data: actions, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['my-hr-actions'],
     queryFn: async () => {
       console.log('[EMPLOYEE HR ACTIONS] Fetching from /hr-actions/my/actions');
@@ -65,6 +66,9 @@ export default function EmployeeHRActionsPage() {
       return res.data;
     },
   });
+
+  // Ensure actions is always an array
+  const actions = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
 
   if (isLoading) {
     return (
@@ -129,7 +133,7 @@ export default function EmployeeHRActionsPage() {
                       {action.subject}
                     </h3>
                     <p className="text-sm text-neutral-400 mb-3">
-                      {action.actionType.replace(/_/g, ' ')}
+                      {formatActionType(action.actionType)}
                     </p>
                   </div>
                   <Link
@@ -144,12 +148,12 @@ export default function EmployeeHRActionsPage() {
                 <div className="flex items-center gap-6 text-xs text-neutral-500">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5" />
-                    Incident: {new Date(action.incidentDate).toLocaleDateString()}
+                    Incident: {formatDate(action.incidentDate)}
                   </div>
                   {action.issuedAt && (
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
-                      Issued: {new Date(action.issuedAt).toLocaleDateString()}
+                      Issued: {formatDate(action.issuedAt)}
                     </div>
                   )}
                   {action.issuedBy?.employee && (
@@ -166,7 +170,7 @@ export default function EmployeeHRActionsPage() {
                       Response Required
                       {action.responseDeadline && (
                         <span className="text-neutral-400">
-                          (Deadline: {new Date(action.responseDeadline).toLocaleDateString()})
+                          (Deadline: {formatDate(action.responseDeadline)})
                         </span>
                       )}
                     </p>

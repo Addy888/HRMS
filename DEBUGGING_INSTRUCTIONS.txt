@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════════
+   EMPLOYEE HR ACTION DETAILS - DEBUGGING INSTRUCTIONS
+═══════════════════════════════════════════════════════════════
+
+I've added extensive console logging to help us identify where the
+data is being lost.
+
+STEP 1: RESTART FRONTEND SERVER
+────────────────────────────────────────────────────────────────
+The logging changes need a fresh server start.
+
+In your frontend terminal:
+1. Press Ctrl+C to stop the server
+2. Run: npm run dev
+3. Wait for it to start
+
+
+STEP 2: OPEN EMPLOYEE PORTAL & DEVTOOLS
+────────────────────────────────────────────────────────────────
+1. Open browser
+2. Press F12 to open DevTools
+3. Go to Console tab
+4. Clear any existing logs
+
+
+STEP 3: NAVIGATE TO HR ACTION
+────────────────────────────────────────────────────────────────
+1. Login as Employee
+2. Go to: /employee/hr-actions
+3. Click on ANY HR Action in the list
+4. The detail page will open
+
+
+STEP 4: CHECK CONSOLE LOGS
+────────────────────────────────────────────────────────────────
+Look for these logs in the Console:
+
+[EMPLOYEE HR ACTION DETAIL] Fetching action: {id}
+[EMPLOYEE HR ACTION DETAIL] API Response: {...}
+[EMPLOYEE HR ACTION DETAIL] Response data: {...}
+[EMPLOYEE HR ACTION DETAIL] Action Type: ...
+[EMPLOYEE HR ACTION DETAIL] Subject: ...
+[EMPLOYEE HR ACTION DETAIL] Reason: ...
+[EMPLOYEE HR ACTION DETAIL] Rendering with action: {...}
+[EMPLOYEE HR ACTION DETAIL] Action keys: [...]
+[EMPLOYEE HR ACTION DETAIL] Full action object: {...}
+
+
+STEP 5: CHECK NETWORK TAB
+────────────────────────────────────────────────────────────────
+1. In DevTools, go to Network tab
+2. Find the request: hr-actions/{id}
+3. Click on it
+4. Click "Response" sub-tab
+5. Copy the ENTIRE JSON response
+
+
+STEP 6: SEND ME THIS INFORMATION
+────────────────────────────────────────────────────────────────
+Copy and paste:
+
+A) From Console tab:
+   - The log: [EMPLOYEE HR ACTION DETAIL] Response data: {...}
+   - The log: [EMPLOYEE HR ACTION DETAIL] Action keys: [...]
+   - The log: [EMPLOYEE HR ACTION DETAIL] Full action object: {...}
+
+B) From Network tab:
+   - The complete JSON response from hr-actions/{id}
+
+
+EXAMPLE OF WHAT TO SEND:
+────────────────────────────────────────────────────────────────
+Console logs:
+[EMPLOYEE HR ACTION DETAIL] Response data: { id: "...", actionType: "WARNING", subject: "Test", ... }
+[EMPLOYEE HR ACTION DETAIL] Action keys: ["id", "actionNumber", "actionType", "subject", "reason", ...]
+
+Network response:
+{
+  "id": "782e564a-a61b-4aaf-9f5a-0b72f5fa4f90",
+  "actionNumber": "FCS-HRA-0001",
+  "actionType": "WARNING",
+  "severity": "HIGH",
+  "subject": "Test Subject",
+  "reason": "Test Reason",
+  "incidentDate": "2026-09-07T00:00:00.000Z",
+  ...
+}
+
+
+WHY THIS IS IMPORTANT:
+────────────────────────────────────────────────────────────────
+The page is showing "—" for all fields, which means one of:
+
+1. API is returning empty object: {}
+2. API response is wrapped: { data: { ... } }
+3. Field names don't match (backend: "actionType", frontend expects: "type")
+4. Data is there but our formatters are incorrectly treating it as empty
+
+The console logs will tell us EXACTLY which one it is.
+
+
+ALTERNATIVE: DATABASE CHECK
+────────────────────────────────────────────────────────────────
+If you can access the database directly, run this SQL:
+
+SELECT 
+  id,
+  "actionNumber",
+  "actionType",
+  severity,
+  subject,
+  reason,
+  "incidentDate",
+  status,
+  "createdAt"
+FROM "HRAction"
+WHERE id = '782e564a-a61b-4aaf-9f5a-0b72f5fa4f90';
+
+Replace the ID with the actual HR Action ID you're viewing.
+
+This will confirm if the data exists in the database.
+
+
+═══════════════════════════════════════════════════════════════
+                    WHAT I NEED FROM YOU
+═══════════════════════════════════════════════════════════════
+
+1. Console logs (from DevTools Console tab)
+2. Network response (from DevTools Network tab)
+
+With this information, I can immediately identify and fix the issue.
+
+═══════════════════════════════════════════════════════════════

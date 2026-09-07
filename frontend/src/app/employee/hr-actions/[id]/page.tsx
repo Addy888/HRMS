@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from '@/lib/toast';
+import { formatDate, formatDateTime, formatActionType, formatStatus } from '@/lib/dateUtils';
 
 const SeverityBadge = ({ severity }: { severity: string }) => {
   const styles: Record<string, string> = {
@@ -55,7 +56,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   return (
     <span className={`text-sm font-bold uppercase tracking-wider border px-3 py-1 rounded flex items-center gap-2 w-max ${style.bg}`}>
       {style.icon}
-      {status.replace(/_/g, ' ')}
+      {formatStatus(status)}
     </span>
   );
 };
@@ -70,15 +71,29 @@ export default function EmployeeHRActionDetailPage() {
   const { data: action, isLoading, error } = useQuery({
     queryKey: ['hr-action', actionId],
     queryFn: async () => {
+      console.log('[EMPLOYEE HR ACTION DETAIL] Fetching action:', actionId);
       const res = await api.get(`/hr-actions/${actionId}`);
-      return res.data;
+      console.log('[EMPLOYEE HR ACTION DETAIL] API Response Wrapper:', res.data);
+      
+      // Unwrap the API response envelope
+      // Response structure: { success, statusCode, message, data: { ...actualHRAction } }
+      const apiWrapper = res.data;
+      const actualAction = apiWrapper.data || apiWrapper; // Handle both wrapped and unwrapped responses
+      
+      console.log('[EMPLOYEE HR ACTION DETAIL] Actual HR Action:', actualAction);
+      console.log('[EMPLOYEE HR ACTION DETAIL] Action Type:', actualAction?.actionType);
+      console.log('[EMPLOYEE HR ACTION DETAIL] Subject:', actualAction?.subject);
+      console.log('[EMPLOYEE HR ACTION DETAIL] Reason:', actualAction?.reason);
+      console.log('[EMPLOYEE HR ACTION DETAIL] Incident Date:', actualAction?.incidentDate);
+      
+      return actualAction;
     },
   });
 
   const acknowledgeMutation = useMutation({
     mutationFn: async () => {
       const res = await api.post(`/hr-actions/${actionId}/acknowledge`);
-      return res.data;
+      return res.data?.data || res.data;
     },
     onSuccess: () => {
       toast.success('HR Action acknowledged successfully');
@@ -95,7 +110,7 @@ export default function EmployeeHRActionDetailPage() {
       const res = await api.post(`/hr-actions/${actionId}/respond`, {
         responseText,
       });
-      return res.data;
+      return res.data?.data || res.data;
     },
     onSuccess: () => {
       toast.success('Response submitted successfully');
@@ -135,6 +150,10 @@ export default function EmployeeHRActionDetailPage() {
     );
   }
 
+  console.log('[EMPLOYEE HR ACTION DETAIL] Rendering with action:', action);
+  console.log('[EMPLOYEE HR ACTION DETAIL] Action keys:', Object.keys(action));
+  console.log('[EMPLOYEE HR ACTION DETAIL] Full action object:', JSON.stringify(action, null, 2));
+
   const canAcknowledge = ['ISSUED', 'VIEWED', 'SENT'].includes(action.status);
   const canRespond = action.responseRequired && ['RESPONSE_PENDING', 'ACKNOWLEDGED'].includes(action.status);
   const hasResponded = action.status === 'RESPONSE_SUBMITTED';
@@ -170,7 +189,7 @@ export default function EmployeeHRActionDetailPage() {
               <StatusBadge status={action.status} />
             </div>
             <div className="text-sm text-neutral-400">
-              Created: {new Date(action.createdAt).toLocaleString()}
+              Created: {formatDateTime(action.createdAt)}
             </div>
           </div>
         </div>
@@ -181,9 +200,9 @@ export default function EmployeeHRActionDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Subject & Type */}
             <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
-              <h2 className="text-2xl font-bold text-white mb-2">{action.subject}</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{action.subject || '—'}</h2>
               <p className="text-sm text-neutral-400 mb-4">
-                {action.actionType.replace(/_/g, ' ')}
+                {formatActionType(action.actionType)}
               </p>
 
               <div className="space-y-4">
@@ -192,7 +211,7 @@ export default function EmployeeHRActionDetailPage() {
                     <FileText className="w-4 h-4" />
                     Reason
                   </h3>
-                  <p className="text-neutral-300 whitespace-pre-wrap">{action.reason}</p>
+                  <p className="text-neutral-300 whitespace-pre-wrap">{action.reason || '—'}</p>
                 </div>
 
                 {action.correctiveAction && (
@@ -262,7 +281,7 @@ export default function EmployeeHRActionDetailPage() {
                         Response Submitted
                       </p>
                       <p className="text-sm text-neutral-400">
-                        Submitted: {action.responseSubmittedAt && new Date(action.responseSubmittedAt).toLocaleString()}
+                        Submitted: {formatDateTime(action.responseSubmittedAt)}
                       </p>
                     </div>
                     {action.responseText && (
@@ -275,7 +294,7 @@ export default function EmployeeHRActionDetailPage() {
                 ) : (
                   <p className="text-sm text-neutral-400">
                     {action.responseDeadline && (
-                      <>Deadline: {new Date(action.responseDeadline).toLocaleDateString()}</>
+                      <>Deadline: {formatDate(action.responseDeadline)}</>
                     )}
                   </p>
                 )}
@@ -291,7 +310,7 @@ export default function EmployeeHRActionDetailPage() {
                 </h3>
                 <div className="space-y-2">
                   <p className="text-sm text-neutral-400">
-                    Resolved on: {action.resolvedAt && new Date(action.resolvedAt).toLocaleString()}
+                    Resolved on: {formatDateTime(action.resolvedAt)}
                   </p>
                   {action.resolvedBy && (
                     <p className="text-sm text-neutral-400">
@@ -317,7 +336,7 @@ export default function EmployeeHRActionDetailPage() {
                 </h3>
                 <div className="space-y-2">
                   <p className="text-sm text-neutral-400">
-                    Cancelled on: {action.cancelledAt && new Date(action.cancelledAt).toLocaleString()}
+                    Cancelled on: {formatDateTime(action.cancelledAt)}
                   </p>
                   {action.cancelledBy && (
                     <p className="text-sm text-neutral-400">
@@ -345,7 +364,7 @@ export default function EmployeeHRActionDetailPage() {
                   <Calendar className="w-4 h-4 text-neutral-500 mt-0.5" />
                   <div className="text-sm">
                     <p className="text-neutral-500">Incident Date</p>
-                    <p className="text-white">{new Date(action.incidentDate).toLocaleDateString()}</p>
+                    <p className="text-white">{formatDate(action.incidentDate)}</p>
                   </div>
                 </div>
                 {action.issuedAt && (
@@ -353,7 +372,7 @@ export default function EmployeeHRActionDetailPage() {
                     <Clock className="w-4 h-4 text-neutral-500 mt-0.5" />
                     <div className="text-sm">
                       <p className="text-neutral-500">Issued</p>
-                      <p className="text-white">{new Date(action.issuedAt).toLocaleString()}</p>
+                      <p className="text-white">{formatDateTime(action.issuedAt)}</p>
                     </div>
                   </div>
                 )}
@@ -362,7 +381,7 @@ export default function EmployeeHRActionDetailPage() {
                     <Eye className="w-4 h-4 text-neutral-500 mt-0.5" />
                     <div className="text-sm">
                       <p className="text-neutral-500">Viewed</p>
-                      <p className="text-white">{new Date(action.viewedAt).toLocaleString()}</p>
+                      <p className="text-white">{formatDateTime(action.viewedAt)}</p>
                     </div>
                   </div>
                 )}
@@ -371,7 +390,7 @@ export default function EmployeeHRActionDetailPage() {
                     <CheckCircle2 className="w-4 h-4 text-neutral-500 mt-0.5" />
                     <div className="text-sm">
                       <p className="text-neutral-500">Acknowledged</p>
-                      <p className="text-white">{new Date(action.acknowledgedAt).toLocaleString()}</p>
+                      <p className="text-white">{formatDateTime(action.acknowledgedAt)}</p>
                     </div>
                   </div>
                 )}

@@ -8,5 +8,6 @@ export * from './attendance-correction.dto';
 export * from './shift.dto';
 export * from './holiday.dto';
 export * from './attendance-settings.dto';
+export * from './attendance-import.dto';
 export { ManualAttendanceDto } from './manual-attendance.dto';
 export { UpdateAttendanceDto } from './update-attendance.dto';

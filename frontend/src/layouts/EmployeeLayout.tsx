@@ -14,7 +14,8 @@ import {
   FileText,
   BookOpen,
   LifeBuoy,
-  DollarSign
+  DollarSign,
+  AlertTriangle,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -88,6 +89,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
     { href: '/employee', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/employee/profile', label: 'My Profile', icon: <User className="w-5 h-5" /> },
     { href: '/employee/attendance', label: 'Attendance', icon: <Clock className="w-5 h-5" /> },
+    { href: '/employee/hr-actions', label: 'Warnings', icon: <AlertTriangle className="w-5 h-5" /> },
     { href: '/employee/documents', label: 'Documents', icon: <FileText className="w-5 h-5" /> },
     { href: '/employee/payslips', label: 'Payslips', icon: <DollarSign className="w-5 h-5" /> },
     { href: '/employee/policies', label: 'Policies', icon: <BookOpen className="w-5 h-5" /> },

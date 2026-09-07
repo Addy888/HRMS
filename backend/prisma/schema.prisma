@@ -43,6 +43,7 @@ model Organization {
   Loan             Loan[]
   AdvanceSalary    AdvanceSalary[]
   hrActions        HRAction[]
+  attendanceImports AttendanceImportHistory[]
 }
 
 model Role {
@@ -91,6 +92,7 @@ model User {
   hrActionsCancelled      HRAction[]              @relation("HRActionsCancelled")
   hrActionAudits          HRActionAuditLog[]      @relation("HRActionAudits")
   attendanceHistories     AttendanceHistory[]
+  attendanceImportsUploaded AttendanceImportHistory[] @relation("AttendanceImportHistoryUploader")
 
   @@index([organizationId])
 }
@@ -811,6 +813,40 @@ model AttendanceHistory {
 
   @@index([attendanceId])
   @@index([changedBy])
+}
+
+model AttendanceImportHistory {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  fileName          String
+  uploadedBy        String? // User ID (HR/Admin)
+  uploadedByUser    User?  @relation("AttendanceImportHistoryUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
+  uploadedAt        DateTime @default(now())
+
+  // Import Statistics
+  totalRows         Int      @default(0)
+  successfulRows    Int      @default(0)
+  failedRows        Int      @default(0)
+  duplicateRows     Int      @default(0)
+  
+  // Import Status
+  status            String   @default("PROCESSING") // PROCESSING, COMPLETED, FAILED, PARTIAL
+  
+  // Error Report
+  errorReport       String?  @db.Text // JSON array of errors
+  
+  // Processing Time
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([uploadedBy])
+  @@index([uploadedAt])
 }
 
 model AttendanceProvider {
