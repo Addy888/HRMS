@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -477,7 +477,7 @@ export default function EmployeeAttendancePage() {
               {todayData?.isMonday ? (
                 <div className="p-4 bg-neutral-800/50 border border-neutral-700 rounded-xl">
                   <p className="text-sm text-neutral-400 text-center font-medium">
-                    📅 Today is a weekly off.
+                    ðŸ“… Today is a weekly off.
                   </p>
                 </div>
               ) : (
@@ -625,25 +625,32 @@ export default function EmployeeAttendancePage() {
           {renderCalendar()}
         </div>
 
-        {/* ✅ NEW: Uploaded Attendance Section */}
+        {/* âœ… NEW: Uploaded Attendance Section */}
         <UploadedAttendanceSection selectedMonth={selectedMonth} selectedYear={selectedYear} />
       </div>
     </EmployeeLayout>
   );
 }
 
-// ✅ NEW: Uploaded Attendance Component
-function UploadedAttendanceSection({ selectedMonth, selectedYear }: { selectedMonth: number; selectedYear: number }) {
+// âœ… UPLOADED ATTENDANCE COMPONENT
+function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: parentYear }: { selectedMonth: number; selectedYear: number }) {
+  // Independent month/year state for uploaded attendance
+  const [uploadMonth, setUploadMonth] = useState<number | null>(null);
+  const [uploadYear, setUploadYear] = useState<number | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+
   const { data: uploadedData, isLoading } = useQuery({
-    queryKey: ['uploaded-attendance', selectedMonth, selectedYear],
+    queryKey: ['uploaded-attendance', uploadMonth, uploadYear],
     queryFn: async () => {
       console.log('[UPLOADED-ATTENDANCE-UI] ========== FETCHING ==========');
-      console.log('[UPLOADED-ATTENDANCE-UI] Month:', selectedMonth);
-      console.log('[UPLOADED-ATTENDANCE-UI] Year:', selectedYear);
+      console.log('[UPLOADED-ATTENDANCE-UI] Month:', uploadMonth);
+      console.log('[UPLOADED-ATTENDANCE-UI] Year:', uploadYear);
       
-      const res = await api.get('/attendance/my/imported', {
-        params: { month: selectedMonth, year: selectedYear },
-      });
+      const params: any = {};
+      if (uploadMonth) params.month = uploadMonth;
+      if (uploadYear) params.year = uploadYear;
+      
+      const res = await api.get('/attendance/my/imported', { params });
       
       console.log('[UPLOADED-ATTENDANCE-UI] RAW API Response:', res);
       console.log('[UPLOADED-ATTENDANCE-UI] res.data:', res.data);
@@ -662,15 +669,150 @@ function UploadedAttendanceSection({ selectedMonth, selectedYear }: { selectedMo
       
       if (payload?.records && payload.records.length > 0) {
         console.log('[UPLOADED-ATTENDANCE-UI] Sample record:', payload.records[0]);
+        console.log('[UPLOADED-ATTENDANCE-UI] Sample record data:', payload.records[0].data);
+        
+        // Extract years from data
+        const years = new Set<number>();
+        payload.records.forEach((r: any) => {
+          // Try to detect year from data
+          const data = r.data || {};
+          Object.keys(data).forEach(key => {
+            const value = data[key];
+            // Look for year patterns in values
+            if (typeof value === 'string') {
+              const yearMatch = value.match(/20\d{2}/);
+              if (yearMatch) {
+                years.add(parseInt(yearMatch[0]));
+              }
+            }
+          });
+        });
+        
+        if (years.size > 0) {
+          setAvailableYears(Array.from(years).sort((a, b) => b - a));
+        }
+        
+        // Auto-select month/year from first record if not set
+        if (uploadMonth === null && uploadYear === null && payload.records.length > 0) {
+          const fileName = payload.records[0].fileName || '';
+          console.log('[UPLOADED-ATTENDANCE-UI] Auto-detecting month/year from fileName:', fileName);
+          
+          // Try to extract month and year from filename
+          // Example: "August_2026_Monthly_Attendance_FINAL(1) (1).xlsx"
+          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                             'July', 'August', 'September', 'October', 'November', 'December'];
+          
+          let detectedMonth = null;
+          let detectedYear = null;
+          
+          // Find month name in filename
+          for (let i = 0; i < monthNames.length; i++) {
+            if (fileName.toLowerCase().includes(monthNames[i].toLowerCase())) {
+              detectedMonth = i + 1;
+              break;
+            }
+          }
+          
+          // Find year in filename
+          const yearMatch = fileName.match(/20\d{2}/);
+          if (yearMatch) {
+            detectedYear = parseInt(yearMatch[0]);
+          }
+          
+          console.log('[UPLOADED-ATTENDANCE-UI] Detected from filename:', { detectedMonth, detectedYear });
+          
+          if (detectedMonth && detectedYear) {
+            setUploadMonth(detectedMonth);
+            setUploadYear(detectedYear);
+          } else {
+            // Fallback: use current month/year
+            const now = new Date();
+            setUploadMonth(now.getMonth() + 1);
+            setUploadYear(now.getFullYear());
+          }
+        }
       }
       
       console.log('[UPLOADED-ATTENDANCE-UI] ========== END ==========');
       
       return payload;
     },
+    enabled: uploadMonth !== null && uploadYear !== null,
   });
 
-  if (isLoading) {
+  // Fetch available years on mount
+  React.useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const res = await api.get('/attendance/my/imported', { params: {} });
+        let payload = res.data;
+        if (res.data && typeof res.data.success === 'boolean' && res.data.data !== undefined) {
+          payload = res.data.data;
+        }
+        
+        if (payload?.records && payload.records.length > 0) {
+          const years = new Set<number>();
+          payload.records.forEach((r: any) => {
+            const fileName = r.fileName || '';
+            const yearMatch = fileName.match(/20\d{2}/);
+            if (yearMatch) {
+              years.add(parseInt(yearMatch[0]));
+            }
+          });
+          
+          if (years.size > 0) {
+            const yearsArray = Array.from(years).sort((a, b) => b - a);
+            setAvailableYears(yearsArray);
+          }
+          
+          // Auto-select the latest month/year from first record
+          if (uploadMonth === null && uploadYear === null) {
+            const fileName = payload.records[0].fileName || '';
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            let detectedMonth = null;
+            let detectedYear = null;
+            
+            for (let i = 0; i < monthNames.length; i++) {
+              if (fileName.toLowerCase().includes(monthNames[i].toLowerCase())) {
+                detectedMonth = i + 1;
+                break;
+              }
+            }
+            
+            const yearMatch = fileName.match(/20\d{2}/);
+            if (yearMatch) {
+              detectedYear = parseInt(yearMatch[0]);
+            }
+            
+            if (detectedMonth && detectedYear) {
+              setUploadMonth(detectedMonth);
+              setUploadYear(detectedYear);
+            } else {
+              setUploadMonth(new Date().getMonth() + 1);
+              setUploadYear(new Date().getFullYear());
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[UPLOADED-ATTENDANCE-UI] Error fetching initial data:', error);
+        // Set defaults
+        if (uploadMonth === null && uploadYear === null) {
+          const now = new Date();
+          setUploadMonth(now.getMonth() + 1);
+          setUploadYear(now.getFullYear());
+        }
+      }
+    };
+    
+    fetchYears();
+  }, []);
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+
+  if (isLoading || uploadMonth === null || uploadYear === null) {
     return (
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
         <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
@@ -685,47 +827,104 @@ function UploadedAttendanceSection({ selectedMonth, selectedYear }: { selectedMo
     return (
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
         <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+        
+        {/* Month/Year Filters */}
+        <div className="flex items-center gap-3 mb-6">
+          <select
+            value={uploadMonth}
+            onChange={(e) => setUploadMonth(Number(e.target.value))}
+            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white"
+          >
+            {monthNames.map((name, idx) => (
+              <option key={idx + 1} value={idx + 1}>{name}</option>
+            ))}
+          </select>
+          <select
+            value={uploadYear}
+            onChange={(e) => setUploadYear(Number(e.target.value))}
+            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white"
+          >
+            {availableYears.length > 0 ? (
+              availableYears.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))
+            ) : (
+              [2024, 2025, 2026, 2027].map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))
+            )}
+          </select>
+        </div>
+        
         <div className="text-center py-12">
-          <p className="text-sm text-neutral-400">Attendance sheet not available yet.</p>
-          <p className="text-xs text-neutral-500 mt-2">
-            The complete attendance sheet uploaded by HR will appear here once available.
+          <p className="text-sm text-neutral-400">
+            No attendance Excel uploaded for {monthNames[uploadMonth - 1]} {uploadYear}
           </p>
         </div>
       </div>
     );
   }
 
+  // Get all unique columns from records
+  const allColumns = uploadedData.columns || [];
+  const records = uploadedData.records || [];
+  const fileName = records.length > 0 ? records[0].fileName : '';
+
+  console.log('[UPLOADED-ATTENDANCE-UI] Rendering table with', records.length, 'rows and', allColumns.length, 'columns');
+
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-white">Uploaded Attendance</h2>
+      <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+      
+      {/* Month/Year Filters + File Name */}
+      <div className="mb-6 space-y-3">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-neutral-500">
-            {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy')}
-          </span>
-          {uploadedData.records.length > 0 && uploadedData.records[0].fileName && (
-            <span className="text-xs text-neutral-400 bg-neutral-800 px-2 py-1 rounded">
-              📄 {uploadedData.records[0].fileName}
-            </span>
-          )}
+          <select
+            value={uploadMonth}
+            onChange={(e) => setUploadMonth(Number(e.target.value))}
+            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white font-semibold"
+          >
+            {monthNames.map((name, idx) => (
+              <option key={idx + 1} value={idx + 1}>{name}</option>
+            ))}
+          </select>
+          <select
+            value={uploadYear}
+            onChange={(e) => setUploadYear(Number(e.target.value))}
+            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white font-semibold"
+          >
+            {availableYears.length > 0 ? (
+              availableYears.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))
+            ) : (
+              [2024, 2025, 2026, 2027].map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))
+            )}
+          </select>
+        </div>
+        
+        {fileName && (
+          <div className="text-xs text-neutral-400 font-mono">
+            ðŸ“„ {fileName}
+          </div>
+        )}
+        
+        <div className="text-xs text-neutral-500">
+          Showing complete attendance sheet: {records.length} employees, {allColumns.length} columns
         </div>
       </div>
 
-      <div className="mb-3">
-        <p className="text-xs text-neutral-500">
-          Showing complete attendance sheet: <span className="font-bold text-white">{uploadedData.total} employees</span>, <span className="font-bold text-white">{uploadedData.columns.length} columns</span>
-        </p>
-      </div>
-      
-      {/* Horizontally AND vertically scrollable table */}
-      <div className="overflow-x-auto overflow-y-auto -mx-6 px-6" style={{ maxHeight: '600px' }}>
-        <table className="w-full min-w-max border-collapse">
+      {/* Horizontally Scrollable Table */}
+      <div className="overflow-x-auto overflow-y-auto max-h-[600px] border border-neutral-800 rounded-xl">
+        <table className="w-full border-collapse min-w-max">
           <thead className="sticky top-0 bg-neutral-900 z-10">
             <tr className="border-b border-neutral-800">
-              {uploadedData.columns && uploadedData.columns.map((col: string) => (
+              {allColumns.map((col: string, idx: number) => (
                 <th
-                  key={col}
-                  className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3 whitespace-nowrap bg-neutral-900 border-b-2 border-neutral-700"
+                  key={idx}
+                  className="text-left text-[10px] font-bold text-neutral-400 uppercase tracking-wider px-4 py-3 border-r border-neutral-800 whitespace-nowrap bg-neutral-900"
                 >
                   {col}
                 </th>
@@ -733,26 +932,33 @@ function UploadedAttendanceSection({ selectedMonth, selectedYear }: { selectedMo
             </tr>
           </thead>
           <tbody>
-            {uploadedData.records.map((record: any, idx: number) => (
-              <tr key={record.id || idx} className="border-b border-neutral-800/40 hover:bg-neutral-800/30 transition-colors">
-                {uploadedData.columns && uploadedData.columns.map((col: string) => (
-                  <td
-                    key={col}
-                    className="px-3 py-3 text-xs text-neutral-300 whitespace-nowrap"
-                  >
-                    {record.data[col] || '—'}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {records.map((record: any, rowIdx: number) => {
+              const data = record.data || {};
+              
+              return (
+                <tr key={record.id || rowIdx} className="border-b border-neutral-800/40 hover:bg-neutral-800/20 transition-colors">
+                  {allColumns.map((col: string, colIdx: number) => {
+                    const value = data[col];
+                    const displayValue = value !== undefined && value !== null && value !== '' ? String(value) : '--';
+                    
+                    return (
+                      <td
+                        key={colIdx}
+                        className="px-4 py-3 text-xs text-neutral-300 border-r border-neutral-800/40 whitespace-nowrap"
+                      >
+                        {displayValue}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-neutral-800">
-        <p className="text-xs text-neutral-500">
-          📌 This is the complete attendance sheet uploaded by HR. You are viewing <span className="font-semibold text-white">{uploadedData.total} employee records</span> with all columns preserved as-is. This view is read-only.
-        </p>
+      <div className="mt-4 text-xs text-neutral-500 italic">
+        â„¹ï¸ This is a read-only view of the uploaded attendance Excel. Scroll horizontally to see all columns.
       </div>
     </div>
   );

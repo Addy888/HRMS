@@ -184,7 +184,7 @@ export class AttendanceImportService {
     // ✅ Import ALL rows as raw attendance records
     for (const row of allRows) {
       try {
-        await this.importRawAttendanceRow(row, organizationId, importHistory.id);
+        await this.importRawAttendanceRow(row, organizationId, importHistory.id, session.fileName);
         successCount++;
       } catch (error) {
         failCount++;
@@ -959,39 +959,104 @@ export class AttendanceImportService {
     row: ExcelRowImportResult,
     organizationId: string,
     importHistoryId: string,
+    fileName: string, // ✅ ADD: Pass filename to extract month/year
   ) {
     const rawData = row.rawData || JSON.stringify({});
     const parsedData = JSON.parse(rawData);
 
-    // Try to extract month/year if identifiable
+    // ✅ EXTRACT ATTENDANCE MONTH/YEAR FROM FILENAME
+    // Example: "August_2026_Monthly_Attendance.xlsx" => August 2026
+    // This is the ATTENDANCE PERIOD, not the upload date
     let attendanceMonth: number | null = null;
     let attendanceYear: number | null = null;
 
-    // Look for month/year in column names or data
-    const columns = Object.keys(parsedData);
+    // Strategy 1: Extract from filename (most reliable)
+    const monthNames = [
+      'january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ];
     
-    // Strategy 1: Look for explicit month/year columns or data
-    for (const col of columns) {
-      if (/month|mth/i.test(col) && parsedData[col]) {
-        const monthMatch = parsedData[col].toString().match(/(\d{1,2})/);
-        if (monthMatch) attendanceMonth = parseInt(monthMatch[1]);
+    const lowerFileName = fileName.toLowerCase();
+    
+    // Find month name in filename
+    for (let i = 0; i < monthNames.length; i++) {
+      if (lowerFileName.includes(monthNames[i])) {
+        attendanceMonth = i + 1; // 1-12
+        this.logger.log(`✅ Detected attendance month from filename: ${monthNames[i]} (${attendanceMonth})`);
+        break;
       }
-      if (/year|yr/i.test(col) && parsedData[col]) {
-        const yearMatch = parsedData[col].toString().match(/(\d{4})/);
-        if (yearMatch) attendanceYear = parseInt(yearMatch[1]);
+    }
+    
+    // Find year in filename (pattern: 2024, 2025, 2026, etc.)
+    const yearMatch = fileName.match(/20\d{2}/);
+    if (yearMatch) {
+      attendanceYear = parseInt(yearMatch[0]);
+      this.logger.log(`✅ Detected attendance year from filename: ${attendanceYear}`);
+    }
+
+    // Strategy 2: Look for month/year in Excel column names or data
+    if (attendanceMonth === null || attendanceYear === null) {
+      const columns = Object.keys(parsedData);
+      
+      for (const col of columns) {
+        if (attendanceMonth === null && /month|mth/i.test(col) && parsedData[col]) {
+          const monthMatch = parsedData[col].toString().match(/(\d{1,2})/);
+          if (monthMatch) {
+            attendanceMonth = parseInt(monthMatch[1]);
+            this.logger.log(`✅ Detected attendance month from Excel data: ${attendanceMonth}`);
+          }
+        }
+        if (attendanceYear === null && /year|yr/i.test(col) && parsedData[col]) {
+          const yearMatch = parsedData[col].toString().match(/(\d{4})/);
+          if (yearMatch) {
+            attendanceYear = parseInt(yearMatch[1]);
+            this.logger.log(`✅ Detected attendance year from Excel data: ${attendanceYear}`);
+          }
+        }
       }
     }
 
-    // Strategy 2: If not found, use current month/year
-    // This ensures uploaded attendance is visible for the current month
+    // Strategy 3: Look for date patterns in column values
     if (attendanceMonth === null || attendanceYear === null) {
-      const now = new Date();
-      attendanceMonth = now.getMonth() + 1; // 1-12
-      attendanceYear = now.getFullYear();
-      this.logger.log(`No month/year detected in Excel, using current: ${attendanceMonth}/${attendanceYear}`);
+      for (const col of Object.keys(parsedData)) {
+        const value = parsedData[col];
+        if (typeof value === 'string') {
+          // Try to find date patterns like "01-Aug-2026" or "August 2026"
+          if (attendanceMonth === null) {
+            for (let i = 0; i < monthNames.length; i++) {
+              if (value.toLowerCase().includes(monthNames[i])) {
+                attendanceMonth = i + 1;
+                this.logger.log(`✅ Detected attendance month from cell value: ${monthNames[i]} (${attendanceMonth})`);
+                break;
+              }
+            }
+          }
+          if (attendanceYear === null) {
+            const yearInValue = value.match(/20\d{2}/);
+            if (yearInValue) {
+              attendanceYear = parseInt(yearInValue[0]);
+              this.logger.log(`✅ Detected attendance year from cell value: ${attendanceYear}`);
+            }
+          }
+        }
+      }
+    }
+
+    // ⚠️ FALLBACK: If still not found, log warning
+    // DO NOT use current date - this would be the upload date, not attendance period
+    if (attendanceMonth === null || attendanceYear === null) {
+      this.logger.warn(
+        `⚠️ Could not detect attendance month/year from filename "${fileName}" or Excel data. ` +
+        `This attendance record will need manual month/year assignment.`
+      );
+      // Store null values - frontend will need to handle this
+      attendanceMonth = null;
+      attendanceYear = null;
     }
 
     // Create raw attendance record
+    // ✅ attendanceMonth/attendanceYear = ATTENDANCE PERIOD (e.g., August 2026)
+    // ✅ createdAt (auto) = UPLOAD DATE (e.g., September 2026)
     await this.prisma.rawAttendanceRecord.create({
       data: {
         organizationId,
@@ -1000,11 +1065,12 @@ export class AttendanceImportService {
         originalIdentifier: row.employeeId,
         originalName: row.employeeName,
         rawData: rawData,
-        attendanceMonth,
-        attendanceYear,
+        attendanceMonth, // ✅ Attendance period month (from filename/content)
+        attendanceYear,  // ✅ Attendance period year (from filename/content)
         isMatched: !!row.matchedEmployeeUUID,
         matchedAt: row.matchedEmployeeUUID ? new Date() : null,
         matchingNote: row.employeeFound ? 'Auto-matched by identifier' : row.error || 'No match found',
+        // createdAt is auto-set to NOW (upload date)
       },
     });
   }
