@@ -332,10 +332,11 @@ export class EmployeesService {
       throw new BadRequestException('User is not associated with an organization');
     }
 
-    // ✅ STEP 3: Build query with HR ownership filter
+    // ✅ STEP 3: Build query with organization isolation ONLY
+    // ⚠️ REMOVED: createdByUserId filter (HR ownership was too restrictive)
+    // HR users should see ALL employees in their organization, not just ones they created
     const whereClause: any = {
       organizationId: requestingUser.organizationId, // ✅ Organization isolation
-      createdByUserId: requestUserId, // ✅ HR Ownership: Only show employees created by this HR
       // Exclude HR admin profiles from employee listing
       user: {
         role: {
@@ -346,7 +347,7 @@ export class EmployeesService {
 
     console.log('🔍 Employee Query Filter:', {
       organizationId: requestingUser.organizationId,
-      createdByUserId: requestUserId,
+      excludedRoles: [UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER],
     });
 
     if (query.search) {
@@ -558,18 +559,14 @@ export class EmployeesService {
       throw new NotFoundException('Employee not found');
     }
 
-    // ✅ STEP 4: Verify ownership - HR can only access their own employees
+    // ✅ STEP 4: Verify organization isolation (NOT HR ownership)
+    // HR users can access ANY employee in their organization
     if (employee.organizationId !== requestingUser.organizationId) {
       console.log('❌ BACKEND: Organization mismatch');
       throw new ForbiddenException('You do not have access to this employee (different organization)');
     }
 
-    if (employee.createdByUserId !== requestUserId) {
-      console.log('❌ BACKEND: Ownership mismatch - Employee belongs to another HR user');
-      throw new ForbiddenException('You do not have access to this employee (not created by you)');
-    }
-
-    console.log('✅ BACKEND STEP 7: Ownership verified');
+    console.log('✅ BACKEND STEP 7: Organization verified');
     console.log('✅ BACKEND STEP 8: Employee FOUND and AUTHORIZED');
     console.log('📊 BACKEND STEP 9: Raw Employee Object Keys:', Object.keys(employee));
     console.log('📊 BACKEND STEP 10: Employee Data from Prisma:');
@@ -725,11 +722,11 @@ export class EmployeesService {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         
         if (uuidRegex.test(deptValue)) {
-          // It's a UUID - verify it exists
+          // It's a UUID - verify it exists AND belongs to same organization
           const existingDept = await this.prisma.department.findFirst({
             where: {
               id: deptValue,
-              organizationId: employee.organizationId,
+              organizationId: employee.organizationId, // ✅ SECURITY: Prevent cross-org assignment
             },
           });
           
@@ -737,8 +734,10 @@ export class EmployeesService {
             updateData.departmentId = deptValue;
             console.log('[EMPLOYEE-UPDATE] Valid department UUID:', deptValue);
           } else {
-            updateData.departmentId = null;
-            console.log('[EMPLOYEE-UPDATE] Department UUID not found, setting to null');
+            // Department not found in same organization - reject assignment
+            throw new BadRequestException(
+              'Selected department does not exist in your organization'
+            );
           }
         } else {
           // Free text like "VTP", "Sales", "Agent" - find or create department
@@ -747,17 +746,17 @@ export class EmployeesService {
           let department = await this.prisma.department.findFirst({
             where: {
               name: deptValue.trim(),
-              organizationId: employee.organizationId,
+              organizationId: employee.organizationId, // ✅ SECURITY: Same organization
             },
           });
           
           if (!department) {
-            // Create new department with this name
+            // Create new department with this name IN SAME ORGANIZATION
             console.log('[EMPLOYEE-UPDATE] Creating new department:', deptValue);
             department = await this.prisma.department.create({
               data: {
                 name: deptValue.trim(),
-                organizationId: employee.organizationId,
+                organizationId: employee.organizationId, // ✅ SECURITY: Same organization
               },
             });
             console.log('[EMPLOYEE-UPDATE] Department created:', department.id);
@@ -771,7 +770,25 @@ export class EmployeesService {
     }
 
     if (updateEmployeeDto.designationId !== undefined) {
-      updateData.designationId = updateEmployeeDto.designationId || null;
+      if (!updateEmployeeDto.designationId) {
+        updateData.designationId = null;
+      } else {
+        // ✅ SECURITY: Verify designation belongs to same organization
+        const designation = await this.prisma.designation.findFirst({
+          where: {
+            id: updateEmployeeDto.designationId,
+            organizationId: employee.organizationId,
+          },
+        });
+        
+        if (!designation) {
+          throw new BadRequestException(
+            'Selected designation does not exist in your organization'
+          );
+        }
+        
+        updateData.designationId = updateEmployeeDto.designationId;
+      }
     }
 
     console.log('[EMPLOYEE-UPDATE] Final update data:', {

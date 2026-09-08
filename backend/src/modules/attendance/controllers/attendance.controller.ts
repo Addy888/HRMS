@@ -139,6 +139,135 @@ export class AttendanceController {
   }
 
   /**
+   * ✅ NEW: GET MY RAW IMPORTED ATTENDANCE
+   * Employee views their HR-uploaded flexible format attendance
+   */
+  @Get('my/imported')
+  @ApiOperation({ summary: 'Get my imported attendance (flexible format)' })
+  @ApiResponse({ status: 200, description: 'Imported attendance retrieved' })
+  async getMyImportedAttendance(
+    @Request() req,
+    @Query('month') month?: number,
+    @Query('year') year?: number,
+  ) {
+    console.log('[IMPORTED-ATTENDANCE] ========== START ==========');
+    console.log('[IMPORTED-ATTENDANCE] Request user ID:', req.user.id);
+    console.log('[IMPORTED-ATTENDANCE] Request month:', month);
+    console.log('[IMPORTED-ATTENDANCE] Request year:', year);
+
+    // Get employee's organization (for security/isolation)
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        organizationId: true,
+        employee: {
+          select: {
+            id: true,
+            employeeId: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    if (!user || !user.employee) {
+      console.log('[IMPORTED-ATTENDANCE] ERROR: Employee record not found for user:', req.user.id);
+      throw new Error('Employee record not found');
+    }
+
+    console.log('[IMPORTED-ATTENDANCE] Found user/employee:', {
+      userId: user.id,
+      organizationId: user.organizationId,
+      employeeId: user.employee.employeeId,
+      name: `${user.employee.firstName} ${user.employee.lastName}`,
+    });
+
+    const now = new Date();
+    const queryMonth = month || now.getMonth() + 1;
+    const queryYear = year || now.getFullYear();
+
+    console.log('[IMPORTED-ATTENDANCE] Query parameters:', { queryMonth, queryYear });
+
+    // ✅ FETCH ALL RECORDS FOR THE ORGANIZATION (NOT FILTERED BY EMPLOYEE)
+    // This shows the COMPLETE uploaded Excel to all employees
+    const records = await this.prisma.rawAttendanceRecord.findMany({
+      where: {
+        organizationId: user.organizationId, // Organization isolation only
+        OR: [
+          { 
+            attendanceMonth: queryMonth, 
+            attendanceYear: queryYear 
+          },
+          { 
+            attendanceMonth: null 
+          },
+        ],
+      },
+      include: {
+        importHistory: {
+          select: {
+            fileName: true,
+            uploadedAt: true,
+            originalColumns: true,
+          },
+        },
+      },
+      orderBy: [
+        { createdAt: 'desc' },
+        { originalIdentifier: 'asc' },
+      ],
+    });
+
+    console.log('[IMPORTED-ATTENDANCE] Found ALL records in organization:', records.length);
+    
+    if (records.length > 0) {
+      console.log('[IMPORTED-ATTENDANCE] Sample record:', {
+        id: records[0].id,
+        identifier: records[0].originalIdentifier,
+        name: records[0].originalName,
+        attendanceMonth: records[0].attendanceMonth,
+        attendanceYear: records[0].attendanceYear,
+        fileName: records[0].importHistory?.fileName,
+      });
+    }
+
+    // Extract unique columns from all records
+    const allColumns = new Set<string>();
+    records.forEach(record => {
+      try {
+        const data = JSON.parse(record.rawData);
+        Object.keys(data).forEach(key => allColumns.add(key));
+      } catch (e) {
+        console.log('[IMPORTED-ATTENDANCE] ERROR parsing rawData for record:', record.id, e);
+      }
+    });
+
+    const columnsArray = Array.from(allColumns);
+    console.log('[IMPORTED-ATTENDANCE] Extracted columns:', columnsArray.length, 'columns');
+    console.log('[IMPORTED-ATTENDANCE] Column names:', columnsArray.slice(0, 10)); // First 10 columns
+
+    const result = {
+      month: queryMonth,
+      year: queryYear,
+      records: records.map(r => ({
+        id: r.id,
+        data: JSON.parse(r.rawData),
+        uploadedAt: r.createdAt,
+        fileName: r.importHistory?.fileName,
+      })),
+      columns: columnsArray,
+      total: records.length,
+    };
+
+    console.log('[IMPORTED-ATTENDANCE] Returning COMPLETE Excel with', result.records.length, 'rows (ALL employees)');
+    console.log('[IMPORTED-ATTENDANCE] ========== END ==========');
+
+    return result;
+  }
+
+  /**
    * GET TODAY'S STATUS
    * Get today's attendance status
    */

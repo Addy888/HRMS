@@ -44,6 +44,7 @@ model Organization {
   AdvanceSalary    AdvanceSalary[]
   hrActions        HRAction[]
   attendanceImports AttendanceImportHistory[]
+  rawAttendanceRecords RawAttendanceRecord[] // ✅ NEW: Flexible attendance imports
   companyPolicies  CompanyPolicy[]
 }
 
@@ -207,6 +208,9 @@ model Employee {
   // Attendance Relations
   attendances      Attendance[]
   shiftAssignments ShiftAssignment[]
+
+  // ✅ NEW: Raw attendance imports (flexible format)
+  rawAttendanceRecords RawAttendanceRecord[] @relation("RawAttendanceRecords")
 
   // Payroll Relations
   salaryStructures SalaryStructure[]
@@ -841,9 +845,17 @@ model AttendanceImportHistory {
   // Error Report
   errorReport       String?  @db.Text // JSON array of errors
   
+  // ✅ NEW: Store original Excel structure
+  originalColumns   String?  @db.Text // JSON array of column names
+  columnMapping     String?  @db.Text // JSON mapping of columns to standard fields
+  fileStoragePath   String?  // Path to stored Excel file
+  
   // Processing Time
   startedAt         DateTime @default(now())
   completedAt       DateTime?
+  
+  // ✅ NEW: Relation to raw attendance records
+  rawRecords        RawAttendanceRecord[]
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -851,6 +863,45 @@ model AttendanceImportHistory {
   @@index([organizationId])
   @@index([uploadedBy])
   @@index([uploadedAt])
+}
+
+// ✅ NEW MODEL: Store any Excel format attendance data
+model RawAttendanceRecord {
+  id                String   @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  importHistoryId   String
+  importHistory     AttendanceImportHistory @relation(fields: [importHistoryId], references: [id], onDelete: Cascade)
+  
+  employeeId        String?  // Matched employee UUID (nullable for unmatched)
+  employee          Employee? @relation("RawAttendanceRecords", fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  // ✅ Store original identifier from Excel
+  originalIdentifier String? // Agent ID, Employee ID, Biometric ID, etc.
+  originalName       String? // Agent Name, Employee Name
+  
+  // ✅ Store ALL columns as JSON
+  rawData           String   @db.Text // JSON object with all column:value pairs
+  
+  // Optional parsed date if identifiable
+  attendanceDate    DateTime? @db.Date
+  attendanceMonth   Int?     // Month number (1-12)
+  attendanceYear    Int?     // Year
+  
+  // Matching status
+  isMatched         Boolean  @default(false)
+  matchedAt         DateTime?
+  matchingNote      String?  // Why match failed/succeeded
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([importHistoryId])
+  @@index([employeeId])
+  @@index([originalIdentifier])
+  @@index([attendanceMonth, attendanceYear])
 }
 
 model AttendanceProvider {

@@ -624,7 +624,136 @@ export default function EmployeeAttendancePage() {
           </div>
           {renderCalendar()}
         </div>
+
+        {/* ✅ NEW: Uploaded Attendance Section */}
+        <UploadedAttendanceSection selectedMonth={selectedMonth} selectedYear={selectedYear} />
       </div>
     </EmployeeLayout>
+  );
+}
+
+// ✅ NEW: Uploaded Attendance Component
+function UploadedAttendanceSection({ selectedMonth, selectedYear }: { selectedMonth: number; selectedYear: number }) {
+  const { data: uploadedData, isLoading } = useQuery({
+    queryKey: ['uploaded-attendance', selectedMonth, selectedYear],
+    queryFn: async () => {
+      console.log('[UPLOADED-ATTENDANCE-UI] ========== FETCHING ==========');
+      console.log('[UPLOADED-ATTENDANCE-UI] Month:', selectedMonth);
+      console.log('[UPLOADED-ATTENDANCE-UI] Year:', selectedYear);
+      
+      const res = await api.get('/attendance/my/imported', {
+        params: { month: selectedMonth, year: selectedYear },
+      });
+      
+      console.log('[UPLOADED-ATTENDANCE-UI] RAW API Response:', res);
+      console.log('[UPLOADED-ATTENDANCE-UI] res.data:', res.data);
+      
+      // Handle API envelope
+      let payload = res.data;
+      if (res.data && typeof res.data.success === 'boolean' && res.data.data !== undefined) {
+        console.log('[UPLOADED-ATTENDANCE-UI] Detected API envelope, unwrapping res.data.data');
+        payload = res.data.data;
+      }
+      
+      console.log('[UPLOADED-ATTENDANCE-UI] UNWRAPPED payload:', payload);
+      console.log('[UPLOADED-ATTENDANCE-UI] payload.records:', payload?.records?.length || 0);
+      console.log('[UPLOADED-ATTENDANCE-UI] payload.columns:', payload?.columns?.length || 0);
+      console.log('[UPLOADED-ATTENDANCE-UI] payload.total:', payload?.total);
+      
+      if (payload?.records && payload.records.length > 0) {
+        console.log('[UPLOADED-ATTENDANCE-UI] Sample record:', payload.records[0]);
+      }
+      
+      console.log('[UPLOADED-ATTENDANCE-UI] ========== END ==========');
+      
+      return payload;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!uploadedData || !uploadedData.records || uploadedData.records.length === 0) {
+    return (
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+        <div className="text-center py-12">
+          <p className="text-sm text-neutral-400">Attendance sheet not available yet.</p>
+          <p className="text-xs text-neutral-500 mt-2">
+            The complete attendance sheet uploaded by HR will appear here once available.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-white">Uploaded Attendance</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-neutral-500">
+            {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy')}
+          </span>
+          {uploadedData.records.length > 0 && uploadedData.records[0].fileName && (
+            <span className="text-xs text-neutral-400 bg-neutral-800 px-2 py-1 rounded">
+              📄 {uploadedData.records[0].fileName}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <p className="text-xs text-neutral-500">
+          Showing complete attendance sheet: <span className="font-bold text-white">{uploadedData.total} employees</span>, <span className="font-bold text-white">{uploadedData.columns.length} columns</span>
+        </p>
+      </div>
+      
+      {/* Horizontally AND vertically scrollable table */}
+      <div className="overflow-x-auto overflow-y-auto -mx-6 px-6" style={{ maxHeight: '600px' }}>
+        <table className="w-full min-w-max border-collapse">
+          <thead className="sticky top-0 bg-neutral-900 z-10">
+            <tr className="border-b border-neutral-800">
+              {uploadedData.columns && uploadedData.columns.map((col: string) => (
+                <th
+                  key={col}
+                  className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3 whitespace-nowrap bg-neutral-900 border-b-2 border-neutral-700"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {uploadedData.records.map((record: any, idx: number) => (
+              <tr key={record.id || idx} className="border-b border-neutral-800/40 hover:bg-neutral-800/30 transition-colors">
+                {uploadedData.columns && uploadedData.columns.map((col: string) => (
+                  <td
+                    key={col}
+                    className="px-3 py-3 text-xs text-neutral-300 whitespace-nowrap"
+                  >
+                    {record.data[col] || '—'}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-neutral-800">
+        <p className="text-xs text-neutral-500">
+          📌 This is the complete attendance sheet uploaded by HR. You are viewing <span className="font-semibold text-white">{uploadedData.total} employee records</span> with all columns preserved as-is. This view is read-only.
+        </p>
+      </div>
+    </div>
   );
 }

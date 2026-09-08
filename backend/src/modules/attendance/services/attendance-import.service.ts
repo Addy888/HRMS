@@ -56,7 +56,8 @@ export class AttendanceImportService {
   }
 
   /**
-   * Parse and validate Excel file
+   * Parse and validate Excel file (FLEXIBLE FORMAT)
+   * Accepts ANY Excel structure without requiring specific columns
    * Returns preview data without saving to database
    */
   async parseAndValidateExcel(
@@ -69,9 +70,14 @@ export class AttendanceImportService {
     // Parse Excel file
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
+    
+    if (!sheetName) {
+      throw new BadRequestException('Excel file has no sheets');
+    }
+    
     const worksheet = workbook.Sheets[sheetName];
 
-    // Convert to JSON
+    // Convert to JSON - accept whatever format exists
     const rows: any[] = XLSX.utils.sheet_to_json(worksheet, {
       raw: false,
       defval: '',
@@ -80,40 +86,21 @@ export class AttendanceImportService {
     this.logger.log(`Parsed ${rows.length} rows from Excel`);
 
     if (rows.length === 0) {
-      throw new BadRequestException('Excel file is empty');
+      throw new BadRequestException('Excel file has no data rows');
     }
 
-    // Validate headers
-    this.validateHeaders(rows[0]);
+    // ✅ FLEXIBLE: Extract actual columns from first row
+    const actualColumns = Object.keys(rows[0]);
+    this.logger.log(`✅ FLEXIBLE MODE: Detected ${actualColumns.length} columns from Excel`);
+    this.logger.log(`Column names: ${actualColumns.slice(0, 10).join(', ')}${actualColumns.length > 10 ? '...' : ''}`);
 
-    // Process each row
-    const results: ExcelRowImportResult[] = [];
-    const employeeIds = new Set<string>();
-    const employeesNotFound = new Set<string>();
+    // ✅ NO VALIDATION: Accept any columns without error
+    // Try to identify employee identifier column (if any)
+    const identifierColumn = this.detectEmployeeIdentifierColumn(actualColumns);
+    this.logger.log(`Detected identifier column: ${identifierColumn || 'NONE (will store all records)'}`);
 
-    for (let i = 0; i < rows.length; i++) {
-      const rowNumber = i + 2; // Excel row number (header is row 1)
-      const row = rows[i];
-
-      const result = await this.validateRow(
-        row,
-        rowNumber,
-        organizationId,
-      );
-
-      results.push(result);
-
-      if (result.employeeFound) {
-        employeeIds.add(result.employeeId);
-      } else {
-        employeesNotFound.add(result.employeeId);
-      }
-    }
-
-    // Categorize results
-    const validRows = results.filter((r) => r.success && !r.isDuplicate);
-    const invalidRows = results.filter((r) => !r.success);
-    const duplicateRows = results.filter((r) => r.isDuplicate);
+    // ✅ Try to match employees
+    const matchResults = await this.matchEmployees(rows, organizationId, identifierColumn);
 
     // Create session
     const sessionId = this.generateSessionId();
@@ -122,29 +109,31 @@ export class AttendanceImportService {
       organizationId,
       uploadedBy: userId,
       fileName: file.originalname,
-      validRows,
-      invalidRows,
-      duplicateRows,
+      validRows: matchResults.matched,
+      invalidRows: [], // No validation errors for flexible format
+      duplicateRows: matchResults.unmatched, // Reuse for unmatched
       createdAt: new Date(),
     });
 
     this.logger.log(`Import session created: ${sessionId}`);
+    this.logger.log(`Matched: ${matchResults.matched.length}, Unmatched: ${matchResults.unmatched.length}`);
 
     return {
       totalRows: rows.length,
-      validRows: validRows.length,
-      invalidRows: invalidRows.length,
-      duplicateRows: duplicateRows.length,
-      employeesFound: employeeIds.size,
-      employeesNotFound: employeesNotFound.size,
-      results,
-      warnings: this.generateWarnings(results),
+      validRows: matchResults.matched.length,
+      invalidRows: 0, // No invalid rows in flexible mode
+      duplicateRows: matchResults.unmatched.length, // Repurpose for unmatched
+      employeesFound: matchResults.matchedEmployeeIds.size,
+      employeesNotFound: matchResults.unmatched.length,
+      results: [...matchResults.matched, ...matchResults.unmatched],
+      warnings: this.generateFlexibleWarnings(matchResults, identifierColumn),
       sessionId,
     };
   }
 
   /**
-   * Confirm and execute import
+   * Confirm and execute import (FLEXIBLE FORMAT)
+   * Stores raw attendance data as-is without forcing structure
    */
   async confirmImport(
     sessionId: string,
@@ -162,20 +151,29 @@ export class AttendanceImportService {
     }
 
     this.logger.log(
-      `Executing import for session ${sessionId} with ${session.validRows.length} valid rows`,
+      `Executing flexible import for session ${sessionId} with ${session.validRows.length} rows`,
     );
 
-    // Create import history record
+    // Get all rows (matched + unmatched)
+    const allRows = [...session.validRows, ...session.duplicateRows];
+
+    // Extract column names from first row
+    const columns = allRows.length > 0 && allRows[0].rawData 
+      ? Object.keys(JSON.parse(allRows[0].rawData))
+      : [];
+
+    // Create import history record with flexible format metadata
     const importHistory = await this.prisma.attendanceImportHistory.create({
       data: {
         organizationId,
         fileName: session.fileName,
         uploadedBy: userId,
-        totalRows: session.validRows.length + session.invalidRows.length,
+        totalRows: allRows.length,
         successfulRows: 0,
         failedRows: 0,
-        duplicateRows: session.duplicateRows.length,
+        duplicateRows: 0,
         status: 'PROCESSING',
+        originalColumns: JSON.stringify(columns), // ✅ Store original columns
       },
     });
 
@@ -183,16 +181,16 @@ export class AttendanceImportService {
     let failCount = 0;
     const errors: any[] = [];
 
-    // Import valid rows
-    for (const row of session.validRows) {
+    // ✅ Import ALL rows as raw attendance records
+    for (const row of allRows) {
       try {
-        await this.importAttendanceRow(row, organizationId, userId);
+        await this.importRawAttendanceRow(row, organizationId, importHistory.id);
         successCount++;
       } catch (error) {
         failCount++;
         errors.push({
           rowNumber: row.rowNumber,
-          employeeId: row.employeeId,
+          identifier: row.employeeId,
           error: error.message,
         });
         this.logger.error(
@@ -206,16 +204,9 @@ export class AttendanceImportService {
       where: { id: importHistory.id },
       data: {
         successfulRows: successCount,
-        failedRows: failCount + session.invalidRows.length,
+        failedRows: failCount,
         status: failCount > 0 ? 'PARTIAL' : 'COMPLETED',
-        errorReport: JSON.stringify({
-          importErrors: errors,
-          validationErrors: session.invalidRows.map((r) => ({
-            rowNumber: r.rowNumber,
-            employeeId: r.employeeId,
-            error: r.error,
-          })),
-        }),
+        errorReport: JSON.stringify({ importErrors: errors }),
         completedAt: new Date(),
       },
     });
@@ -224,38 +215,23 @@ export class AttendanceImportService {
     this.importSessions.delete(sessionId);
 
     this.logger.log(
-      `Import completed: ${successCount} success, ${failCount} failed`,
+      `Flexible import completed: ${successCount} success, ${failCount} failed`,
     );
 
-    // Emit real-time notification to HR users
+    // Emit real-time notification
     try {
-      this.socketGateway.sendToRole('HR', 'attendance:import:completed', {
+      const notification = {
         importHistoryId: importHistory.id,
         fileName: session.fileName,
-        totalRows: session.validRows.length,
+        totalRows: allRows.length,
         successfulRows: successCount,
         failedRows: failCount,
-        duplicateRows: session.duplicateRows.length,
         status: failCount > 0 ? 'PARTIAL' : 'COMPLETED',
-      });
-      this.socketGateway.sendToRole('HR_ADMIN', 'attendance:import:completed', {
-        importHistoryId: importHistory.id,
-        fileName: session.fileName,
-        totalRows: session.validRows.length,
-        successfulRows: successCount,
-        failedRows: failCount,
-        duplicateRows: session.duplicateRows.length,
-        status: failCount > 0 ? 'PARTIAL' : 'COMPLETED',
-      });
-      this.socketGateway.sendToRole('HR_USER', 'attendance:import:completed', {
-        importHistoryId: importHistory.id,
-        fileName: session.fileName,
-        totalRows: session.validRows.length,
-        successfulRows: successCount,
-        failedRows: failCount,
-        duplicateRows: session.duplicateRows.length,
-        status: failCount > 0 ? 'PARTIAL' : 'COMPLETED',
-      });
+      };
+      
+      this.socketGateway.sendToRole('HR', 'attendance:import:completed', notification);
+      this.socketGateway.sendToRole('HR_ADMIN', 'attendance:import:completed', notification);
+      this.socketGateway.sendToRole('HR_USER', 'attendance:import:completed', notification);
     } catch (error) {
       this.logger.warn('Failed to emit Socket.IO notification:', error.message);
     }
@@ -263,11 +239,11 @@ export class AttendanceImportService {
     return {
       success: true,
       importHistoryId: importHistory.id,
-      totalRows: session.validRows.length,
+      totalRows: allRows.length,
       successfulRows: successCount,
       failedRows: failCount,
-      duplicateRows: session.duplicateRows.length,
-      invalidRows: session.invalidRows.length,
+      matchedEmployees: session.validRows.length,
+      unmatchedRecords: session.duplicateRows.length,
     };
   }
 
@@ -279,6 +255,13 @@ export class AttendanceImportService {
     organizationId: string,
     userId: string,
   ) {
+    // For flexible format, date might not exist
+    if (!row.date) {
+      this.logger.warn(`Row ${row.rowNumber} has no date field, using raw format instead`);
+      // Delegate to raw import
+      throw new Error('Date field required for structured import');
+    }
+
     // Parse date and times
     const businessDate = this.parseDate(row.date);
     const checkInTime = row.checkIn ? this.parseDateTime(row.date, row.checkIn) : null;
@@ -416,6 +399,37 @@ export class AttendanceImportService {
   }
 
   /**
+   * Get column value from row with flexible header matching
+   */
+  private getColumnValue(row: any, columnName: string): string {
+    const normalizeHeader = (header: string) => 
+      header.toLowerCase().replace(/[\s_-]/g, '');
+    
+    const targetNormalized = normalizeHeader(columnName);
+    
+    // Map of column variations
+    const columnVariations: Record<string, string[]> = {
+      'employeeid': ['employeeid', 'empid', 'employee', 'employee id', 'emp_id'],
+      'date': ['date', 'attendancedate', 'day', 'attendance date', 'attendance_date'],
+      'checkin': ['checkin', 'timein', 'intime', 'clockin', 'check in', 'time in', 'clock in'],
+      'checkout': ['checkout', 'timeout', 'outtime', 'clockout', 'check out', 'time out', 'clock out'],
+      'status': ['status', 'attendancestatus', 'state', 'attendance status', 'attendance_status'],
+    };
+    
+    const variations = columnVariations[targetNormalized] || [targetNormalized];
+    
+    // Try to find matching column in row
+    for (const key of Object.keys(row)) {
+      const normalizedKey = normalizeHeader(key);
+      if (variations.includes(normalizedKey)) {
+        return row[key]?.toString().trim() || '';
+      }
+    }
+    
+    return '';
+  }
+
+  /**
    * Validate Excel row
    */
   private async validateRow(
@@ -423,11 +437,11 @@ export class AttendanceImportService {
     rowNumber: number,
     organizationId: string,
   ): Promise<ExcelRowImportResult> {
-    const employeeId = row['Employee ID']?.toString().trim() || '';
-    const date = row['Date']?.toString().trim() || '';
-    const checkIn = row['Check In']?.toString().trim() || '';
-    const checkOut = row['Check Out']?.toString().trim() || '';
-    const status = row['Status']?.toString().trim() || '';
+    const employeeId = this.getColumnValue(row, 'Employee ID');
+    const date = this.getColumnValue(row, 'Date');
+    const checkIn = this.getColumnValue(row, 'Check In');
+    const checkOut = this.getColumnValue(row, 'Check Out');
+    const status = this.getColumnValue(row, 'Status');
 
     const result: ExcelRowImportResult = {
       rowNumber,
@@ -525,18 +539,51 @@ export class AttendanceImportService {
 
   /**
    * Validate Excel headers
+   * Supports flexible column name matching (case-insensitive, handles variations)
    */
   private validateHeaders(firstRow: any) {
-    const requiredHeaders = ['Employee ID', 'Date', 'Check In', 'Check Out', 'Status'];
     const actualHeaders = Object.keys(firstRow);
-
-    for (const required of requiredHeaders) {
-      if (!actualHeaders.includes(required)) {
-        throw new BadRequestException(
-          `Missing required column: "${required}". Please use the provided template.`,
-        );
+    
+    // Log actual headers for debugging
+    this.logger.debug(`Actual Excel headers: ${JSON.stringify(actualHeaders)}`);
+    
+    // Normalize header names for comparison (lowercase, remove spaces/underscores)
+    const normalizeHeader = (header: string) => 
+      header.toLowerCase().replace(/[\s_-]/g, '');
+    
+    const normalizedActual = actualHeaders.map(normalizeHeader);
+    this.logger.debug(`Normalized headers: ${JSON.stringify(normalizedActual)}`);
+    
+    // Required headers with their variations
+    const requiredHeadersMap = {
+      'Employee ID': ['employeeid', 'empid', 'employee'],
+      'Date': ['date', 'attendancedate', 'day'],
+      'Check In': ['checkin', 'timein', 'intime', 'clockin'],
+      'Check Out': ['checkout', 'timeout', 'outtime', 'clockout'],
+      'Status': ['status', 'attendancestatus', 'state'],
+    };
+    
+    const missingHeaders: string[] = [];
+    
+    for (const [displayName, variations] of Object.entries(requiredHeadersMap)) {
+      const found = variations.some(variant => normalizedActual.includes(variant));
+      if (!found) {
+        missingHeaders.push(displayName);
       }
     }
+    
+    if (missingHeaders.length > 0) {
+      this.logger.error(`Missing headers: ${JSON.stringify(missingHeaders)}`);
+      this.logger.error(`Headers found in file: ${JSON.stringify(actualHeaders)}`);
+      this.logger.error(`Expected variations: ${JSON.stringify(requiredHeadersMap)}`);
+      throw new BadRequestException(
+        `Missing required columns: ${missingHeaders.join(', ')}. ` +
+        `Found columns: ${actualHeaders.join(', ')}. ` +
+        `Please use the provided template or ensure columns are named correctly.`
+      );
+    }
+    
+    this.logger.debug('All required headers found');
   }
 
   /**
@@ -756,5 +803,238 @@ export class AttendanceImportService {
         this.logger.log(`Cleaned up expired session: ${sessionId}`);
       }
     }
+  }
+
+  /**
+   * ✅ NEW: Detect employee identifier column from Excel headers
+   */
+  private detectEmployeeIdentifierColumn(columns: string[]): string | null {
+    const normalizeColumn = (col: string) => col.toLowerCase().replace(/[\s_-]/g, '');
+    
+    // Prioritized list of identifier patterns
+    const identifierPatterns = [
+      ['agentid', 'agent'],
+      ['employeeid', 'empid'],
+      ['biometricid', 'biometric'],
+      ['staffid', 'staff'],
+      ['userid', 'user'],
+    ];
+
+    for (const patterns of identifierPatterns) {
+      for (const col of columns) {
+        const normalized = normalizeColumn(col);
+        if (patterns.some(p => normalized === p || normalized.includes(p))) {
+          this.logger.log(`✅ Detected identifier column: "${col}"`);
+          return col;
+        }
+      }
+    }
+
+    this.logger.warn('⚠️ No employee identifier column detected - will try to match by name');
+    return null;
+  }
+
+  /**
+   * ✅ NEW: Match employees from flexible Excel format
+   */
+  private async matchEmployees(
+    rows: any[],
+    organizationId: string,
+    identifierColumn: string | null,
+  ) {
+    const matched: ExcelRowImportResult[] = [];
+    const unmatched: ExcelRowImportResult[] = [];
+    const matchedEmployeeIds = new Set<string>();
+
+    // Get all employees for this organization
+    const employees = await this.prisma.employee.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        employeeId: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    this.logger.log(`Found ${employees.length} employees in organization`);
+
+    // Create lookup maps
+    const employeeByIdMap = new Map(
+      employees.map(e => [e.employeeId.toLowerCase().trim(), e])
+    );
+    
+    const employeeByNameMap = new Map(
+      employees.map(e => [`${e.firstName} ${e.lastName}`.toLowerCase().trim(), e])
+    );
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNumber = i + 2; // Excel row (header = row 1)
+      const row = rows[i];
+
+      let matchedEmployee: typeof employees[0] | undefined = undefined;
+      let originalIdentifier: string | null = null;
+      let matchMethod = 'NONE';
+
+      // Strategy 1: Try to match using identifier column
+      if (identifierColumn && row[identifierColumn]) {
+        originalIdentifier = row[identifierColumn].toString().trim();
+        if (originalIdentifier) {
+          const lookupKey = originalIdentifier.toLowerCase().trim();
+          matchedEmployee = employeeByIdMap.get(lookupKey);
+          if (matchedEmployee) {
+            matchMethod = 'ID';
+            this.logger.log(`Row ${rowNumber}: Matched by ID "${originalIdentifier}" -> ${matchedEmployee.employeeId}`);
+          }
+        }
+      }
+
+      // Strategy 2: Try to match by name if ID match failed
+      if (!matchedEmployee) {
+        const nameColumn = this.detectNameColumn(Object.keys(row));
+        if (nameColumn && row[nameColumn]) {
+          const originalName = row[nameColumn].toString().trim();
+          const lookupKey = originalName.toLowerCase().trim();
+          matchedEmployee = employeeByNameMap.get(lookupKey);
+          if (matchedEmployee) {
+            matchMethod = 'NAME';
+            originalIdentifier = originalIdentifier || originalName;
+            this.logger.log(`Row ${rowNumber}: Matched by NAME "${originalName}" -> ${matchedEmployee.employeeId}`);
+          }
+        }
+      }
+
+      // Extract name for display
+      const nameColumn = this.detectNameColumn(Object.keys(row));
+      const originalName = nameColumn ? row[nameColumn]?.toString().trim() : (originalIdentifier || 'UNKNOWN');
+
+      const result: ExcelRowImportResult = {
+        rowNumber,
+        employeeId: originalIdentifier || originalName || `ROW-${rowNumber}`,
+        employeeName: originalName,
+        rawData: JSON.stringify(row), // ✅ Store complete row as JSON
+        success: !!matchedEmployee,
+        employeeFound: !!matchedEmployee,
+        matchedEmployeeUUID: matchedEmployee?.id,
+      };
+
+      if (matchedEmployee) {
+        result.employeeName = `${matchedEmployee.firstName} ${matchedEmployee.lastName}`;
+        matchedEmployeeIds.add(matchedEmployee.id);
+        matched.push(result);
+      } else {
+        result.error = `No match found (tried ID: "${originalIdentifier || 'N/A'}", Name: "${originalName}")`;
+        unmatched.push(result);
+      }
+    }
+
+    this.logger.log(`✅ Matching complete: ${matched.length} matched, ${unmatched.length} unmatched`);
+    
+    return { matched, unmatched, matchedEmployeeIds };
+  }
+
+  /**
+   * ✅ NEW: Detect name column from Excel headers
+   */
+  private detectNameColumn(columns: string[]): string | null {
+    const normalizeColumn = (col: string) => col.toLowerCase().replace(/[\s_-]/g, '');
+    
+    const namePatterns = ['agentname', 'employeename', 'name', 'fullname', 'staffname', 'empname'];
+
+    for (const col of columns) {
+      const normalized = normalizeColumn(col);
+      if (namePatterns.some(p => normalized === p || normalized.includes(p))) {
+        this.logger.log(`✅ Detected name column: "${col}"`);
+        return col;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * ✅ NEW: Import raw attendance row (flexible format)
+   */
+  private async importRawAttendanceRow(
+    row: ExcelRowImportResult,
+    organizationId: string,
+    importHistoryId: string,
+  ) {
+    const rawData = row.rawData || JSON.stringify({});
+    const parsedData = JSON.parse(rawData);
+
+    // Try to extract month/year if identifiable
+    let attendanceMonth: number | null = null;
+    let attendanceYear: number | null = null;
+
+    // Look for month/year in column names or data
+    const columns = Object.keys(parsedData);
+    
+    // Strategy 1: Look for explicit month/year columns or data
+    for (const col of columns) {
+      if (/month|mth/i.test(col) && parsedData[col]) {
+        const monthMatch = parsedData[col].toString().match(/(\d{1,2})/);
+        if (monthMatch) attendanceMonth = parseInt(monthMatch[1]);
+      }
+      if (/year|yr/i.test(col) && parsedData[col]) {
+        const yearMatch = parsedData[col].toString().match(/(\d{4})/);
+        if (yearMatch) attendanceYear = parseInt(yearMatch[1]);
+      }
+    }
+
+    // Strategy 2: If not found, use current month/year
+    // This ensures uploaded attendance is visible for the current month
+    if (attendanceMonth === null || attendanceYear === null) {
+      const now = new Date();
+      attendanceMonth = now.getMonth() + 1; // 1-12
+      attendanceYear = now.getFullYear();
+      this.logger.log(`No month/year detected in Excel, using current: ${attendanceMonth}/${attendanceYear}`);
+    }
+
+    // Create raw attendance record
+    await this.prisma.rawAttendanceRecord.create({
+      data: {
+        organizationId,
+        importHistoryId,
+        employeeId: row.matchedEmployeeUUID || null,
+        originalIdentifier: row.employeeId,
+        originalName: row.employeeName,
+        rawData: rawData,
+        attendanceMonth,
+        attendanceYear,
+        isMatched: !!row.matchedEmployeeUUID,
+        matchedAt: row.matchedEmployeeUUID ? new Date() : null,
+        matchingNote: row.employeeFound ? 'Auto-matched by identifier' : row.error || 'No match found',
+      },
+    });
+  }
+
+  /**
+   * ✅ NEW: Generate warnings for flexible format
+   */
+  private generateFlexibleWarnings(matchResults: any, identifierColumn: string | null): string[] {
+    const warnings: string[] = [];
+
+    if (!identifierColumn) {
+      warnings.push(
+        'No employee identifier column detected (Agent ID, Employee ID, etc.). ' +
+        'All records will be imported as unmatched. Please ensure your Excel contains an identifier column.'
+      );
+    }
+
+    if (matchResults.unmatched.length > 0) {
+      warnings.push(
+        `${matchResults.unmatched.length} records could not be matched to employees in the system. ` +
+        `These will be stored but not visible to employees until matched.`
+      );
+    }
+
+    if (matchResults.matched.length === 0) {
+      warnings.push(
+        'No records were matched to employees. Please verify that employee identifiers in Excel match those in the HRMS system.'
+      );
+    }
+
+    return warnings;
   }
 }

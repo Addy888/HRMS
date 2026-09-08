@@ -7,7 +7,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export interface ExcelRowImportResult {
   rowNumber: number;
   employeeId: string;
-  date: string;
+  date?: string; // Optional now
   checkIn?: string;
   checkOut?: string;
   status?: string;
@@ -16,6 +16,8 @@ export interface ExcelRowImportResult {
   isDuplicate?: boolean;
   employeeFound?: boolean;
   employeeName?: string;
+  rawData?: string; // ✅ NEW: Complete row as JSON
+  matchedEmployeeUUID?: string; // ✅ NEW: Matched employee UUID
 }
 
 /**
@@ -36,10 +38,10 @@ export interface AttendanceImportPreviewDto {
  * Import Confirmation Request
  */
 export class ConfirmImportDto {
-  @ApiProperty({ description: 'Temporary file ID or path' })
+  @ApiProperty({ description: 'Temporary file ID or path', required: false })
   @IsString()
-  @IsNotEmpty()
-  fileId: string;
+  @IsOptional()
+  fileId?: string;
 
   @ApiProperty({ description: 'Import session ID' })
   @IsString()
