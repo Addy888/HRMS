@@ -248,6 +248,14 @@ export class AttendanceController {
     console.log('[IMPORTED-ATTENDANCE] Extracted columns:', columnsArray.length, 'columns');
     console.log('[IMPORTED-ATTENDANCE] Column names:', columnsArray.slice(0, 10)); // First 10 columns
 
+    // ✅ Extract unique attendance months/years from records for frontend filter
+    const availableMonths = new Set<string>();
+    records.forEach(record => {
+      if (record.attendanceMonth && record.attendanceYear) {
+        availableMonths.add(`${record.attendanceYear}-${String(record.attendanceMonth).padStart(2, '0')}`);
+      }
+    });
+
     const result = {
       month: queryMonth,
       year: queryYear,
@@ -256,12 +264,16 @@ export class AttendanceController {
         data: JSON.parse(r.rawData),
         uploadedAt: r.createdAt,
         fileName: r.importHistory?.fileName,
+        attendanceMonth: r.attendanceMonth, // ✅ Include attendance period
+        attendanceYear: r.attendanceYear,   // ✅ Include attendance period
       })),
       columns: columnsArray,
       total: records.length,
+      availableMonths: Array.from(availableMonths).sort().reverse(), // ✅ Available periods
     };
 
     console.log('[IMPORTED-ATTENDANCE] Returning COMPLETE Excel with', result.records.length, 'rows (ALL employees)');
+    console.log('[IMPORTED-ATTENDANCE] Available months:', result.availableMonths);
     console.log('[IMPORTED-ATTENDANCE] ========== END ==========');
 
     return result;
