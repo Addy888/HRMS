@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HRLayout from '@/layouts/HRLayout';
 import api from '@/lib/api';
@@ -53,7 +53,7 @@ const SEVERITIES = [
   { value: 'CRITICAL', label: 'Critical', color: 'text-red-400' },
 ];
 
-export default function CreateHRActionPage() {
+function CreateHRActionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const employeeId = searchParams.get('employeeId');
@@ -754,5 +754,21 @@ export default function CreateHRActionPage() {
         </div>
       </div>
     </HRLayout>
+  );
+}
+
+
+// Wrap with Suspense to fix the useSearchParams error
+export default function CreateHRActionPage() {
+  return (
+    <Suspense fallback={
+      <HRLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        </div>
+      </HRLayout>
+    }>
+      <CreateHRActionPageContent />
+    </Suspense>
   );
 }

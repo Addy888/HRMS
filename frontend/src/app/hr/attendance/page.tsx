@@ -310,10 +310,13 @@ export default function HRAttendancePage() {
                       File Name
                     </th>
                     <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
+                      Attendance Month
+                    </th>
+                    <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
                       Uploaded By
                     </th>
                     <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
-                      Date & Time
+                      Upload Date
                     </th>
                     <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
                       Rows
@@ -341,10 +344,42 @@ export default function HRAttendancePage() {
                       upload.status === 'FAILED' ? 'Upload Failed' :
                       upload.status;
 
+                    // Extract attendance month/year from filename
+                    const extractMonthYear = (fileName: string) => {
+                      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                         'July', 'August', 'September', 'October', 'November', 'December'];
+                      const lowerFileName = fileName.toLowerCase();
+                      
+                      let detectedMonth = null;
+                      let detectedYear = null;
+                      
+                      for (let i = 0; i < monthNames.length; i++) {
+                        if (lowerFileName.includes(monthNames[i].toLowerCase())) {
+                          detectedMonth = monthNames[i];
+                          break;
+                        }
+                      }
+                      
+                      const yearMatch = fileName.match(/20\d{2}/);
+                      if (yearMatch) {
+                        detectedYear = yearMatch[0];
+                      }
+                      
+                      if (detectedMonth && detectedYear) {
+                        return `${detectedMonth} ${detectedYear}`;
+                      }
+                      return '—';
+                    };
+
+                    const attendanceMonth = extractMonthYear(upload.fileName);
+
                     return (
                       <tr key={upload.id} className="border-b border-neutral-800/40 hover:bg-neutral-800/20 transition-colors">
                         <td className="px-3 py-3 text-sm text-white font-medium">
                           {upload.fileName}
+                        </td>
+                        <td className="px-3 py-3 text-xs text-blue-400 font-semibold">
+                          {attendanceMonth}
                         </td>
                         <td className="px-3 py-3 text-xs text-neutral-300">
                           {uploadedByName}

@@ -90,6 +90,9 @@ export default function ImportHistoryPage() {
                     File Name
                   </th>
                   <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                    Attendance Month
+                  </th>
+                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
                     Uploaded By
                   </th>
                   <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
@@ -103,9 +106,6 @@ export default function ImportHistoryPage() {
                   </th>
                   <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
                     Failed
-                  </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
-                    Duplicates
                   </th>
                   <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
                     Status
@@ -130,53 +130,84 @@ export default function ImportHistoryPage() {
                     </td>
                   </tr>
                 ) : (
-                  records.map((record: any) => (
-                    <tr key={record.id} className="hover:bg-neutral-800/35 transition-colors">
-                      <td className="px-6 py-4 text-sm font-semibold text-white">
-                        {record.fileName}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-neutral-400">
-                        {record.uploadedByUser?.employee
-                          ? `${record.uploadedByUser.employee.firstName} ${record.uploadedByUser.employee.lastName}`
-                          : record.uploadedByUser?.email || '—'}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-neutral-400 font-mono">
-                        {format(new Date(record.uploadedAt), 'MMM dd, yyyy HH:mm')}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-neutral-300 font-mono">
-                        {record.totalRows}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-emerald-400 font-mono font-bold">
-                        {record.successfulRows}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-red-400 font-mono font-bold">
-                        {record.failedRows}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-amber-400 font-mono font-bold">
-                        {record.duplicateRows}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-lg border text-[9px] font-extrabold ${
-                            STATUS_COLORS[record.status] || STATUS_COLORS.PROCESSING
-                          }`}
-                        >
-                          {record.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {record.failedRows > 0 && record.errorReport && (
-                          <button
-                            onClick={() => downloadErrorReport(record.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
+                  records.map((record: any) => {
+                    // Extract month/year from filename
+                    const extractMonthYear = (fileName: string) => {
+                      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                         'July', 'August', 'September', 'October', 'November', 'December'];
+                      const lowerFileName = fileName.toLowerCase();
+                      
+                      let detectedMonth = null;
+                      let detectedYear = null;
+                      
+                      for (let i = 0; i < monthNames.length; i++) {
+                        if (lowerFileName.includes(monthNames[i].toLowerCase())) {
+                          detectedMonth = monthNames[i];
+                          break;
+                        }
+                      }
+                      
+                      const yearMatch = fileName.match(/20\d{2}/);
+                      if (yearMatch) {
+                        detectedYear = yearMatch[0];
+                      }
+                      
+                      if (detectedMonth && detectedYear) {
+                        return `${detectedMonth} ${detectedYear}`;
+                      }
+                      return '—';
+                    };
+
+                    const attendanceMonth = extractMonthYear(record.fileName);
+
+                    return (
+                      <tr key={record.id} className="hover:bg-neutral-800/35 transition-colors">
+                        <td className="px-6 py-4 text-sm font-semibold text-white">
+                          {record.fileName}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-blue-400 font-semibold">
+                          {attendanceMonth}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-neutral-400">
+                          {record.uploadedByUser?.employee
+                            ? `${record.uploadedByUser.employee.firstName} ${record.uploadedByUser.employee.lastName}`
+                            : record.uploadedByUser?.email || '—'}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-neutral-400 font-mono">
+                          {format(new Date(record.uploadedAt), 'MMM dd, yyyy HH:mm')}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-neutral-300 font-mono">
+                          {record.totalRows}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-emerald-400 font-mono font-bold">
+                          {record.successfulRows}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-red-400 font-mono font-bold">
+                          {record.failedRows}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-lg border text-[9px] font-extrabold ${
+                              STATUS_COLORS[record.status] || STATUS_COLORS.PROCESSING
+                            }`}
                           >
-                            <Download className="w-3 h-3" />
-                            Errors
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                            {record.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {record.failedRows > 0 && record.errorReport && (
+                            <button
+                              onClick={() => downloadErrorReport(record.id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
+                            >
+                              <Download className="w-3 h-3" />
+                              Errors
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
