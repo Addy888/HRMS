@@ -30,14 +30,14 @@ export default function NotificationBell() {
       <div className="relative">
         <button
           onClick={() => setDrawerOpen(true)}
-          className="relative p-2.5 rounded-xl bg-neutral-900 border border-neutral-850 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-all shadow-inner"
+          className="relative p-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-all shadow-inner"
         >
           <motion.div animate={controls}>
             <Bell className="w-5 h-5" />
           </motion.div>
           
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-extrabold text-white ring-2 ring-black font-mono animate-in zoom-in-50 duration-200">
+            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-extrabold text-foreground ring-2 ring-black font-mono animate-in zoom-in-50 duration-200">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}

@@ -73,14 +73,14 @@ export default function PlatformAdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Platform Dashboard</h1>
-          <p className="text-neutral-600 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Platform Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
             Manage organizations and view platform-wide statistics
           </p>
         </div>
         <button
           onClick={() => router.push('/platform-admin/companies/create')}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Building2 className="h-5 w-5" />
           Create Company
@@ -105,22 +105,22 @@ export default function PlatformAdminDashboard() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-neutral-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Organizations
               </CardTitle>
               <Building2 className="h-5 w-5 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-neutral-900">
+              <div className="text-3xl font-bold text-foreground">
                 {stats.totalOrganizations}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">All companies</p>
+              <p className="text-xs text-muted-foreground mt-1">All companies</p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-neutral-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Active Organizations
               </CardTitle>
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -129,13 +129,13 @@ export default function PlatformAdminDashboard() {
               <div className="text-3xl font-bold text-green-600">
                 {stats.activeOrganizations}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Currently active</p>
+              <p className="text-xs text-muted-foreground mt-1">Currently active</p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-red-500">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-neutral-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Inactive Organizations
               </CardTitle>
               <XCircle className="h-5 w-5 text-red-500" />
@@ -144,52 +144,52 @@ export default function PlatformAdminDashboard() {
               <div className="text-3xl font-bold text-red-600">
                 {stats.inactiveOrganizations}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Temporarily disabled</p>
+              <p className="text-xs text-muted-foreground mt-1">Temporarily disabled</p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-purple-500">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-neutral-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Users
               </CardTitle>
               <Users className="h-5 w-5 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-neutral-900">
+              <div className="text-3xl font-bold text-foreground">
                 {stats.totalUsers}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Platform-wide</p>
+              <p className="text-xs text-muted-foreground mt-1">Platform-wide</p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-orange-500">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-neutral-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Employees
               </CardTitle>
               <Shield className="h-5 w-5 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-neutral-900">
+              <div className="text-3xl font-bold text-foreground">
                 {stats.totalEmployees}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Across all companies</p>
+              <p className="text-xs text-muted-foreground mt-1">Across all companies</p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-teal-500">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-neutral-600">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Departments
               </CardTitle>
               <Activity className="h-5 w-5 text-teal-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-neutral-900">
+              <div className="text-3xl font-bold text-foreground">
                 {stats.totalDepartments}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Platform-wide</p>
+              <p className="text-xs text-muted-foreground mt-1">Platform-wide</p>
             </CardContent>
           </Card>
         </div>
@@ -205,7 +205,7 @@ export default function PlatformAdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-muted-foreground">
               View all organizations, create new companies, and manage company Super Admins.
             </p>
           </CardContent>
@@ -219,7 +219,7 @@ export default function PlatformAdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-muted-foreground">
               Add a new organization to the platform with its own Super Admin account.
             </p>
           </CardContent>

@@ -107,21 +107,21 @@ export default function OtpVerification({
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">
+        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-xl flex items-center justify-center">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="font-heading text-lg font-bold text-white">{title}</h2>
-          <p className="text-xs text-neutral-500">FCS Security Verification</p>
+          <h2 className="font-heading text-lg font-bold text-foreground">{title}</h2>
+          <p className="text-xs text-muted-foreground">FCS Security Verification</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="text-center space-y-1">
-          <p className="text-xs text-neutral-400 leading-relaxed">
+          <p className="text-xs text-muted-foreground leading-relaxed">
             {description}
           </p>
-          <p className="text-sm font-bold text-emerald-400">{maskedPhone}</p>
+          <p className="text-sm font-bold text-emerald-600">{maskedPhone}</p>
         </div>
 
         {/* OTP Input Boxes */}
@@ -138,13 +138,13 @@ export default function OtpVerification({
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
               disabled={isVerifying}
-              className="w-12 h-14 bg-neutral-950 border border-neutral-800 rounded-xl text-center text-xl font-bold text-white focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
+              className="w-12 h-14 bg-card border border-border rounded-xl text-center text-xl font-bold text-foreground focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
             />
           ))}
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-400 font-semibold leading-relaxed">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-600 font-semibold leading-relaxed">
             {error}
           </div>
         )}
@@ -152,7 +152,7 @@ export default function OtpVerification({
         <button
           onClick={() => handleVerify()}
           disabled={!isComplete || isVerifying}
-          className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-950/20"
+          className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-950/20"
         >
           {isVerifying ? (
             <>
@@ -170,7 +170,7 @@ export default function OtpVerification({
             type="button"
             onClick={handleResend}
             disabled={resendCooldown > 0 || isResending}
-            className="text-xs text-emerald-400 hover:text-emerald-300 disabled:text-neutral-600 disabled:cursor-not-allowed font-semibold flex items-center gap-1.5 transition-colors"
+            className="text-xs text-emerald-600 hover:text-emerald-300 disabled:text-muted-foreground disabled:cursor-not-allowed font-semibold flex items-center gap-1.5 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isResending ? 'animate-spin' : ''}`} />
             {resendCooldown > 0 ? `Resend OTP (${resendCooldown}s)` : 'Resend OTP'}
@@ -181,7 +181,7 @@ export default function OtpVerification({
               type="button"
               onClick={onBack}
               disabled={isVerifying}
-              className="text-xs text-neutral-500 hover:text-neutral-350 disabled:opacity-50 font-semibold flex items-center gap-1.5 transition-colors"
+              className="text-xs text-muted-foreground hover:text-neutral-350 disabled:opacity-50 font-semibold flex items-center gap-1.5 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Login
@@ -190,7 +190,7 @@ export default function OtpVerification({
         </div>
       </div>
 
-      <div className="text-center text-[10px] text-neutral-600 leading-relaxed">
+      <div className="text-center text-[10px] text-muted-foreground leading-relaxed">
         🔒 OTP is valid for 5 minutes. Never share your OTP with anyone.
       </div>
     </div>

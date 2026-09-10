@@ -270,7 +270,10 @@ export class EmployeesService {
 
       // Auto-assign current ACTIVE company policy if exists
       const activeCompanyPolicy = await tx.companyPolicy.findFirst({
-        where: { status: 'ACTIVE' },
+        where: { 
+          organizationId: requestingUser.organizationId,
+          status: 'ACTIVE' 
+        },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -480,10 +483,15 @@ export class EmployeesService {
       throw new UnauthorizedException('Authenticated user could not be identified');
     }
 
-    // ✅ STEP 2: Get requesting user's organizationId
+    // ✅ STEP 2: Get requesting user's organizationId and role
     const requestingUser = await this.prisma.user.findUnique({
       where: { id: requestUserId },
-      select: { organizationId: true },
+      select: { 
+        organizationId: true,
+        role: {
+          select: { name: true }
+        }
+      },
     });
 
     if (!requestingUser || !requestingUser.organizationId) {
@@ -491,6 +499,9 @@ export class EmployeesService {
     }
     
     console.log('\n🔍 BACKEND STEP 3: Executing Prisma Query with ownership verification...');
+    console.log('   User Role:', requestingUser.role.name);
+    console.log('   Organization ID:', requestingUser.organizationId);
+    
     const employee = await this.prisma.employee.findUnique({
       where: { id },
       include: {
@@ -559,8 +570,9 @@ export class EmployeesService {
       throw new NotFoundException('Employee not found');
     }
 
-    // ✅ STEP 4: Verify organization isolation (NOT HR ownership)
-    // HR users can access ANY employee in their organization
+    // ✅ STEP 4: Verify organization isolation
+    // SUPER_ADMIN can access ANY employee in their organization
+    // HR users can also access ANY employee in their organization
     if (employee.organizationId !== requestingUser.organizationId) {
       console.log('❌ BACKEND: Organization mismatch');
       throw new ForbiddenException('You do not have access to this employee (different organization)');
@@ -680,7 +692,7 @@ export class EmployeesService {
       designationId: updateEmployeeDto.designationId,
     });
 
-    // ✅ findOne already verifies ownership (organizationId + createdByUserId)
+    // ✅ findOne already verifies organization isolation (SUPER_ADMIN can edit ANY employee in their org)
     const employee = await this.findOne(id, requestUserId);
 
     console.log('[EMPLOYEE-UPDATE] Current employee data:', {
@@ -848,7 +860,7 @@ export class EmployeesService {
   }
 
   async setActivation(id: string, active: boolean, requestUserId: string) {
-    // ✅ findOne already verifies ownership
+    // ✅ findOne already verifies organization isolation (SUPER_ADMIN can activate/deactivate ANY employee in their org)
     const employee = await this.findOne(id, requestUserId);
     await this.prisma.user.update({
       where: { id: employee.userId },
@@ -864,7 +876,7 @@ export class EmployeesService {
   }
 
   async resetPassword(id: string, requestUserId: string) {
-    // ✅ findOne already verifies ownership
+    // ✅ findOne already verifies organization isolation (SUPER_ADMIN can reset password for ANY employee in their org)
     const employee = await this.findOne(id, requestUserId);
     const defaultPassword = '1234';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
@@ -880,7 +892,7 @@ export class EmployeesService {
     await this.prisma.auditLog.create({
       data: {
         action: 'EMPLOYEE_PASSWORD_RESET',
-        details: `Password reset by HR for employee ID ${employee.employeeId}`,
+        details: `Password reset for employee ID ${employee.employeeId}`,
       },
     });
 
@@ -888,7 +900,7 @@ export class EmployeesService {
   }
 
   async remove(id: string, requestUserId: string) {
-    // ✅ findOne already verifies ownership
+    // ✅ findOne already verifies organization isolation (SUPER_ADMIN can delete ANY employee in their org)
     const employee = await this.findOne(id, requestUserId);
 
     await this.prisma.user.delete({

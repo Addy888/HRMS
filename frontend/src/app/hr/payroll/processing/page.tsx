@@ -252,13 +252,13 @@ export default function PayrollProcessingPage() {
   // Status colors
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      DRAFT: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20',
-      CALCULATED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      DRAFT: 'bg-background0/10 text-muted-foreground border-neutral-500/20',
+      CALCULATED: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
       VERIFIED: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-      APPROVED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      LOCKED: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      PAID: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      REJECTED: 'bg-red-500/10 text-red-400 border-red-500/20',
+      APPROVED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      LOCKED: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+      PAID: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      REJECTED: 'bg-red-500/10 text-red-600 border-red-500/20',
     };
     return colors[status] || colors.DRAFT;
   };
@@ -268,49 +268,49 @@ export default function PayrollProcessingPage() {
     {
       title: 'Employees',
       value: stats?.totalEmployees || 0,
-      icon: <Users className="w-6 h-6 text-blue-400" />,
+      icon: <Users className="w-6 h-6 text-blue-600" />,
       color: 'from-blue-500 to-indigo-600',
     },
     {
       title: 'Configured',
       value: stats?.configuredStructures || 0,
-      icon: <CheckCircle className="w-6 h-6 text-emerald-400" />,
+      icon: <CheckCircle className="w-6 h-6 text-emerald-600" />,
       color: 'from-emerald-500 to-teal-600',
     },
     {
       title: 'Attendance Complete',
       value: stats?.attendanceCompleted || 0,
-      icon: <Clock className="w-6 h-6 text-purple-400" />,
+      icon: <Clock className="w-6 h-6 text-purple-600" />,
       color: 'from-purple-500 to-pink-600',
     },
     {
       title: 'Leaves Processed',
       value: stats?.leavesProcessed || 0,
-      icon: <Calendar className="w-6 h-6 text-amber-400" />,
+      icon: <Calendar className="w-6 h-6 text-amber-600" />,
       color: 'from-amber-500 to-orange-600',
     },
     {
       title: 'Gross Payroll',
       value: `₹${((stats?.grossPayroll || 0) / 100000).toFixed(2)}L`,
-      icon: <TrendingUp className="w-6 h-6 text-emerald-400" />,
+      icon: <TrendingUp className="w-6 h-6 text-emerald-600" />,
       color: 'from-emerald-500 to-green-600',
     },
     {
       title: 'Total Deductions',
       value: `₹${((stats?.totalDeductions || 0) / 100000).toFixed(2)}L`,
-      icon: <TrendingDown className="w-6 h-6 text-red-400" />,
+      icon: <TrendingDown className="w-6 h-6 text-red-600" />,
       color: 'from-red-500 to-rose-600',
     },
     {
       title: 'Net Payroll',
       value: `₹${((stats?.netPayroll || 0) / 100000).toFixed(2)}L`,
-      icon: <DollarSign className="w-6 h-6 text-blue-400" />,
+      icon: <DollarSign className="w-6 h-6 text-blue-600" />,
       color: 'from-blue-500 to-cyan-600',
     },
     {
       title: 'Pending',
       value: stats?.pendingEmployees || 0,
-      icon: <AlertCircle className="w-6 h-6 text-amber-400" />,
+      icon: <AlertCircle className="w-6 h-6 text-amber-600" />,
       color: 'from-amber-500 to-yellow-600',
     },
   ];
@@ -336,13 +336,13 @@ export default function PayrollProcessingPage() {
     return (
       <HRLayout>
         <div className="space-y-8 animate-pulse">
-          <div className="h-12 bg-neutral-900 rounded-lg w-1/3" />
+          <div className="h-12 bg-secondary rounded-lg w-1/3" />
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="h-32 bg-neutral-900 rounded-xl" />
+              <div key={i} className="h-32 bg-secondary rounded-xl" />
             ))}
           </div>
-          <div className="h-96 bg-neutral-900 rounded-xl" />
+          <div className="h-96 bg-secondary rounded-xl" />
         </div>
       </HRLayout>
     );
@@ -355,13 +355,13 @@ export default function PayrollProcessingPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-white" />
+              <CreditCard className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
                 Payroll Processing
               </h1>
-              <p className="text-sm text-neutral-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Generate, review and finalize monthly payroll
               </p>
             </div>
@@ -372,14 +372,14 @@ export default function PayrollProcessingPage() {
             <button
               onClick={() => generateMutation.mutate()}
               disabled={generateMutation.isPending}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Play className="w-4 h-4" />
               Generate Payroll
             </button>
             <button
               onClick={() => setShowProcessModal(true)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-foreground rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <CheckCircle className="w-4 h-4" />
               Process Payroll
@@ -387,7 +387,7 @@ export default function PayrollProcessingPage() {
             <button
               onClick={() => lockMutation.mutate()}
               disabled={lockMutation.isPending}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Lock className="w-4 h-4" />
               Lock Payroll
@@ -395,7 +395,7 @@ export default function PayrollProcessingPage() {
             <button
               onClick={() => generatePayslipsMutation.mutate()}
               disabled={generatePayslipsMutation.isPending}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <FileText className="w-4 h-4" />
               Generate Payslips
@@ -403,7 +403,7 @@ export default function PayrollProcessingPage() {
             <button
               onClick={() => exportExcelMutation.mutate()}
               disabled={exportExcelMutation.isPending}
-              className="px-4 py-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-secondary border border-border hover:border-border text-foreground rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Export Excel
@@ -411,7 +411,7 @@ export default function PayrollProcessingPage() {
             <button
               onClick={() => exportPdfMutation.mutate()}
               disabled={exportPdfMutation.isPending}
-              className="px-4 py-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-secondary border border-border hover:border-border text-foreground rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               Export PDF
@@ -427,29 +427,29 @@ export default function PayrollProcessingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-neutral-700 transition-all"
+              className="bg-card border border-border rounded-2xl p-6 hover:border-border transition-all"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-xl flex items-center justify-center`}>
                   {card.icon}
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{card.value}</div>
-              <div className="text-sm text-neutral-400">{card.title}</div>
+              <div className="text-3xl font-bold text-foreground mb-1">{card.value}</div>
+              <div className="text-sm text-muted-foreground">{card.title}</div>
             </motion.div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             {/* Month */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
               >
                 {months.map((month) => (
                   <option key={month.value} value={month.value}>
@@ -461,11 +461,11 @@ export default function PayrollProcessingPage() {
 
             {/* Year */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
               >
                 {years.map((year) => (
                   <option key={year} value={year}>
@@ -477,11 +477,11 @@ export default function PayrollProcessingPage() {
 
             {/* Department Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
               >
                 <option value="">All Departments</option>
                 {(departments || []).map((dept) => (
@@ -494,11 +494,11 @@ export default function PayrollProcessingPage() {
 
             {/* Status Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
               >
                 <option value="">All Status</option>
                 <option value="DRAFT">Draft</option>
@@ -513,25 +513,25 @@ export default function PayrollProcessingPage() {
 
             {/* Search */}
             <div className="relative lg:col-span-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search by employee name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
         </div>
 
         {/* Payroll Table */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {!payrollRecords || payrollRecords.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6">
-              <FileText className="w-16 h-16 text-neutral-700 mb-4" />
-              <h3 className="font-semibold text-white mb-2">No payroll records found</h3>
-              <p className="text-sm text-neutral-500 text-center max-w-sm">
+              <FileText className="w-16 h-16 text-card-foreground mb-4" />
+              <h3 className="font-semibold text-foreground mb-2">No payroll records found</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-sm">
                 {searchTerm || departmentFilter || statusFilter
                   ? 'Try adjusting your filters'
                   : 'Generate payroll for the selected month to get started'}
@@ -541,101 +541,101 @@ export default function PayrollProcessingPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-neutral-900/50 border-b border-neutral-800">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                  <tr className="bg-secondary border-b border-border">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Employee
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Department
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Days
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Present
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Leave
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       OT
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Basic
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Allowances
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Gross
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Deductions
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Net Salary
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800">
+                <tbody className="divide-y divide-border">
                   {payrollRecords.map((record, index) => (
                     <motion.tr
                       key={record.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.02 }}
-                      className="hover:bg-neutral-900/30 transition-colors"
+                      className="hover:bg-secondary/30 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-white">{record.employeeName}</div>
-                          <div className="text-xs text-neutral-500">{record.employeeCode}</div>
+                          <div className="text-sm font-medium text-foreground">{record.employeeName}</div>
+                          <div className="text-xs text-muted-foreground">{record.employeeCode}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-neutral-300">{record.department}</div>
-                        <div className="text-xs text-neutral-500">{record.designation}</div>
+                        <div className="text-sm text-card-foreground">{record.department}</div>
+                        <div className="text-xs text-muted-foreground">{record.designation}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="text-sm text-white font-medium">{record.workingDays}</div>
+                        <div className="text-sm text-foreground font-medium">{record.workingDays}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="text-sm text-emerald-400 font-medium">{record.present}</div>
+                        <div className="text-sm text-emerald-600 font-medium">{record.present}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="text-sm text-amber-400 font-medium">{record.leaves}</div>
+                        <div className="text-sm text-amber-600 font-medium">{record.leaves}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="text-sm text-blue-400 font-medium">{record.overtime}h</div>
+                        <div className="text-sm text-blue-600 font-medium">{record.overtime}h</div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-sm text-neutral-300">
+                        <div className="text-sm text-card-foreground">
                           ₹{record.basicSalary.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-sm text-neutral-300">
+                        <div className="text-sm text-card-foreground">
                           ₹{record.allowances.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-sm font-medium text-white">
+                        <div className="text-sm font-medium text-foreground">
                           ₹{record.grossSalary.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-sm text-red-400">
+                        <div className="text-sm text-red-600">
                           ₹{record.deductions.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-sm font-bold text-emerald-400">
+                        <div className="text-sm font-bold text-emerald-600">
                           ₹{record.netSalary.toLocaleString()}
                         </div>
                       </td>
@@ -651,7 +651,7 @@ export default function PayrollProcessingPage() {
                             className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors group"
                             title="View Details"
                           >
-                            <Eye className="w-4 h-4 text-neutral-400 group-hover:text-blue-400" />
+                            <Eye className="w-4 h-4 text-muted-foreground group-hover:text-blue-600" />
                           </button>
                           <button
                             onClick={() => downloadPayslip.mutate(record.id)}
@@ -659,7 +659,7 @@ export default function PayrollProcessingPage() {
                             className="p-1.5 hover:bg-emerald-500/10 rounded-lg transition-colors group disabled:opacity-30"
                             title="Download Payslip"
                           >
-                            <Download className="w-4 h-4 text-neutral-400 group-hover:text-emerald-400" />
+                            <Download className="w-4 h-4 text-muted-foreground group-hover:text-emerald-600" />
                           </button>
                         </div>
                       </td>
@@ -673,45 +673,45 @@ export default function PayrollProcessingPage() {
 
         {/* Bottom Summary */}
         {payrollRecords && payrollRecords.length > 0 && (
-          <div className="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 rounded-2xl p-6">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-400" />
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
               Payroll Summary
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                <div className="text-xs text-blue-400 font-semibold uppercase mb-1">Total Gross</div>
-                <div className="text-xl font-bold text-white font-mono">
+                <div className="text-xs text-blue-600 font-semibold uppercase mb-1">Total Gross</div>
+                <div className="text-xl font-bold text-foreground font-mono">
                   ₹{payrollRecords.reduce((sum, r) => sum + r.grossSalary, 0).toLocaleString()}
                 </div>
               </div>
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
-                <div className="text-xs text-purple-400 font-semibold uppercase mb-1">Total PF</div>
-                <div className="text-xl font-bold text-white font-mono">
+                <div className="text-xs text-purple-600 font-semibold uppercase mb-1">Total PF</div>
+                <div className="text-xl font-bold text-foreground font-mono">
                   ₹{(payrollRecords.reduce((sum, r) => sum + r.deductions, 0) * 0.3).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </div>
               </div>
               <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
                 <div className="text-xs text-indigo-400 font-semibold uppercase mb-1">Total ESI</div>
-                <div className="text-xl font-bold text-white font-mono">
+                <div className="text-xl font-bold text-foreground font-mono">
                   ₹{(payrollRecords.reduce((sum, r) => sum + r.deductions, 0) * 0.2).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </div>
               </div>
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
-                <div className="text-xs text-amber-400 font-semibold uppercase mb-1">Total TDS</div>
-                <div className="text-xl font-bold text-white font-mono">
+                <div className="text-xs text-amber-600 font-semibold uppercase mb-1">Total TDS</div>
+                <div className="text-xl font-bold text-foreground font-mono">
                   ₹{(payrollRecords.reduce((sum, r) => sum + r.deductions, 0) * 0.15).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </div>
               </div>
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                <div className="text-xs text-red-400 font-semibold uppercase mb-1">Total Deductions</div>
-                <div className="text-xl font-bold text-white font-mono">
+                <div className="text-xs text-red-600 font-semibold uppercase mb-1">Total Deductions</div>
+                <div className="text-xl font-bold text-foreground font-mono">
                   ₹{payrollRecords.reduce((sum, r) => sum + r.deductions, 0).toLocaleString()}
                 </div>
               </div>
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-                <div className="text-xs text-emerald-400 font-semibold uppercase mb-1">Final Payable</div>
-                <div className="text-xl font-bold text-white font-mono">
+                <div className="text-xs text-emerald-600 font-semibold uppercase mb-1">Final Payable</div>
+                <div className="text-xl font-bold text-foreground font-mono">
                   ₹{payrollRecords.reduce((sum, r) => sum + r.netSalary, 0).toLocaleString()}
                 </div>
               </div>

@@ -266,11 +266,11 @@ export default function PayrollReportsPage() {
   // Status colors
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      DRAFT: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20',
-      GENERATED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      APPROVED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      PAID: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      REJECTED: 'bg-red-500/10 text-red-400 border-red-500/20',
+      DRAFT: 'bg-background0/10 text-muted-foreground border-neutral-500/20',
+      GENERATED: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+      APPROVED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      PAID: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      REJECTED: 'bg-red-500/10 text-red-600 border-red-500/20',
     };
     return colors[status] || colors.DRAFT;
   };
@@ -280,56 +280,56 @@ export default function PayrollReportsPage() {
     {
       title: 'Total Payroll',
       value: `₹${((summary?.totalPayroll || 0) / 100000).toFixed(2)}L`,
-      icon: <DollarSign className="w-6 h-6 text-emerald-400" />,
+      icon: <DollarSign className="w-6 h-6 text-emerald-600" />,
       color: 'from-emerald-500 to-teal-600',
       change: '+12.5%',
     },
     {
       title: 'Total Employees',
       value: summary?.totalEmployees || 0,
-      icon: <Users className="w-6 h-6 text-blue-400" />,
+      icon: <Users className="w-6 h-6 text-blue-600" />,
       color: 'from-blue-500 to-indigo-600',
       change: '+5',
     },
     {
       title: 'Average Salary',
       value: `₹${((summary?.averageSalary || 0) / 1000).toFixed(1)}K`,
-      icon: <TrendingUp className="w-6 h-6 text-purple-400" />,
+      icon: <TrendingUp className="w-6 h-6 text-purple-600" />,
       color: 'from-purple-500 to-pink-600',
       change: '+8.3%',
     },
     {
       title: 'Highest Salary',
       value: `₹${((summary?.highestSalary || 0) / 100000).toFixed(2)}L`,
-      icon: <CreditCard className="w-6 h-6 text-amber-400" />,
+      icon: <CreditCard className="w-6 h-6 text-amber-600" />,
       color: 'from-amber-500 to-orange-600',
       change: '—',
     },
     {
       title: 'Lowest Salary',
       value: `₹${((summary?.lowestSalary || 0) / 1000).toFixed(1)}K`,
-      icon: <TrendingDown className="w-6 h-6 text-red-400" />,
+      icon: <TrendingDown className="w-6 h-6 text-red-600" />,
       color: 'from-red-500 to-rose-600',
       change: '—',
     },
     {
       title: 'Pending Payments',
       value: summary?.pendingPayments || 0,
-      icon: <AlertCircle className="w-6 h-6 text-amber-400" />,
+      icon: <AlertCircle className="w-6 h-6 text-amber-600" />,
       color: 'from-amber-500 to-yellow-600',
       change: '-3',
     },
     {
       title: 'Processed Payroll',
       value: summary?.processedPayroll || 0,
-      icon: <CheckCircle className="w-6 h-6 text-emerald-400" />,
+      icon: <CheckCircle className="w-6 h-6 text-emerald-600" />,
       color: 'from-emerald-500 to-green-600',
       change: '+15',
     },
     {
       title: 'Total Deductions',
       value: `₹${((summary?.totalDeductions || 0) / 100000).toFixed(2)}L`,
-      icon: <TrendingDown className="w-6 h-6 text-red-400" />,
+      icon: <TrendingDown className="w-6 h-6 text-red-600" />,
       color: 'from-red-500 to-pink-600',
       change: '+4.2%',
     },
@@ -356,18 +356,18 @@ export default function PayrollReportsPage() {
     return (
       <HRLayout>
         <div className="space-y-8 animate-pulse">
-          <div className="h-12 bg-neutral-900 rounded-lg w-1/3" />
+          <div className="h-12 bg-secondary rounded-lg w-1/3" />
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="h-32 bg-neutral-900 rounded-xl" />
+              <div key={i} className="h-32 bg-secondary rounded-xl" />
             ))}
           </div>
           <div className="grid grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-80 bg-neutral-900 rounded-xl" />
+              <div key={i} className="h-80 bg-secondary rounded-xl" />
             ))}
           </div>
-          <div className="h-96 bg-neutral-900 rounded-xl" />
+          <div className="h-96 bg-secondary rounded-xl" />
         </div>
       </HRLayout>
     );
@@ -380,13 +380,13 @@ export default function PayrollReportsPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
+              <TrendingUp className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
                 Payroll Reports
               </h1>
-              <p className="text-sm text-neutral-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Generate payroll analytics, salary reports and financial insights
               </p>
             </div>
@@ -397,7 +397,7 @@ export default function PayrollReportsPage() {
             <button
               onClick={() => exportExcelMutation.mutate()}
               disabled={exportExcelMutation.isPending}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Export Excel
@@ -405,14 +405,14 @@ export default function PayrollReportsPage() {
             <button
               onClick={() => exportPdfMutation.mutate()}
               disabled={exportPdfMutation.isPending}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               Export PDF
             </button>
             <button
               onClick={handlePrint}
-              className="px-4 py-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-secondary border border-border hover:border-border text-foreground rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <Printer className="w-4 h-4" />
               Print
@@ -428,33 +428,33 @@ export default function PayrollReportsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-neutral-700 transition-all"
+              className="bg-card border border-border rounded-2xl p-6 hover:border-border transition-all"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-xl flex items-center justify-center`}>
                   {card.icon}
                 </div>
                 {card.change && (
-                  <span className={`text-xs font-semibold px-2 py-1 rounded ${card.change.startsWith('+') ? 'bg-emerald-500/10 text-emerald-400' : card.change.startsWith('-') ? 'bg-red-500/10 text-red-400' : 'text-neutral-500'}`}>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded ${card.change.startsWith('+') ? 'bg-emerald-500/10 text-emerald-600' : card.change.startsWith('-') ? 'bg-red-500/10 text-red-600' : 'text-neutral-500'}`}>
                     {card.change}
                   </span>
                 )}
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{card.value}</div>
-              <div className="text-sm text-neutral-400">{card.title}</div>
+              <div className="text-3xl font-bold text-foreground mb-1">{card.value}</div>
+              <div className="text-sm text-muted-foreground">{card.title}</div>
             </motion.div>
           ))}
         </div>
 
         {/* Filters & Reports Table Placeholder */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white">Payroll Reports</h3>
+            <h3 className="text-lg font-bold text-foreground">Payroll Reports</h3>
             <div className="flex items-center gap-2">
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-white text-sm"
+                className="px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm"
               >
                 {months.map((m) => (
                   <option key={m.value} value={m.value}>
@@ -465,7 +465,7 @@ export default function PayrollReportsPage() {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg text-white text-sm"
+                className="px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm"
               >
                 {years.map((y) => (
                   <option key={y} value={y}>
@@ -478,9 +478,9 @@ export default function PayrollReportsPage() {
 
           {!reports || reports.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <FileText className="w-16 h-16 text-neutral-700 mb-4" />
-              <h3 className="font-semibold text-white mb-2">No reports found</h3>
-              <p className="text-sm text-neutral-500 text-center max-w-sm">
+              <FileText className="w-16 h-16 text-card-foreground mb-4" />
+              <h3 className="font-semibold text-foreground mb-2">No reports found</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-sm">
                 Reports will appear here once payroll is processed
               </p>
             </div>
@@ -488,60 +488,60 @@ export default function PayrollReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-neutral-900/50 border-b border-neutral-800">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase">
+                  <tr className="bg-secondary border-b border-border">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">
                       Employee
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">
                       Department
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">
                       Basic
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">
                       Allowances
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">
                       Deductions
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">
                       Gross
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase">
                       Net
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-neutral-400 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800">
+                <tbody className="divide-y divide-border">
                   {reports.map((report: any) => (
-                    <tr key={report.id} className="hover:bg-neutral-900/30 transition-colors">
+                    <tr key={report.id} className="hover:bg-secondary/30 transition-colors">
                       <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-white">{report.employeeName}</div>
-                        <div className="text-xs text-neutral-500">{report.employeeCode}</div>
+                        <div className="text-sm font-medium text-foreground">{report.employeeName}</div>
+                        <div className="text-xs text-muted-foreground">{report.employeeCode}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm text-neutral-300">{report.department}</div>
-                        <div className="text-xs text-neutral-500">{report.designation}</div>
+                        <div className="text-sm text-card-foreground">{report.department}</div>
+                        <div className="text-xs text-muted-foreground">{report.designation}</div>
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-neutral-300">
+                      <td className="px-4 py-3 text-right text-sm text-card-foreground">
                         ₹{report.basicSalary.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-emerald-400">
+                      <td className="px-4 py-3 text-right text-sm text-emerald-600">
                         +₹{report.allowances.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-red-400">
+                      <td className="px-4 py-3 text-right text-sm text-red-600">
                         -₹{report.deductions.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-white">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                         ₹{report.grossSalary.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-emerald-400">
+                      <td className="px-4 py-3 text-right text-sm font-bold text-emerald-600">
                         ₹{report.netSalary.toLocaleString()}
                       </td>
                       <td className="px-4 py-3">
@@ -559,10 +559,10 @@ export default function PayrollReportsPage() {
                             onClick={() => handleViewDetails(report)}
                             className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors group"
                           >
-                            <Eye className="w-4 h-4 text-neutral-400 group-hover:text-blue-400" />
+                            <Eye className="w-4 h-4 text-muted-foreground group-hover:text-blue-600" />
                           </button>
                           <button className="p-1.5 hover:bg-emerald-500/10 rounded-lg transition-colors group">
-                            <Download className="w-4 h-4 text-neutral-400 group-hover:text-emerald-400" />
+                            <Download className="w-4 h-4 text-muted-foreground group-hover:text-emerald-600" />
                           </button>
                         </div>
                       </td>

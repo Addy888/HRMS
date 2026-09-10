@@ -57,29 +57,29 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl space-y-6">
+    <div className="bg-secondary border border-border rounded-3xl p-8 shadow-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">
+        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-xl flex items-center justify-center">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="font-heading text-lg font-bold text-white">Reset Password</h2>
-          <p className="text-xs text-neutral-500">Enter your new credentials</p>
+          <h2 className="font-heading text-lg font-bold text-foreground">Reset Password</h2>
+          <p className="text-xs text-muted-foreground">Enter your new credentials</p>
         </div>
       </div>
 
       {success ? (
         <div className="space-y-4">
           <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-neutral-300 leading-relaxed">
-              <p className="font-semibold text-emerald-400">Password Updated</p>
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-card-foreground leading-relaxed">
+              <p className="font-semibold text-emerald-600">Password Updated</p>
               <p className="mt-1">{success}</p>
             </div>
           </div>
           <button
             onClick={() => router.push('/login')}
-            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-foreground rounded-xl text-xs font-bold transition-all shadow-md"
           >
             Back to Login Selection
           </button>
@@ -87,40 +87,40 @@ function ResetPasswordForm() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-400 uppercase">Reset Token</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase">Reset Token</label>
             <input
               type="text"
               placeholder="Enter the reset token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-400 uppercase">New Password</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase">New Password</label>
             <input
               type="password"
               placeholder="Min 6 characters"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-400 uppercase">Confirm Password</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase">Confirm Password</label>
             <input
               type="password"
               placeholder="Repeat new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-400 font-semibold leading-relaxed">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-600 font-semibold leading-relaxed">
               {error}
             </div>
           )}
@@ -128,7 +128,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={resetMutation.isPending}
-            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-950/20"
+            className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-950/20"
           >
             {resetMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {resetMutation.isPending ? 'Updating Password...' : 'Save New Password'}
@@ -143,7 +143,7 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-card flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[120px]" />
       </div>
@@ -151,14 +151,14 @@ export default function ResetPasswordPage() {
       <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
         <button
           onClick={() => router.push('/login')}
-          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-350 transition-colors mb-6 font-semibold"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-neutral-350 transition-colors mb-6 font-semibold"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
         </button>
 
         <Suspense
           fallback={
-            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl flex items-center justify-center min-h-[300px]">
+            <div className="bg-secondary border border-border rounded-3xl p-8 shadow-2xl flex items-center justify-center min-h-[300px]">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
             </div>
           }

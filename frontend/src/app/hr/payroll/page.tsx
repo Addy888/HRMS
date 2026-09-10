@@ -64,13 +64,13 @@ export default function PayrollDashboard() {
     {
       title: 'Total Employees',
       value: stats?.totalEmployees || 0,
-      icon: <Users className="w-5 h-5 text-blue-400" />,
+      icon: <Users className="w-5 h-5 text-blue-600" />,
       desc: 'Registered employees',
     },
     {
       title: 'Pending Payroll',
       value: stats?.pendingPayroll || 0,
-      icon: <Clock className="w-5 h-5 text-amber-400" />,
+      icon: <Clock className="w-5 h-5 text-amber-600" />,
       desc: 'Awaiting processing',
     },
     {
@@ -82,7 +82,7 @@ export default function PayrollDashboard() {
     {
       title: 'Paid Employees',
       value: stats?.paidEmployees || 0,
-      icon: <CheckCircle className="w-5 h-5 text-emerald-400" />,
+      icon: <CheckCircle className="w-5 h-5 text-emerald-600" />,
       desc: 'Payment completed',
     },
     {
@@ -94,7 +94,7 @@ export default function PayrollDashboard() {
     {
       title: 'Monthly Expense',
       value: `₹${(stats?.monthlySalaryExpense || 0).toLocaleString()}`,
-      icon: <DollarSign className="w-5 h-5 text-purple-400" />,
+      icon: <DollarSign className="w-5 h-5 text-purple-600" />,
       desc: 'Total salary this month',
     },
     {
@@ -109,9 +109,9 @@ export default function PayrollDashboard() {
     return (
       <HRLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-          <AlertCircle className="w-14 h-14 text-red-400" />
-          <h2 className="font-heading text-xl font-bold text-white">Failed to load dashboard</h2>
-          <p className="text-sm text-neutral-400">Please try again later</p>
+          <AlertCircle className="w-14 h-14 text-red-600" />
+          <h2 className="font-heading text-xl font-bold text-foreground">Failed to load dashboard</h2>
+          <p className="text-sm text-muted-foreground">Please try again later</p>
         </div>
       </HRLayout>
     );
@@ -122,10 +122,10 @@ export default function PayrollDashboard() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Header */}
         <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
             Payroll Dashboard
           </h1>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             Payroll overview for {new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </p>
         </div>
@@ -148,60 +148,60 @@ export default function PayrollDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <a
             href="/hr/payroll/salary-structure"
-            className="group bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-blue-500/50 transition-all"
+            className="group bg-card border border-border rounded-2xl p-6 hover:border-blue-500/50 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                <FileText className="w-6 h-6 text-blue-400" />
+                <FileText className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Salary Structure</h3>
-                <p className="text-xs text-neutral-400">Manage salary templates</p>
+                <h3 className="font-semibold text-foreground">Salary Structure</h3>
+                <p className="text-xs text-muted-foreground">Manage salary templates</p>
               </div>
             </div>
           </a>
 
           <a
             href="/hr/payroll/processing"
-            className="group bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-emerald-500/50 transition-all"
+            className="group bg-card border border-border rounded-2xl p-6 hover:border-emerald-500/50 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                <CreditCard className="w-6 h-6 text-emerald-400" />
+                <CreditCard className="w-6 h-6 text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Process Payroll</h3>
-                <p className="text-xs text-neutral-400">Generate monthly payroll</p>
+                <h3 className="font-semibold text-foreground">Process Payroll</h3>
+                <p className="text-xs text-muted-foreground">Generate monthly payroll</p>
               </div>
             </div>
           </a>
 
           <a
             href="/hr/payroll/payslips"
-            className="group bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-purple-500/50 transition-all"
+            className="group bg-card border border-border rounded-2xl p-6 hover:border-purple-500/50 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                <FileText className="w-6 h-6 text-purple-400" />
+                <FileText className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Salary Slips</h3>
-                <p className="text-xs text-neutral-400">View & download slips</p>
+                <h3 className="font-semibold text-foreground">Salary Slips</h3>
+                <p className="text-xs text-muted-foreground">View & download slips</p>
               </div>
             </div>
           </a>
 
           <a
             href="/hr/payroll/reports"
-            className="group bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-amber-500/50 transition-all"
+            className="group bg-card border border-border rounded-2xl p-6 hover:border-amber-500/50 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
-                <TrendingUp className="w-6 h-6 text-amber-400" />
+                <TrendingUp className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Reports</h3>
-                <p className="text-xs text-neutral-400">View payroll analytics</p>
+                <h3 className="font-semibold text-foreground">Reports</h3>
+                <p className="text-xs text-muted-foreground">View payroll analytics</p>
               </div>
             </div>
           </a>

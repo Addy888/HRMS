@@ -28,16 +28,16 @@ const StatCard = ({ title, value, subtitle, icon, gradient, href }: any) => {
   return (
     <Wrapper
       href={href || '#'}
-      className={`bg-neutral-950 border border-neutral-800 rounded-2xl p-6 ${href ? 'hover:border-purple-500/50 transition-all cursor-pointer group' : ''}`}
+      className={`bg-card border border-border rounded-2xl p-6 shadow-sm ${href ? 'hover:border-purple-500/50 transition-all cursor-pointer group' : ''}`}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-2">
+          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
             {title}
           </p>
-          <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
+          <h3 className="text-3xl font-bold text-card-foreground mb-1">{value}</h3>
           {subtitle && (
-            <p className="text-sm text-neutral-400">{subtitle}</p>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           )}
         </div>
         <div className={`p-3 rounded-xl ${gradient}`}>
@@ -45,7 +45,7 @@ const StatCard = ({ title, value, subtitle, icon, gradient, href }: any) => {
         </div>
       </div>
       {href && (
-        <div className="mt-4 flex items-center gap-1 text-xs text-purple-400 font-medium group-hover:gap-2 transition-all">
+        <div className="mt-4 flex items-center gap-1 text-xs text-purple-600 font-medium group-hover:gap-2 transition-all">
           View Details <ArrowUpRight className="w-3.5 h-3.5" />
         </div>
       )}
@@ -55,35 +55,35 @@ const StatCard = ({ title, value, subtitle, icon, gradient, href }: any) => {
 
 const ProcessRow = ({ process }: any) => {
   return (
-    <tr className="hover:bg-neutral-900/30 transition-colors border-b border-neutral-900">
+    <tr className="hover:bg-secondary/30 transition-colors border-b border-border">
       <td className="px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
-            <Layers className="w-4 h-4 text-white" />
+            <Layers className="w-4 h-4 text-foreground" />
           </div>
-          <span className="font-semibold text-white">{process.name}</span>
+          <span className="font-semibold text-card-foreground">{process.name}</span>
         </div>
       </td>
       <td className="px-4 py-4 text-center">
-        <span className="text-neutral-300">{process.totalEmployees}</span>
+        <span className="text-card-foreground">{process.totalEmployees}</span>
       </td>
       <td className="px-4 py-4 text-center">
-        <span className="text-emerald-400">{process.activeEmployees}</span>
+        <span className="text-emerald-600">{process.activeEmployees}</span>
       </td>
       <td className="px-4 py-4 text-center">
-        <span className="text-red-400">{process.inactiveEmployees}</span>
+        <span className="text-red-600">{process.inactiveEmployees}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="text-neutral-300">₹{process.monthlyBasicSalary.toLocaleString('en-IN')}</span>
+        <span className="text-card-foreground">₹{process.monthlyBasicSalary.toLocaleString('en-IN')}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="text-neutral-300">₹{process.monthlyIncentive.toLocaleString('en-IN')}</span>
+        <span className="text-card-foreground">₹{process.monthlyIncentive.toLocaleString('en-IN')}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="font-semibold text-white">₹{process.totalMonthlyPayroll.toLocaleString('en-IN')}</span>
+        <span className="font-semibold text-card-foreground">₹{(process.totalMonthlyPayroll || 0).toLocaleString('en-IN')}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="text-neutral-400">₹{process.avgSalary.toLocaleString('en-IN')}</span>
+        <span className="text-muted-foreground">₹{process.avgSalary.toLocaleString('en-IN')}</span>
       </td>
     </tr>
   );
@@ -129,11 +129,11 @@ export default function SuperAdminDashboard() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Header */}
         <div>
-          <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
             <Activity className="w-8 h-8 text-purple-500" />
             Company Dashboard
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Complete overview of your organization — employees, admins, processes, and payroll
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function SuperAdminDashboard() {
             title="Total Employees"
             value={stats?.totalEmployees || 0}
             subtitle={`${stats?.activeEmployees || 0} active, ${stats?.inactiveEmployees || 0} inactive`}
-            icon={<Users className="w-6 h-6 text-white" />}
+            icon={<Users className="w-6 h-6 text-foreground" />}
             gradient="bg-gradient-to-br from-blue-600 to-indigo-700"
             href="/super-admin/employees"
           />
@@ -152,7 +152,7 @@ export default function SuperAdminDashboard() {
             title="HR Admins"
             value={stats?.totalHRAdmins || 0}
             subtitle="Managing operations"
-            icon={<UserCog className="w-6 h-6 text-white" />}
+            icon={<UserCog className="w-6 h-6 text-foreground" />}
             gradient="bg-gradient-to-br from-purple-600 to-pink-700"
             href="/super-admin/admins"
           />
@@ -160,7 +160,7 @@ export default function SuperAdminDashboard() {
             title="Total Processes"
             value={stats?.totalProcesses || 0}
             subtitle="Departments/Teams"
-            icon={<Layers className="w-6 h-6 text-white" />}
+            icon={<Layers className="w-6 h-6 text-foreground" />}
             gradient="bg-gradient-to-br from-emerald-600 to-teal-700"
             href="/super-admin/processes"
           />
@@ -168,7 +168,7 @@ export default function SuperAdminDashboard() {
             title="Monthly Payroll"
             value={`₹${(stats?.totalMonthlyPayroll || 0).toLocaleString('en-IN')}`}
             subtitle={`Basic: ₹${(stats?.totalPayrollCost || 0).toLocaleString('en-IN')}`}
-            icon={<IndianRupee className="w-6 h-6 text-white" />}
+            icon={<IndianRupee className="w-6 h-6 text-foreground" />}
             gradient="bg-gradient-to-br from-amber-600 to-orange-700"
             href="/super-admin/payroll"
           />
@@ -176,48 +176,48 @@ export default function SuperAdminDashboard() {
 
         {/* Attendance Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                 Present Today
               </p>
               <Clock className="w-5 h-5 text-emerald-500" />
             </div>
-            <h3 className="text-2xl font-bold text-emerald-400">{stats?.presentToday || 0}</h3>
-            <p className="text-xs text-neutral-500 mt-1">Employees checked in</p>
+            <h3 className="text-2xl font-bold text-emerald-600">{stats?.presentToday || 0}</h3>
+            <p className="text-xs text-muted-foreground mt-1">Employees checked in</p>
           </div>
 
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                 Late Today
               </p>
               <AlertCircle className="w-5 h-5 text-amber-500" />
             </div>
-            <h3 className="text-2xl font-bold text-amber-400">{stats?.lateToday || 0}</h3>
-            <p className="text-xs text-neutral-500 mt-1">Late check-ins</p>
+            <h3 className="text-2xl font-bold text-amber-600">{stats?.lateToday || 0}</h3>
+            <p className="text-xs text-muted-foreground mt-1">Late check-ins</p>
           </div>
 
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                 Absent Today
               </p>
               <UserX className="w-5 h-5 text-red-500" />
             </div>
-            <h3 className="text-2xl font-bold text-red-400">{stats?.absentToday || 0}</h3>
-            <p className="text-xs text-neutral-500 mt-1">No attendance marked</p>
+            <h3 className="text-2xl font-bold text-red-600">{stats?.absentToday || 0}</h3>
+            <p className="text-xs text-muted-foreground mt-1">No attendance marked</p>
           </div>
         </div>
 
         {/* Process Overview Table */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-neutral-800">
-            <h2 className="font-heading text-xl font-bold text-white flex items-center gap-2">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-6 py-5 border-b border-border">
+            <h2 className="font-heading text-xl font-bold text-card-foreground flex items-center gap-2">
               <Layers className="w-5 h-5 text-purple-500" />
               Process Overview
             </h2>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Employee count, payroll breakdown by department/process
             </p>
           </div>
@@ -225,7 +225,7 @@ export default function SuperAdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="bg-neutral-900 border-b border-neutral-800 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                <tr className="bg-secondary border-b border-border text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                   <th className="px-4 py-4">Process</th>
                   <th className="px-4 py-4 text-center">Employees</th>
                   <th className="px-4 py-4 text-center">Active</th>
@@ -243,7 +243,7 @@ export default function SuperAdminDashboard() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-neutral-500">
+                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                       No processes found
                     </td>
                   </tr>
@@ -253,14 +253,14 @@ export default function SuperAdminDashboard() {
           </div>
 
           {processOverview && processOverview.length > 0 && (
-            <div className="px-6 py-4 border-t border-neutral-800 bg-neutral-900/30">
+            <div className="px-6 py-4 border-t border-border bg-secondary/30">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400">
+                <span className="text-muted-foreground">
                   Total: {processOverview.length} process{processOverview.length !== 1 ? 'es' : ''}
                 </span>
                 <Link
                   href="/super-admin/processes"
-                  className="text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition-colors"
+                  className="text-purple-600 hover:text-purple-300 font-medium flex items-center gap-1 transition-colors"
                 >
                   View All Processes <ArrowUpRight className="w-4 h-4" />
                 </Link>
@@ -273,11 +273,11 @@ export default function SuperAdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             href="/super-admin/employees"
-            className="bg-neutral-950 border border-neutral-800 hover:border-purple-500/50 rounded-xl p-4 transition-all group"
+            className="bg-card border border-border hover:border-purple-500/50 rounded-xl p-4 transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-purple-500" />
-              <span className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors">
+              <span className="text-sm font-semibold text-card-foreground group-hover:text-purple-600 transition-colors">
                 Manage Employees
               </span>
             </div>
@@ -285,11 +285,11 @@ export default function SuperAdminDashboard() {
 
           <Link
             href="/super-admin/admins"
-            className="bg-neutral-950 border border-neutral-800 hover:border-purple-500/50 rounded-xl p-4 transition-all group"
+            className="bg-card border border-border hover:border-purple-500/50 rounded-xl p-4 transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
               <UserCog className="w-5 h-5 text-purple-500" />
-              <span className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors">
+              <span className="text-sm font-semibold text-card-foreground group-hover:text-purple-600 transition-colors">
                 Manage Admins
               </span>
             </div>
@@ -297,11 +297,11 @@ export default function SuperAdminDashboard() {
 
           <Link
             href="/super-admin/payroll"
-            className="bg-neutral-950 border border-neutral-800 hover:border-purple-500/50 rounded-xl p-4 transition-all group"
+            className="bg-card border border-border hover:border-purple-500/50 rounded-xl p-4 transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
               <DollarSign className="w-5 h-5 text-purple-500" />
-              <span className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors">
+              <span className="text-sm font-semibold text-card-foreground group-hover:text-purple-600 transition-colors">
                 View Payroll
               </span>
             </div>
@@ -309,11 +309,11 @@ export default function SuperAdminDashboard() {
 
           <Link
             href="/super-admin/analytics"
-            className="bg-neutral-950 border border-neutral-800 hover:border-purple-500/50 rounded-xl p-4 transition-all group"
+            className="bg-card border border-border hover:border-purple-500/50 rounded-xl p-4 transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
               <TrendingUp className="w-5 h-5 text-purple-500" />
-              <span className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors">
+              <span className="text-sm font-semibold text-card-foreground group-hover:text-purple-600 transition-colors">
                 View Analytics
               </span>
             </div>

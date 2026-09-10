@@ -23,6 +23,7 @@ import {
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToastProvider from '@/components/NotificationToastProvider';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface SidebarLinkProps {
   href: string;
@@ -39,8 +40,8 @@ const SidebarLink = ({ href, icon, children, active, onClick }: SidebarLinkProps
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
         active
-          ? 'bg-gradient-to-r from-purple-600/20 to-indigo-600/20 text-white shadow-md border border-purple-500/30'
-          : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50'
+          ? 'bg-gradient-to-r from-purple-600/20 to-indigo-600/20 text-card-foreground shadow-sm border border-purple-500/30'
+          : 'text-muted-foreground hover:text-card-foreground hover:bg-secondary/50'
       }`}
     >
       {icon}
@@ -82,7 +83,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   if (!isHydrated || !isAuthenticated || !user || !isSuperAdmin) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-purple-500 rounded-full animate-spin"></div>
       </div>
     );
@@ -101,13 +102,13 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   return (
     <NotificationToastProvider>
-      <div className="flex min-h-screen bg-black text-white antialiased">
+      <div className="flex min-h-screen bg-background text-foreground antialiased">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex flex-col w-64 border-r border-neutral-800 bg-neutral-950 p-6 space-y-6">
+        <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card p-6 space-y-6 shadow-sm">
           {/* Logo */}
           <div className="flex items-center gap-2 px-2 py-3">
             <div className="bg-gradient-to-tr from-purple-500 to-indigo-600 p-1.5 rounded-lg">
-              <Shield className="w-5 h-5 text-white" />
+              <Shield className="w-5 h-5 text-foreground" />
             </div>
             <span className="font-heading text-lg font-bold tracking-tight bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
               FCS HRMS
@@ -116,9 +117,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
           {/* User Card */}
           <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-500/30 rounded-xl p-4 flex flex-col gap-1">
-            <span className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Company Owner</span>
-            <span className="text-sm font-semibold truncate">{user?.email || 'owner@fcs.com'}</span>
-            <span className="text-[10px] bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2 py-0.5 rounded w-max mt-1 font-bold uppercase tracking-wider">
+            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Company Owner</span>
+            <span className="text-sm font-semibold truncate text-card-foreground">{user?.email || 'owner@fcs.com'}</span>
+            <span className="text-[10px] bg-gradient-to-r from-purple-500 to-indigo-500 text-foreground px-2 py-0.5 rounded w-max mt-1 font-bold uppercase tracking-wider">
               SUPER ADMIN
             </span>
           </div>
@@ -141,7 +142,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <div>
             <button
               onClick={() => logout()}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all border border-transparent hover:border-red-500/10"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:text-red-300 hover:bg-red-500/5 transition-all border border-transparent hover:border-red-500/10"
             >
               <LogOut className="w-5 h-5" />
               Logout
@@ -152,24 +153,25 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Sticky Unified Top Header */}
-          <header className="flex items-center justify-between border-b border-neutral-800 bg-neutral-950 px-6 py-4 sticky top-0 z-30 backdrop-blur-md bg-neutral-950/80">
+          <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileOpen(true)}
-                className="md:hidden p-1 rounded-lg text-neutral-400 hover:text-white"
+                className="md:hidden p-1 rounded-lg text-muted-foreground hover:text-foreground"
               >
                 <Menu className="w-6 h-6" />
               </button>
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-purple-500 md:hidden" />
-                <span className="font-heading font-bold text-white md:hidden">FCS HRMS</span>
-                <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-neutral-500 font-bold uppercase tracking-wider">
+                <span className="font-heading font-bold text-foreground md:hidden">FCS HRMS</span>
+                <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-bold uppercase tracking-wider">
                   <Shield className="w-3.5 h-3.5 text-purple-500" />
                   Super Admin Portal
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <NotificationBell />
             </div>
           </header>
@@ -178,12 +180,12 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           {mobileOpen && (
             <div className="md:hidden fixed inset-0 z-50 flex">
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-              <aside className="relative flex flex-col w-64 bg-neutral-950 p-6 border-r border-neutral-800 animate-in slide-in-from-left duration-200">
+              <aside className="relative flex flex-col w-64 bg-card p-6 border-r border-border animate-in slide-in-from-left duration-200 shadow-xl">
                 <div className="flex items-center justify-between mb-6">
                   <span className="font-heading text-lg font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
                     Super Admin
                   </span>
-                  <button onClick={() => setMobileOpen(false)} className="text-neutral-400 hover:text-white">
+                  <button onClick={() => setMobileOpen(false)} className="text-muted-foreground hover:text-foreground">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -200,10 +202,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                     </div>
                   ))}
                 </nav>
-                <div className="border-t border-neutral-800 pt-6 mt-auto">
+                <div className="border-t border-border pt-6 mt-auto">
                   <button
                     onClick={() => { setMobileOpen(false); logout(); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:text-red-300 hover:bg-red-500/10 transition-colors"
                   >
                     <LogOut className="w-5 h-5" />
                     Logout

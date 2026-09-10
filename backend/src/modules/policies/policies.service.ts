@@ -401,7 +401,10 @@ export class PoliciesService {
 
     // Get company policies status
     const companyPolicies = await this.prisma.companyPolicy.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        organizationId: emp.organizationId, // ✅ Multi-tenant: Filter by organization
+        status: 'ACTIVE' 
+      },
       include: {
         acceptances: {
           where: { 
@@ -477,7 +480,10 @@ export class PoliciesService {
     
     // Get company policies (they apply to all employees)
     const companyPolicies = await this.prisma.companyPolicy.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        organizationId: emp.organizationId, // ✅ Multi-tenant: Filter by organization
+        status: 'ACTIVE' 
+      },
       include: {
         acceptances: {
           where: { 

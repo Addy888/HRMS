@@ -73,9 +73,9 @@ export default function EmployeeProfilePage() {
     return (
       <EmployeeLayout>
         <div className="space-y-6 animate-pulse">
-          <div className="h-40 bg-neutral-900 rounded-3xl"></div>
-          <div className="h-8 w-64 bg-neutral-900 rounded-xl"></div>
-          <div className="h-64 bg-neutral-900 rounded-3xl"></div>
+          <div className="h-40 bg-secondary rounded-3xl"></div>
+          <div className="h-8 w-64 bg-secondary rounded-xl"></div>
+          <div className="h-64 bg-secondary rounded-3xl"></div>
         </div>
       </EmployeeLayout>
     );
@@ -85,9 +85,9 @@ export default function EmployeeProfilePage() {
     <EmployeeLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Banner with Profile Picture */}
-        <div className="relative overflow-hidden bg-neutral-950 border border-neutral-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6">
+        <div className="relative overflow-hidden bg-card border border-border rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6">
           <div className="relative group shrink-0">
-            <div className="w-24 h-24 rounded-2xl bg-neutral-800 border-2 border-neutral-700 overflow-hidden flex items-center justify-center font-heading text-3xl font-extrabold text-white uppercase shadow-xl relative">
+            <div className="w-24 h-24 rounded-2xl bg-secondary border-2 border-border overflow-hidden flex items-center justify-center font-heading text-3xl font-extrabold text-foreground uppercase shadow-xl relative">
               {emp.photoUrl ? (
                 <img
                   src={`${api.defaults.baseURL?.replace('/api/v1', '')}${emp.photoUrl}`}
@@ -98,7 +98,7 @@ export default function EmployeeProfilePage() {
                 `${emp.firstName?.charAt(0)}${emp.lastName?.charAt(0)}`
               )}
               {uploadPhotoMutation.isPending && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                   <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
                 </div>
               )}
@@ -106,7 +106,7 @@ export default function EmployeeProfilePage() {
             <div className="absolute -bottom-1 -right-1 flex gap-1">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg border border-blue-500/30 transition-colors"
+                className="p-1.5 bg-blue-600 hover:bg-blue-500 text-foreground rounded-lg shadow-lg border border-blue-500/30 transition-colors"
                 title="Upload Photo"
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -114,7 +114,7 @@ export default function EmployeeProfilePage() {
               {emp.photoUrl && (
                 <button
                   onClick={() => { if (confirm('Delete photo?')) deletePhotoMutation.mutate(); }}
-                  className="p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg shadow-lg border border-red-500/30 transition-colors"
+                  className="p-1.5 bg-red-600 hover:bg-red-500 text-foreground rounded-lg shadow-lg border border-red-500/30 transition-colors"
                   title="Remove Photo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -131,14 +131,14 @@ export default function EmployeeProfilePage() {
           </div>
 
           <div className="flex-1 text-center sm:text-left space-y-1.5 min-w-0">
-            <h1 className="font-heading text-2xl font-extrabold text-white truncate">{emp.firstName} {emp.lastName}</h1>
-            <p className="text-xs text-neutral-400 font-mono font-medium">{emp.employeeId} · {emp.designation?.name || 'Designation Pending'}</p>
-            <p className="text-xs text-neutral-500">{emp.department?.name || 'Department Pending'}</p>
+            <h1 className="font-heading text-2xl font-extrabold text-foreground truncate">{emp.firstName} {emp.lastName}</h1>
+            <p className="text-xs text-muted-foreground font-mono font-medium">{emp.employeeId} · {emp.designation?.name || 'Designation Pending'}</p>
+            <p className="text-xs text-muted-foreground">{emp.department?.name || 'Department Pending'}</p>
           </div>
 
           <Link
             href="/employee/profile/edit"
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-md shrink-0"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-semibold transition-all shadow-md shrink-0"
           >
             <Edit2 className="w-4 h-4" />
             Edit Profile Details
@@ -146,15 +146,15 @@ export default function EmployeeProfilePage() {
         </div>
 
         {/* Tab Headers */}
-        <div className="flex gap-2 border-b border-neutral-800 overflow-x-auto pb-px">
+        <div className="flex gap-2 border-b border-border overflow-x-auto pb-px">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap -mb-px ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-white'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  ? 'border-blue-500 text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.icon}
@@ -164,7 +164,7 @@ export default function EmployeeProfilePage() {
         </div>
 
         {/* Tab Content Cards */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 sm:p-8">
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
           {activeTab === 'personal' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
@@ -178,9 +178,9 @@ export default function EmployeeProfilePage() {
                 { label: 'Marital Status', val: emp.maritalStatus },
                 { label: 'Nationality', val: emp.nationality },
               ].map((item, i) => (
-                <div key={i} className="space-y-1 py-2 border-b border-neutral-900">
-                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{item.label}</div>
-                  <div className="text-sm font-medium text-white">{item.val || '—'}</div>
+                <div key={i} className="space-y-1 py-2 border-b border-border">
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{item.label}</div>
+                  <div className="text-sm font-medium text-foreground">{item.val || '—'}</div>
                 </div>
               ))}
             </div>
@@ -198,9 +198,9 @@ export default function EmployeeProfilePage() {
                 { label: 'Emergency Contact Number', val: emp.emergencyContactPhone },
                 { label: 'Emergency Contact Relation', val: emp.emergencyContactRelation },
               ].map((item, i) => (
-                <div key={i} className="space-y-1 py-2 border-b border-neutral-900">
-                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{item.label}</div>
-                  <div className="text-sm font-medium text-white">{item.val || '—'}</div>
+                <div key={i} className="space-y-1 py-2 border-b border-border">
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{item.label}</div>
+                  <div className="text-sm font-medium text-foreground">{item.val || '—'}</div>
                 </div>
               ))}
             </div>
@@ -216,9 +216,9 @@ export default function EmployeeProfilePage() {
                 { label: 'Employment Type', val: emp.employmentType },
                 { label: 'Joining Date', val: emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString() : '' },
               ].map((item, i) => (
-                <div key={i} className="space-y-1 py-2 border-b border-neutral-900">
-                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{item.label}</div>
-                  <div className="text-sm font-medium text-white">{item.val || '—'}</div>
+                <div key={i} className="space-y-1 py-2 border-b border-border">
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{item.label}</div>
+                  <div className="text-sm font-medium text-foreground">{item.val || '—'}</div>
                 </div>
               ))}
             </div>
@@ -234,9 +234,9 @@ export default function EmployeeProfilePage() {
                 { label: 'IFSC Code', val: emp.bankIfsc },
                 { label: 'UPI ID', val: emp.upiId },
               ].map((item, i) => (
-                <div key={i} className="space-y-1 py-2 border-b border-neutral-900">
-                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{item.label}</div>
-                  <div className="text-sm font-medium text-white">{item.val || '—'}</div>
+                <div key={i} className="space-y-1 py-2 border-b border-border">
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{item.label}</div>
+                  <div className="text-sm font-medium text-foreground">{item.val || '—'}</div>
                 </div>
               ))}
             </div>
@@ -250,9 +250,9 @@ export default function EmployeeProfilePage() {
                 { label: 'Passport Number', val: emp.passportNumber },
                 { label: 'Driving License Number', val: emp.drivingLicenseNumber },
               ].map((item, i) => (
-                <div key={i} className="space-y-1 py-2 border-b border-neutral-900">
-                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">{item.label}</div>
-                  <div className="text-sm font-medium text-white">{item.val || '—'}</div>
+                <div key={i} className="space-y-1 py-2 border-b border-border">
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{item.label}</div>
+                  <div className="text-sm font-medium text-foreground">{item.val || '—'}</div>
                 </div>
               ))}
             </div>

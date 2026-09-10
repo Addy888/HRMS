@@ -148,10 +148,10 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-sm text-neutral-400">Loading policy...</p>
+          <p className="text-sm text-muted-foreground">Loading policy...</p>
         </div>
       </div>
     );
@@ -159,16 +159,16 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center">
+      <div className="min-h-screen bg-card flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-secondary border border-border rounded-2xl p-8 text-center">
           <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-400" />
+            <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Policy Not Found</h2>
-          <p className="text-sm text-neutral-400 mb-6">{error}</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">Policy Not Found</h2>
+          <p className="text-sm text-muted-foreground mb-6">{error}</p>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-foreground rounded-lg text-sm font-semibold transition-colors"
           >
             Go Back
           </button>
@@ -178,22 +178,22 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex flex-col select-none">
+    <div className="min-h-screen bg-card flex flex-col select-none">
       {/* Header */}
-      <div className="bg-neutral-900 border-b border-neutral-800 px-6 py-4">
+      <div className="bg-secondary border-b border-border px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <FileText className="w-5 h-5 text-purple-400" />
+              <FileText className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">{policy.policyName}</h1>
-              <p className="text-xs text-neutral-400">Version {policy.version} • Secure Viewer</p>
+              <h1 className="text-lg font-bold text-foreground">{policy.policyName}</h1>
+              <p className="text-xs text-muted-foreground">Version {policy.version} • Secure Viewer</p>
             </div>
           </div>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-sm font-semibold transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-lg text-sm font-semibold transition-colors"
           >
             Close
           </button>
@@ -202,7 +202,7 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
 
       {/* Security Notice */}
       <div className="bg-amber-500/5 border-b border-amber-500/20 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs text-amber-400">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs text-amber-600">
           <Shield className="w-4 h-4" />
           <span className="font-semibold">Secure Document:</span>
           <span>This document is confidential. Downloading, printing, and copying are disabled.</span>
@@ -210,27 +210,27 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
       </div>
 
       {/* PDF Viewer */}
-      <div className="flex-1 bg-neutral-900 p-6 overflow-hidden relative">
+      <div className="flex-1 bg-secondary p-6 overflow-hidden relative">
         <div className="max-w-7xl mx-auto h-full">
           {pdfLoading && !pdfError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-neutral-900 z-20">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-secondary z-20">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-              <p className="text-sm text-neutral-400">Loading document...</p>
+              <p className="text-sm text-muted-foreground">Loading document...</p>
             </div>
           )}
           
           {pdfError && (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-amber-400" />
+                <AlertCircle className="w-8 h-8 text-amber-600" />
               </div>
-              <p className="text-sm text-neutral-400 mb-2">Unable to display PDF</p>
-              <p className="text-xs text-neutral-500 mb-4">{error || 'Your browser may not support inline PDF viewing'}</p>
+              <p className="text-sm text-muted-foreground mb-2">Unable to display PDF</p>
+              <p className="text-xs text-muted-foreground mb-4">{error || 'Your browser may not support inline PDF viewing'}</p>
               {pdfBlobUrl && (
                 <a
                   href={pdfBlobUrl}
                   download={policy?.fileName || 'policy.pdf'}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-foreground rounded-lg text-sm font-semibold transition-colors"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Download PDF
@@ -243,7 +243,7 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
             <iframe
               ref={iframeRef}
               src={pdfBlobUrl}
-              className="w-full h-full border border-neutral-800 rounded-lg"
+              className="w-full h-full border border-border rounded-lg"
               title={policy?.policyName || 'Policy Document'}
               style={{ minHeight: '700px' }}
             />
@@ -253,7 +253,7 @@ export default function CompanyPolicyViewerPage({ params }: { params: Promise<{ 
 
       {/* Watermark Overlay */}
       <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-5 z-10">
-        <div className="transform -rotate-45 text-white text-6xl font-bold whitespace-nowrap">
+        <div className="transform -rotate-45 text-foreground text-6xl font-bold whitespace-nowrap">
           CONFIDENTIAL
         </div>
       </div>

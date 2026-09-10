@@ -26,7 +26,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fontSans.variable} ${fontOutfit.variable} h-full antialiased dark`}
+      className={`${fontSans.variable} ${fontOutfit.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <Providers>{children}</Providers>

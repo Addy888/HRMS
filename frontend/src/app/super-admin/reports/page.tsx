@@ -25,20 +25,20 @@ function ReportCard({ title, description, icon: Icon, color, onClick, loading }:
     <button
       onClick={onClick}
       disabled={loading}
-      className="bg-neutral-950 border border-neutral-800 hover:border-purple-500/50 rounded-2xl p-6 text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+      className="bg-card border border-border hover:border-purple-500/50 rounded-2xl p-6 text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-xl ${color}`}>
-          <Icon className="w-6 h-6 text-white" />
+          <Icon className="w-6 h-6 text-foreground" />
         </div>
         {loading ? (
           <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
         ) : (
-          <Download className="w-5 h-5 text-neutral-600 group-hover:text-purple-400 transition-colors" />
+          <Download className="w-5 h-5 text-muted-foreground group-hover:text-purple-600 transition-colors" />
         )}
       </div>
-      <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-      <p className="text-sm text-neutral-400">{description}</p>
+      <h3 className="text-lg font-bold text-foreground mb-2">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </button>
   );
 }
@@ -103,30 +103,30 @@ export default function SuperAdminReportsPage() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Header */}
           <div>
-            <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+            <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
               <FileText className="w-8 h-8 text-purple-500" />
               Reports & Analytics
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Generate and download comprehensive business reports
             </p>
           </div>
 
           {/* Period Selector */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+          <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="w-5 h-5 text-purple-500" />
-              <h2 className="font-semibold text-white">Report Period</h2>
+              <h2 className="font-semibold text-foreground">Report Period</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-neutral-500 font-semibold uppercase tracking-wider block mb-2">
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-2">
                   Month
                 </label>
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
                 >
                   {months.map((month, index) => (
                     <option key={month} value={index + 1}>
@@ -136,13 +136,13 @@ export default function SuperAdminReportsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-neutral-500 font-semibold uppercase tracking-wider block mb-2">
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-2">
                   Year
                 </label>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
                 >
                   {years.map((year) => (
                     <option key={year} value={year}>
@@ -156,50 +156,50 @@ export default function SuperAdminReportsPage() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center justify-between mb-3">
                 <Users className="w-5 h-5 text-blue-500" />
-                <span className="text-xs text-neutral-500 font-semibold uppercase">Employees</span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase">Employees</span>
               </div>
-              <h3 className="text-2xl font-bold text-white">{stats?.totalEmployees || 0}</h3>
-              <p className="text-xs text-neutral-400 mt-1">
+              <h3 className="text-2xl font-bold text-foreground">{stats?.totalEmployees || 0}</h3>
+              <p className="text-xs text-muted-foreground mt-1">
                 {stats?.activeEmployees || 0} active
               </p>
             </div>
 
-            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center justify-between mb-3">
                 <Layers className="w-5 h-5 text-purple-500" />
-                <span className="text-xs text-neutral-500 font-semibold uppercase">Processes</span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase">Processes</span>
               </div>
-              <h3 className="text-2xl font-bold text-white">{stats?.totalProcesses || 0}</h3>
-              <p className="text-xs text-neutral-400 mt-1">Departments</p>
+              <h3 className="text-2xl font-bold text-foreground">{stats?.totalProcesses || 0}</h3>
+              <p className="text-xs text-muted-foreground mt-1">Departments</p>
             </div>
 
-            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center justify-between mb-3">
                 <DollarSign className="w-5 h-5 text-emerald-500" />
-                <span className="text-xs text-neutral-500 font-semibold uppercase">Payroll</span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase">Payroll</span>
               </div>
-              <h3 className="text-2xl font-bold text-white">
+              <h3 className="text-2xl font-bold text-foreground">
                 ₹{((stats?.totalMonthlyPayroll || 0) / 100000).toFixed(1)}L
               </h3>
-              <p className="text-xs text-neutral-400 mt-1">Monthly</p>
+              <p className="text-xs text-muted-foreground mt-1">Monthly</p>
             </div>
 
-            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center justify-between mb-3">
                 <Clock className="w-5 h-5 text-amber-500" />
-                <span className="text-xs text-neutral-500 font-semibold uppercase">Attendance</span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase">Attendance</span>
               </div>
-              <h3 className="text-2xl font-bold text-white">{stats?.presentToday || 0}</h3>
-              <p className="text-xs text-neutral-400 mt-1">Present today</p>
+              <h3 className="text-2xl font-bold text-foreground">{stats?.presentToday || 0}</h3>
+              <p className="text-xs text-muted-foreground mt-1">Present today</p>
             </div>
           </div>
 
           {/* Available Reports */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
-            <h2 className="font-heading text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <h2 className="font-heading text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <FileDown className="w-5 h-5 text-purple-500" />
               Available Reports
             </h2>
@@ -260,10 +260,10 @@ export default function SuperAdminReportsPage() {
           </div>
 
           {/* Recent Activity / Data Preview */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-neutral-800">
-              <h2 className="font-heading text-xl font-bold text-white">Process Overview</h2>
-              <p className="text-sm text-neutral-400 mt-1">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="font-heading text-xl font-bold text-foreground">Process Overview</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 Current organizational structure snapshot
               </p>
             </div>
@@ -271,7 +271,7 @@ export default function SuperAdminReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                  <tr className="bg-neutral-900 border-b border-neutral-800 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                  <tr className="bg-secondary border-b border-border text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                     <th className="px-6 py-4">Process</th>
                     <th className="px-6 py-4 text-center">Employees</th>
                     <th className="px-6 py-4 text-center">Active</th>
@@ -279,7 +279,7 @@ export default function SuperAdminReportsPage() {
                     <th className="px-6 py-4 text-right">Avg Salary</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-900">
+                <tbody className="divide-y divide-border">
                   {isLoading ? (
                     <tr>
                       <td colSpan={5} className="text-center py-12">
@@ -288,32 +288,32 @@ export default function SuperAdminReportsPage() {
                     </tr>
                   ) : processes && processes.length > 0 ? (
                     processes.slice(0, 5).map((process: any) => (
-                      <tr key={process.id} className="hover:bg-neutral-900/30 transition-colors text-sm">
+                      <tr key={process.id} className="hover:bg-secondary/30 transition-colors text-sm">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
-                              <Layers className="w-4 h-4 text-white" />
+                              <Layers className="w-4 h-4 text-foreground" />
                             </div>
-                            <span className="font-semibold text-white">{process.name}</span>
+                            <span className="font-semibold text-foreground">{process.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center text-neutral-300">
+                        <td className="px-6 py-4 text-center text-card-foreground">
                           {process.totalEmployees}
                         </td>
-                        <td className="px-6 py-4 text-center text-emerald-400">
+                        <td className="px-6 py-4 text-center text-emerald-600">
                           {process.activeEmployees}
                         </td>
-                        <td className="px-6 py-4 text-right text-white font-semibold">
-                          ₹{process.totalMonthlyPayroll.toLocaleString('en-IN')}
+                        <td className="px-6 py-4 text-right text-foreground font-semibold">
+                          ₹{(process.totalMonthlyPayroll || 0).toLocaleString('en-IN')}
                         </td>
-                        <td className="px-6 py-4 text-right text-neutral-300">
+                        <td className="px-6 py-4 text-right text-card-foreground">
                           ₹{process.avgSalary.toLocaleString('en-IN')}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="text-center py-12 text-neutral-500">
+                      <td colSpan={5} className="text-center py-12 text-muted-foreground">
                         No process data available
                       </td>
                     </tr>
@@ -323,8 +323,8 @@ export default function SuperAdminReportsPage() {
             </div>
 
             {!isLoading && processes && processes.length > 5 && (
-              <div className="px-6 py-4 border-t border-neutral-800 bg-neutral-900/30 text-center">
-                <p className="text-xs text-neutral-400">
+              <div className="px-6 py-4 border-t border-border bg-secondary/50 text-center">
+                <p className="text-xs text-muted-foreground">
                   Showing 5 of {processes.length} processes
                 </p>
               </div>
@@ -334,9 +334,9 @@ export default function SuperAdminReportsPage() {
           {/* Info Note */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6">
             <div className="flex items-start gap-3">
-              <FileText className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+              <FileText className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-sm font-bold text-blue-400 mb-1">Report Generation</h3>
+                <h3 className="text-sm font-bold text-blue-600 mb-1">Report Generation</h3>
                 <p className="text-sm text-blue-300/80 leading-relaxed">
                   Reports are generated based on the selected period and include data from all processes and employees. 
                   Download reports in Excel or PDF format for detailed analysis and record-keeping.

@@ -242,21 +242,21 @@ export default function SalaryHistoryPage() {
   // Status colors
   const getPayrollStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      DRAFT: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20',
-      GENERATED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      APPROVED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      PAID: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      REJECTED: 'bg-red-500/10 text-red-400 border-red-500/20',
+      DRAFT: 'bg-background0/10 text-muted-foreground border-neutral-500/20',
+      GENERATED: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+      APPROVED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      PAID: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      REJECTED: 'bg-red-500/10 text-red-600 border-red-500/20',
     };
     return colors[status] || colors.DRAFT;
   };
 
   const getPaymentStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      PENDING: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      PROCESSING: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      PAID: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      FAILED: 'bg-red-500/10 text-red-400 border-red-500/20',
+      PENDING: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+      PROCESSING: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+      PAID: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      FAILED: 'bg-red-500/10 text-red-600 border-red-500/20',
     };
     return colors[status] || colors.PENDING;
   };
@@ -266,31 +266,31 @@ export default function SalaryHistoryPage() {
     {
       title: 'Total Payslips',
       value: summary?.totalPayslips || 0,
-      icon: <FileText className="w-6 h-6 text-blue-400" />,
+      icon: <FileText className="w-6 h-6 text-blue-600" />,
       color: 'from-blue-500 to-indigo-600',
     },
     {
       title: 'Total Payroll Amount',
       value: `₹${((summary?.totalPayrollAmount || 0) / 100000).toFixed(2)}L`,
-      icon: <DollarSign className="w-6 h-6 text-emerald-400" />,
+      icon: <DollarSign className="w-6 h-6 text-emerald-600" />,
       color: 'from-emerald-500 to-teal-600',
     },
     {
       title: 'Average Salary',
       value: `₹${((summary?.averageSalary || 0) / 1000).toFixed(1)}K`,
-      icon: <TrendingUp className="w-6 h-6 text-purple-400" />,
+      icon: <TrendingUp className="w-6 h-6 text-purple-600" />,
       color: 'from-purple-500 to-pink-600',
     },
     {
       title: 'Highest Salary',
       value: `₹${((summary?.highestSalary || 0) / 100000).toFixed(2)}L`,
-      icon: <CreditCard className="w-6 h-6 text-amber-400" />,
+      icon: <CreditCard className="w-6 h-6 text-amber-600" />,
       color: 'from-amber-500 to-orange-600',
     },
     {
       title: 'Pending Payments',
       value: summary?.pendingPayments || 0,
-      icon: <Clock className="w-6 h-6 text-red-400" />,
+      icon: <Clock className="w-6 h-6 text-red-600" />,
       color: 'from-red-500 to-rose-600',
     },
     {
@@ -322,13 +322,13 @@ export default function SalaryHistoryPage() {
     return (
       <HRLayout>
         <div className="space-y-8 animate-pulse">
-          <div className="h-12 bg-neutral-900 rounded-lg w-1/3" />
+          <div className="h-12 bg-secondary rounded-lg w-1/3" />
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-32 bg-neutral-900 rounded-xl" />
+              <div key={i} className="h-32 bg-secondary rounded-xl" />
             ))}
           </div>
-          <div className="h-96 bg-neutral-900 rounded-xl" />
+          <div className="h-96 bg-secondary rounded-xl" />
         </div>
       </HRLayout>
     );
@@ -341,13 +341,13 @@ export default function SalaryHistoryPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-white" />
+              <Calendar className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
                 Salary History
               </h1>
-              <p className="text-sm text-neutral-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 View and manage employee salary history and payroll records
               </p>
             </div>
@@ -358,7 +358,7 @@ export default function SalaryHistoryPage() {
             <button
               onClick={() => exportExcelMutation.mutate()}
               disabled={exportExcelMutation.isPending}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Export Excel
@@ -366,7 +366,7 @@ export default function SalaryHistoryPage() {
             <button
               onClick={() => exportPdfMutation.mutate()}
               disabled={exportPdfMutation.isPending}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               Export PDF
@@ -375,7 +375,7 @@ export default function SalaryHistoryPage() {
               onClick={() => {
                 exportExcelMutation.mutate();
               }}
-              className="px-4 py-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-secondary border border-border hover:border-border text-foreground rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <FileText className="w-4 h-4" />
               Download Report
@@ -391,32 +391,32 @@ export default function SalaryHistoryPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 hover:border-neutral-700 transition-all"
+              className="bg-card border border-border rounded-2xl p-6 hover:border-border transition-all"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-xl flex items-center justify-center`}>
                   {card.icon}
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{card.value}</div>
-              <div className="text-sm text-neutral-400">{card.title}</div>
+              <div className="text-3xl font-bold text-foreground mb-1">{card.value}</div>
+              <div className="text-sm text-muted-foreground">{card.title}</div>
             </motion.div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
             {/* Employee Filter */}
             <div className="relative xl:col-span-2">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={selectedEmployee}
                 onChange={(e) => {
                   setSelectedEmployee(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
               >
                 <option value="">All Employees</option>
                 {(employees || []).map((emp) => (
@@ -429,14 +429,14 @@ export default function SalaryHistoryPage() {
 
             {/* Department Filter */}
             <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={selectedDepartment}
                 onChange={(e) => {
                   setSelectedDepartment(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
               >
                 <option value="">All Departments</option>
                 {(departments || []).map((dept) => (
@@ -449,14 +449,14 @@ export default function SalaryHistoryPage() {
 
             {/* Month Filter */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={selectedMonth}
                 onChange={(e) => {
                   setSelectedMonth(e.target.value ? Number(e.target.value) : '');
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
               >
                 <option value="">All Months</option>
                 {months.map((month) => (
@@ -469,14 +469,14 @@ export default function SalaryHistoryPage() {
 
             {/* Year Filter */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={selectedYear}
                 onChange={(e) => {
                   setSelectedYear(e.target.value ? Number(e.target.value) : '');
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
               >
                 <option value="">All Years</option>
                 {years.map((year) => (
@@ -489,14 +489,14 @@ export default function SalaryHistoryPage() {
 
             {/* Payroll Status Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={payrollStatus}
                 onChange={(e) => {
                   setPayrollStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
               >
                 <option value="">All Payroll Status</option>
                 <option value="DRAFT">Draft</option>
@@ -509,14 +509,14 @@ export default function SalaryHistoryPage() {
 
             {/* Payment Status Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <select
                 value={paymentStatus}
                 onChange={(e) => {
                   setPaymentStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-sm"
               >
                 <option value="">All Payment Status</option>
                 <option value="PENDING">Pending</option>
@@ -528,7 +528,7 @@ export default function SalaryHistoryPage() {
 
             {/* Search */}
             <div className="relative xl:col-span-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search by name or ID..."
@@ -537,19 +537,19 @@ export default function SalaryHistoryPage() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
           </div>
         </div>
 
         {/* Salary History Table */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {!salaryRecords || salaryRecords.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6">
-              <Calendar className="w-16 h-16 text-neutral-700 mb-4" />
-              <h3 className="font-semibold text-white mb-2">No salary history found</h3>
-              <p className="text-sm text-neutral-500 text-center max-w-sm">
+              <Calendar className="w-16 h-16 text-card-foreground mb-4" />
+              <h3 className="font-semibold text-foreground mb-2">No salary history found</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-sm">
                 {searchTerm || selectedEmployee || selectedDepartment
                   ? 'Try adjusting your filters'
                   : 'Salary records will appear here once payroll is processed'}
@@ -560,104 +560,104 @@ export default function SalaryHistoryPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-neutral-900/50 border-b border-neutral-800">
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                    <tr className="bg-secondary border-b border-border">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Employee
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Department
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Month
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Year
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Basic
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Gross
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Deductions
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Net Salary
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Payment Date
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Payment Method
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Payroll Status
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Payment Status
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-800">
+                  <tbody className="divide-y divide-border">
                     {salaryRecords.map((record: any, index: number) => (
                       <motion.tr
                         key={record.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.02 }}
-                        className="hover:bg-neutral-900/30 transition-colors"
+                        className="hover:bg-secondary/30 transition-colors"
                       >
                         <td className="px-6 py-4">
                           <div>
-                            <div className="text-sm font-medium text-white">{record.employeeName}</div>
-                            <div className="text-xs text-neutral-500">{record.employeeCode}</div>
+                            <div className="text-sm font-medium text-foreground">{record.employeeName}</div>
+                            <div className="text-xs text-muted-foreground">{record.employeeCode}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-neutral-300">{record.department}</div>
-                          <div className="text-xs text-neutral-500">{record.designation}</div>
+                          <div className="text-sm text-card-foreground">{record.department}</div>
+                          <div className="text-xs text-muted-foreground">{record.designation}</div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <div className="text-sm text-white font-medium">
+                          <div className="text-sm text-foreground font-medium">
                             {months.find((m) => m.value === record.month)?.label}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <div className="text-sm text-white font-medium">{record.year}</div>
+                          <div className="text-sm text-foreground font-medium">{record.year}</div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="text-sm text-neutral-300">
+                          <div className="text-sm text-card-foreground">
                             ₹{record.basicSalary.toLocaleString()}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="text-sm font-medium text-white">
+                          <div className="text-sm font-medium text-foreground">
                             ₹{record.grossSalary.toLocaleString()}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="text-sm text-red-400">
+                          <div className="text-sm text-red-600">
                             ₹{record.deductions.toLocaleString()}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="text-sm font-bold text-emerald-400">
+                          <div className="text-sm font-bold text-emerald-600">
                             ₹{record.netSalary.toLocaleString()}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-neutral-300">
+                          <div className="text-sm text-card-foreground">
                             {record.paymentDate
                               ? new Date(record.paymentDate).toLocaleDateString()
                               : '—'}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-neutral-300">
+                          <div className="text-sm text-card-foreground">
                             {record.paymentMethod || '—'}
                           </div>
                         </td>
@@ -686,7 +686,7 @@ export default function SalaryHistoryPage() {
                               className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors group"
                               title="View Salary Details"
                             >
-                              <Eye className="w-4 h-4 text-neutral-400 group-hover:text-blue-400" />
+                              <Eye className="w-4 h-4 text-muted-foreground group-hover:text-blue-600" />
                             </button>
                             <button
                               onClick={() => downloadPayslipMutation.mutate(record.id)}
@@ -694,7 +694,7 @@ export default function SalaryHistoryPage() {
                               className="p-1.5 hover:bg-emerald-500/10 rounded-lg transition-colors group disabled:opacity-30"
                               title="Download Payslip"
                             >
-                              <Download className="w-4 h-4 text-neutral-400 group-hover:text-emerald-400" />
+                              <Download className="w-4 h-4 text-muted-foreground group-hover:text-emerald-600" />
                             </button>
                           </div>
                         </td>
@@ -706,8 +706,8 @@ export default function SalaryHistoryPage() {
 
               {/* Pagination */}
               {pagination.pages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-800">
-                  <div className="text-sm text-neutral-400">
+                <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+                  <div className="text-sm text-muted-foreground">
                     Showing {(currentPage - 1) * pageSize + 1} to{' '}
                     {Math.min(currentPage * pageSize, pagination.total)} of {pagination.total} records
                   </div>
@@ -715,7 +715,7 @@ export default function SalaryHistoryPage() {
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 bg-secondary hover:bg-secondary border border-border text-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -738,8 +738,8 @@ export default function SalaryHistoryPage() {
                             onClick={() => setCurrentPage(pageNum)}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                               currentPage === pageNum
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white'
+                                ? 'bg-blue-600 text-foreground'
+                                : 'bg-secondary hover:bg-secondary border border-border text-foreground'
                             }`}
                           >
                             {pageNum}
@@ -750,7 +750,7 @@ export default function SalaryHistoryPage() {
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(pagination.pages, p + 1))}
                       disabled={currentPage === pagination.pages}
-                      className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 bg-secondary hover:bg-secondary border border-border text-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>

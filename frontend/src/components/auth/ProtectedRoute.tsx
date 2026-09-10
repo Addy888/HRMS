@@ -48,7 +48,7 @@ export default function ProtectedRoute({
   // Show loading while hydrating or checking auth
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
       </div>
     );
@@ -57,7 +57,7 @@ export default function ProtectedRoute({
   // Not authenticated - block render and show loading
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
       </div>
     );
@@ -66,7 +66,7 @@ export default function ProtectedRoute({
   // Wrong role - block render and show loading
   if (!allowedRoles.includes(user.role)) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
       </div>
     );

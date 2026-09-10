@@ -17,14 +17,14 @@ import {
 } from '@nestjs/swagger';
 import { SuperAdminService } from './super-admin.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
-import { Roles } from '../../common/guards/roles.guard.js';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard.js';
 import { UserRole } from '../../common/constants/index.js';
 import { GetUser } from '../../common/decorators/get-user.decorator.js';
 
 @ApiTags('Super Admin')
 @ApiBearerAuth()
 @Controller('super-admin')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN)
 export class SuperAdminController {
   constructor(private readonly superAdminService: SuperAdminService) {}
@@ -119,6 +119,52 @@ export class SuperAdminController {
     @Param('id') employeeId: string,
   ) {
     return this.superAdminService.getEmployeeDetails(userId, employeeId);
+  }
+
+  @Post('employees')
+  @ApiOperation({ summary: 'Create new employee (Super Admin Only)' })
+  @ApiResponse({ status: 201, description: 'Employee created successfully' })
+  createEmployee(@GetUser('id') userId: string, @Body() dto: any) {
+    return this.superAdminService.createEmployee(userId, dto);
+  }
+
+  @Put('employees/:id')
+  @ApiOperation({ summary: 'Update employee details (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Employee updated successfully' })
+  updateEmployee(
+    @GetUser('id') userId: string,
+    @Param('id') employeeId: string,
+    @Body() dto: any,
+  ) {
+    return this.superAdminService.updateEmployee(userId, employeeId, dto);
+  }
+
+  @Delete('employees/:id')
+  @ApiOperation({ summary: 'Delete employee (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Employee deleted successfully' })
+  deleteEmployee(@GetUser('id') userId: string, @Param('id') employeeId: string) {
+    return this.superAdminService.deleteEmployee(userId, employeeId);
+  }
+
+  @Post('employees/:id/activate')
+  @ApiOperation({ summary: 'Activate employee account (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Employee activated successfully' })
+  activateEmployee(@GetUser('id') userId: string, @Param('id') employeeId: string) {
+    return this.superAdminService.setEmployeeActivation(userId, employeeId, true);
+  }
+
+  @Post('employees/:id/deactivate')
+  @ApiOperation({ summary: 'Deactivate employee account (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Employee deactivated successfully' })
+  deactivateEmployee(@GetUser('id') userId: string, @Param('id') employeeId: string) {
+    return this.superAdminService.setEmployeeActivation(userId, employeeId, false);
+  }
+
+  @Post('employees/:id/reset-password')
+  @ApiOperation({ summary: 'Reset employee password (Super Admin Only)' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  resetEmployeePassword(@GetUser('id') userId: string, @Param('id') employeeId: string) {
+    return this.superAdminService.resetEmployeePassword(userId, employeeId);
   }
 
   // ==========================================

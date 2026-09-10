@@ -334,35 +334,35 @@ export default function SalaryStructureForm({
 
     return (
       <div className="space-y-2">
-        <label className="flex items-center gap-2 text-sm font-semibold text-neutral-300">
+        <label className="flex items-center gap-2 text-sm font-semibold text-card-foreground">
           {icon}
           {label}
         </label>
         <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="flex-1 flex items-center gap-2 bg-secondary border border-border rounded-lg overflow-hidden">
             <input
               type="number"
               step="0.01"
               {...register(valueName, { valueAsNumber: true })}
-              className="flex-1 px-4 py-2.5 bg-transparent text-white text-sm focus:outline-none"
+              className="flex-1 px-4 py-2.5 bg-transparent text-foreground text-sm focus:outline-none"
               placeholder="0"
             />
             <select
               {...register(typeName)}
-              className="px-3 py-2.5 bg-neutral-800 border-l border-neutral-700 text-white text-sm cursor-pointer focus:outline-none"
+              className="px-3 py-2.5 bg-secondary border-l border-border text-foreground text-sm cursor-pointer focus:outline-none"
             >
               <option value="fixed">₹</option>
               <option value="percentage">%</option>
             </select>
           </div>
           {calculatedAmount > 0 && (
-            <div className="text-sm font-mono text-emerald-400 min-w-[100px] text-right">
+            <div className="text-sm font-mono text-emerald-600 min-w-[100px] text-right">
               ₹{calculatedAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
             </div>
           )}
         </div>
         {errors[valueName as keyof typeof errors] && (
-          <p className="text-xs text-red-400">{errors[valueName as keyof typeof errors]?.message?.toString()}</p>
+          <p className="text-xs text-red-600">{errors[valueName as keyof typeof errors]?.message?.toString()}</p>
         )}
       </div>
     );
@@ -373,40 +373,40 @@ export default function SalaryStructureForm({
       <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
         
         {/* SECTION 1: Employee Information */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-400" />
+        <div className="bg-secondary border border-border rounded-xl p-6 space-y-4">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-600" />
             Employee Information
           </h3>
 
           {/* Employee Search */}
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-neutral-300">
-              Employee <span className="text-red-400">*</span>
+            <label className="text-sm font-semibold text-card-foreground">
+              Employee <span className="text-red-600">*</span>
             </label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowEmployeeSearch(!showEmployeeSearch)}
-                className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-lg text-left text-white text-sm hover:border-neutral-700 transition-colors flex items-center justify-between"
+                className="w-full px-4 py-3 bg-card border border-border rounded-lg text-left text-foreground text-sm hover:border-border transition-colors flex items-center justify-between"
               >
                 {selectedEmployee ? (
                   <span>{selectedEmployee.firstName} {selectedEmployee.lastName} ({selectedEmployee.employeeId})</span>
                 ) : (
-                  <span className="text-neutral-500">Search employee...</span>
+                  <span className="text-muted-foreground">Search employee...</span>
                 )}
-                <Search className="w-4 h-4 text-neutral-500" />
+                <Search className="w-4 h-4 text-muted-foreground" />
               </button>
 
               {showEmployeeSearch && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-900 border border-neutral-800 rounded-lg shadow-2xl z-50 max-h-64 overflow-y-auto">
-                  <div className="p-3 border-b border-neutral-800">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-secondary border border-border rounded-lg shadow-2xl z-50 max-h-64 overflow-y-auto">
+                  <div className="p-3 border-b border-border">
                     <input
                       type="text"
                       placeholder="Search by name or ID..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-card border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       autoFocus
                     />
                   </div>
@@ -417,18 +417,18 @@ export default function SalaryStructureForm({
                           key={emp.id}
                           type="button"
                           onClick={() => handleEmployeeSelect(emp)}
-                          className="w-full px-4 py-3 text-left hover:bg-neutral-800 transition-colors border-b border-neutral-800 last:border-0"
+                          className="w-full px-4 py-3 text-left hover:bg-secondary transition-colors border-b border-border last:border-0"
                         >
-                          <div className="text-sm font-medium text-white">
+                          <div className="text-sm font-medium text-foreground">
                             {emp.firstName} {emp.lastName}
                           </div>
-                          <div className="text-xs text-neutral-500 mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             {emp.employeeId} • {emp.departmentName} • {emp.designationTitle}
                           </div>
                         </button>
                       ))
                     ) : (
-                      <div className="px-4 py-8 text-center text-sm text-neutral-500">
+                      <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                         {searchTerm ? 'No employees found' : 'Start typing to search'}
                       </div>
                     )}
@@ -437,28 +437,28 @@ export default function SalaryStructureForm({
               )}
             </div>
             {errors.employeeId && (
-              <p className="text-xs text-red-400">{errors.employeeId.message}</p>
+              <p className="text-xs text-red-600">{errors.employeeId.message}</p>
             )}
           </div>
 
           {/* Employee Details (Read-only) */}
           {selectedEmployee && (
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800">
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
               <div>
-                <div className="text-xs text-neutral-500 uppercase font-semibold mb-1">Employee ID</div>
-                <div className="text-sm text-white font-mono">{selectedEmployee.employeeId}</div>
+                <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Employee ID</div>
+                <div className="text-sm text-foreground font-mono">{selectedEmployee.employeeId}</div>
               </div>
               <div>
-                <div className="text-xs text-neutral-500 uppercase font-semibold mb-1">Department</div>
-                <div className="text-sm text-white">{selectedEmployee.departmentName}</div>
+                <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Department</div>
+                <div className="text-sm text-foreground">{selectedEmployee.departmentName}</div>
               </div>
               <div>
-                <div className="text-xs text-neutral-500 uppercase font-semibold mb-1">Designation</div>
-                <div className="text-sm text-white">{selectedEmployee.designationTitle}</div>
+                <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Designation</div>
+                <div className="text-sm text-foreground">{selectedEmployee.designationTitle}</div>
               </div>
               <div>
-                <div className="text-xs text-neutral-500 uppercase font-semibold mb-1">Joining Date</div>
-                <div className="text-sm text-white">
+                <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">Joining Date</div>
+                <div className="text-sm text-foreground">
                   {new Date(selectedEmployee.joiningDate).toLocaleDateString()}
                 </div>
               </div>
@@ -468,27 +468,27 @@ export default function SalaryStructureForm({
           {/* Effective Date & Template */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-neutral-300 flex items-center gap-2">
+              <label className="text-sm font-semibold text-card-foreground flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Effective From <span className="text-red-400">*</span>
+                Effective From <span className="text-red-600">*</span>
               </label>
               <input
                 type="date"
                 {...register('effectiveFrom')}
-                className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               {errors.effectiveFrom && (
-                <p className="text-xs text-red-400">{errors.effectiveFrom.message}</p>
+                <p className="text-xs text-red-600">{errors.effectiveFrom.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-neutral-300">
+              <label className="text-sm font-semibold text-card-foreground">
                 Salary Template
               </label>
               <select
                 {...register('template')}
-                className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 <option value="">No Template</option>
                 <option value="standard">Standard Package</option>
@@ -500,27 +500,27 @@ export default function SalaryStructureForm({
         </div>
 
         {/* SECTION 2: Earnings */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
+        <div className="bg-secondary border border-border rounded-xl p-6 space-y-4">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
             Earnings
           </h3>
 
           {/* Basic Salary */}
-          <div className="space-y-2 pb-4 border-b border-neutral-800">
-            <label className="text-sm font-semibold text-neutral-300 flex items-center gap-2">
+          <div className="space-y-2 pb-4 border-b border-border">
+            <label className="text-sm font-semibold text-card-foreground flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              Basic Salary <span className="text-red-400">*</span>
+              Basic Salary <span className="text-red-600">*</span>
             </label>
             <input
               type="number"
               step="0.01"
               {...register('basicSalary', { valueAsNumber: true })}
-              className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter basic salary"
             />
             {errors.basicSalary && (
-              <p className="text-xs text-red-400">{errors.basicSalary.message}</p>
+              <p className="text-xs text-red-600">{errors.basicSalary.message}</p>
             )}
           </div>
 
@@ -596,9 +596,9 @@ export default function SalaryStructureForm({
         </div>
 
         {/* SECTION 3: Deductions */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <TrendingDown className="w-5 h-5 text-red-400" />
+        <div className="bg-secondary border border-border rounded-xl p-6 space-y-4">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <TrendingDown className="w-5 h-5 text-red-600" />
             Deductions
           </h3>
 
@@ -655,9 +655,9 @@ export default function SalaryStructureForm({
         </div>
 
         {/* SECTION 4: Employer Contribution */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Shield className="w-5 h-5 text-purple-400" />
+        <div className="bg-secondary border border-border rounded-xl p-6 space-y-4">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-5 h-5 text-purple-600" />
             Employer Contribution
           </h3>
 
@@ -690,9 +690,9 @@ export default function SalaryStructureForm({
         </div>
 
         {/* SECTION 5: Live Calculation */}
-        <div className="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 rounded-xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-blue-400" />
+        <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-blue-600" />
             Summary & Calculation
           </h3>
 
@@ -700,51 +700,51 @@ export default function SalaryStructureForm({
             {/* Gross Earnings */}
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <div className="text-xs font-semibold text-emerald-400 uppercase">Gross Earnings</div>
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <div className="text-xs font-semibold text-emerald-600 uppercase">Gross Earnings</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
+              <div className="text-2xl font-bold text-foreground font-mono">
                 ₹{grossEarnings.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-neutral-400 mt-1">Monthly</div>
+              <div className="text-xs text-muted-foreground mt-1">Monthly</div>
             </div>
 
             {/* Total Deductions */}
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="w-4 h-4 text-red-400" />
-                <div className="text-xs font-semibold text-red-400 uppercase">Total Deductions</div>
+                <TrendingDown className="w-4 h-4 text-red-600" />
+                <div className="text-xs font-semibold text-red-600 uppercase">Total Deductions</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
+              <div className="text-2xl font-bold text-foreground font-mono">
                 ₹{totalDeductions.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-neutral-400 mt-1">Monthly</div>
+              <div className="text-xs text-muted-foreground mt-1">Monthly</div>
             </div>
 
             {/* Employer Contribution */}
             <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Shield className="w-4 h-4 text-purple-400" />
-                <div className="text-xs font-semibold text-purple-400 uppercase">Employer Contribution</div>
+                <Shield className="w-4 h-4 text-purple-600" />
+                <div className="text-xs font-semibold text-purple-600 uppercase">Employer Contribution</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
+              <div className="text-2xl font-bold text-foreground font-mono">
                 ₹{employerContribution.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-neutral-400 mt-1">Monthly</div>
+              <div className="text-xs text-muted-foreground mt-1">Monthly</div>
             </div>
           </div>
 
           {/* Net Salary & CTC */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-neutral-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-4 h-4 text-blue-400" />
-                <div className="text-xs font-semibold text-blue-400 uppercase">Net Salary</div>
+                <DollarSign className="w-4 h-4 text-blue-600" />
+                <div className="text-xs font-semibold text-blue-600 uppercase">Net Salary</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
+              <div className="text-2xl font-bold text-foreground font-mono">
                 ₹{netSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-neutral-400 mt-1">Take Home (Monthly)</div>
+              <div className="text-xs text-muted-foreground mt-1">Take Home (Monthly)</div>
             </div>
 
             <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
@@ -752,21 +752,21 @@ export default function SalaryStructureForm({
                 <DollarSign className="w-4 h-4 text-indigo-400" />
                 <div className="text-xs font-semibold text-indigo-400 uppercase">Monthly CTC</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
+              <div className="text-2xl font-bold text-foreground font-mono">
                 ₹{monthlyCTC.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-neutral-400 mt-1">Cost to Company</div>
+              <div className="text-xs text-muted-foreground mt-1">Cost to Company</div>
             </div>
 
             <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-4 h-4 text-blue-400" />
-                <div className="text-xs font-semibold text-blue-400 uppercase">Annual CTC</div>
+                <DollarSign className="w-4 h-4 text-blue-600" />
+                <div className="text-xs font-semibold text-blue-600 uppercase">Annual CTC</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
+              <div className="text-2xl font-bold text-foreground font-mono">
                 ₹{(annualCTC / 100000).toFixed(2)}L
               </div>
-              <div className="text-xs text-neutral-400 mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 ₹{annualCTC.toLocaleString('en-IN')}
               </div>
             </div>
@@ -774,34 +774,34 @@ export default function SalaryStructureForm({
         </div>
 
         {/* SECTION 6: Notes */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-amber-400" />
+        <div className="bg-secondary border border-border rounded-xl p-6 space-y-4">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <FileText className="w-5 h-5 text-amber-600" />
             Notes & Remarks
           </h3>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-neutral-300">
+            <label className="text-sm font-semibold text-card-foreground">
               Additional Notes
             </label>
             <textarea
               {...register('remarks')}
               rows={4}
               placeholder="Add any additional notes or remarks about this salary structure..."
-              className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-neutral-600 resize-none"
+              className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-muted-foreground resize-none"
             />
           </div>
         </div>
       </div>
 
       {/* Bottom Action Buttons - Sticky */}
-      <div className="sticky bottom-0 bg-neutral-950 border-t border-neutral-800 px-6 py-4">
+      <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onCancel}
             disabled={saveMutation.isPending}
-            className="flex-1 px-6 py-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 bg-secondary hover:bg-secondary border border-border text-foreground rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -809,7 +809,7 @@ export default function SalaryStructureForm({
           <button
             type="submit"
             disabled={saveMutation.isPending || !selectedEmployee || !formValues.basicSalary}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-foreground rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
           >
             {saveMutation.isPending ? (
               <>

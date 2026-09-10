@@ -27,35 +27,35 @@ const CATEGORIES = [
 
 function Input({ className = '', ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <input {...props} className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors ${className}`} />
+    <input {...props} className={`w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors ${className}`} />
   );
 }
 
 function Textarea({ className = '', ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <textarea {...props} className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors resize-none ${className}`} />
+    <textarea {...props} className={`w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors resize-none ${className}`} />
   );
 }
 
 function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <div className="relative">
-      <select {...props} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 pr-9 text-sm text-white focus:outline-none focus:border-blue-500 appearance-none transition-colors">
+      <select {...props} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 pr-9 text-sm text-foreground focus:outline-none focus:border-blue-500 appearance-none transition-colors">
         {children}
       </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
     </div>
   );
 }
 
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
-  return <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wide mb-1.5">{label}{required && <span className="text-red-400 ml-0.5">*</span>}</label>;
+  return <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">{label}{required && <span className="text-red-600 ml-0.5">*</span>}</label>;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  DRAFT: { label: 'Draft', icon: FileText, color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  PUBLISHED: { label: 'Published', icon: Globe, color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  ARCHIVED: { label: 'Archived', icon: Archive, color: 'bg-neutral-600/20 text-neutral-400 border-neutral-600/20' },
+  DRAFT: { label: 'Draft', icon: FileText, color: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
+  PUBLISHED: { label: 'Published', icon: Globe, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+  ARCHIVED: { label: 'Archived', icon: Archive, color: 'bg-neutral-600/20 text-muted-foreground border-neutral-600/20' },
 };
 
 export default function EditPolicyPage() {
@@ -117,15 +117,15 @@ export default function EditPolicyPage() {
 
   if (preview && form.title) {
     return (
-      <div className="min-h-screen bg-neutral-950 p-6">
+      <div className="min-h-screen bg-card p-6">
         <div className="max-w-3xl mx-auto">
-          <button onClick={() => setPreview(false)} className="flex items-center gap-2 text-xs text-neutral-500 hover:text-white mb-6 font-semibold">
+          <button onClick={() => setPreview(false)} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-6 font-semibold">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Editor
           </button>
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8">
-            <h1 className="text-2xl font-bold text-white mb-2">{form.title}</h1>
-            {form.description && <p className="text-sm text-neutral-400 mb-6">{form.description}</p>}
-            <div className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap bg-neutral-950/50 rounded-xl p-6 border border-neutral-800">
+          <div className="bg-secondary border border-border rounded-2xl p-8">
+            <h1 className="text-2xl font-bold text-foreground mb-2">{form.title}</h1>
+            {form.description && <p className="text-sm text-muted-foreground mb-6">{form.description}</p>}
+            <div className="text-sm text-card-foreground leading-relaxed whitespace-pre-wrap bg-card rounded-xl p-6 border border-border">
               {form.content}
             </div>
           </div>
@@ -135,22 +135,22 @@ export default function EditPolicyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 p-6">
+    <div className="min-h-screen bg-card p-6">
       <div className="max-w-3xl mx-auto space-y-5">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/hr/policies')} className="w-8 h-8 bg-neutral-900 border border-neutral-800 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white">
+          <button onClick={() => router.push('/hr/policies')} className="w-8 h-8 bg-secondary border border-border rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-white font-heading">Edit Policy</h1>
-            <p className="text-xs text-neutral-500">Policy ID: {id}</p>
+            <h1 className="text-xl font-bold text-foreground font-heading">Edit Policy</h1>
+            <p className="text-xs text-muted-foreground">Policy ID: {id}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Status Change */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex items-center gap-4">
+          <div className="bg-secondary border border-border rounded-2xl p-5 flex items-center gap-4">
             <div>
               <FieldLabel label="Change Status" />
               <Select value={statusChange} onChange={(e) => setStatusChange(e.target.value)}>
@@ -160,14 +160,14 @@ export default function EditPolicyPage() {
                 <option value="ARCHIVED">Archive</option>
               </Select>
             </div>
-            <div className="ml-auto text-xs text-neutral-500 pt-5">
+            <div className="ml-auto text-xs text-muted-foreground pt-5">
               Only fields you fill will be updated.
             </div>
           </div>
 
           {/* Core Details */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
-            <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Update Details</h2>
+          <div className="bg-secondary border border-border rounded-2xl p-6 space-y-4">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Update Details</h2>
 
             <div>
               <FieldLabel label="Policy Title" />
@@ -200,28 +200,28 @@ export default function EditPolicyPage() {
           </div>
 
           {/* Content */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-3">
+          <div className="bg-secondary border border-border rounded-2xl p-6 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Policy Content</h2>
-              <button type="button" onClick={() => setPreview(true)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold">
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Policy Content</h2>
+              <button type="button" onClick={() => setPreview(true)} className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-300 font-semibold">
                 <Eye className="w-3.5 h-3.5" /> Preview
               </button>
             </div>
-            <p className="text-[10px] text-amber-400/80 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-amber-600/80 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2">
               ⚠ Saving new content will auto-increment the policy version and archive the previous version.
             </p>
             <Textarea rows={14} placeholder="Leave blank to keep existing content, or enter new text to create a new version." value={form.content} onChange={set('content')} />
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-400 font-semibold">{error}</div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-600 font-semibold">{error}</div>
           )}
 
           <div className="flex gap-3">
-            <button type="button" onClick={() => router.push('/hr/policies')} className="flex-1 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-xs font-bold text-neutral-300">
+            <button type="button" onClick={() => router.push('/hr/policies')} className="flex-1 py-2.5 bg-secondary border border-border rounded-xl text-xs font-bold text-card-foreground">
               Cancel
             </button>
-            <button type="submit" disabled={updateMutation.isPending} className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+            <button type="submit" disabled={updateMutation.isPending} className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2">
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
             </button>

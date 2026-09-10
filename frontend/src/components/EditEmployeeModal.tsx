@@ -90,15 +90,15 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
   if (!isOpen || !employee) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
           <div>
-            <h2 className="font-heading text-xl font-bold text-white">Edit Employee Profile</h2>
-            <p className="text-sm text-neutral-400 mt-0.5">{employee.employeeId} — {employee.firstName} {employee.lastName}</p>
+            <h2 className="font-heading text-xl font-bold text-foreground">Edit Employee Profile</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">{employee.employeeId} — {employee.firstName} {employee.lastName}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -114,21 +114,21 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
               { label: 'Joining Date', name: 'joiningDate', type: 'date' },
             ].map(field => (
               <div key={field.name} className="space-y-1.5">
-                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">{field.label}</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{field.label}</label>
                 <input
                   type={field.type}
                   name={field.name}
                   value={(form as any)[field.name]}
                   onChange={handleChange}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             ))}
 
             <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Gender</label>
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Gender</label>
               <select name="gender" value={form.gender} onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500 transition-colors">
                 <option value="">Select Gender</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
@@ -137,7 +137,7 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                 Process {loadingDepartments && '(Loading...)'}
               </label>
               <select
@@ -145,7 +145,7 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
                 value={form.departmentId}
                 onChange={handleChange}
                 disabled={loadingDepartments}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
               >
                 <option value="">Select Process</option>
                 {(departments as any[]).map((d: any) => (
@@ -153,12 +153,12 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
                 ))}
               </select>
               {departments.length === 0 && !loadingDepartments && (
-                <p className="text-xs text-amber-400">No processes found. You can create one or leave empty.</p>
+                <p className="text-xs text-amber-600">No processes found. You can create one or leave empty.</p>
               )}
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                 Designation {loadingDesignations && '(Loading...)'}
               </label>
               <select
@@ -166,38 +166,38 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
                 value={form.designationId}
                 onChange={handleChange}
                 disabled={loadingDesignations}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
               >
                 <option value="">Select Designation</option>
                 {(designations as any[]).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
               {designations.length === 0 && !loadingDesignations && (
-                <p className="text-xs text-amber-400">No designations found. You can create one or leave empty.</p>
+                <p className="text-xs text-amber-600">No designations found. You can create one or leave empty.</p>
               )}
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Address</label>
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Address</label>
               <textarea name="address" value={form.address} onChange={handleChange} rows={2}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none"
                 placeholder="Full residential address" />
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Emergency Contact</label>
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Emergency Contact</label>
               <input type="text" name="emergencyContact" value={form.emergencyContact} onChange={handleChange}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="Name: Phone Number" />
             </div>
           </div>
 
-          <div className="flex gap-3 px-6 py-4 border-t border-neutral-800">
+          <div className="flex gap-3 px-6 py-4 border-t border-border">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors">
+              className="flex-1 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors">
               Cancel
             </button>
             <button type="submit" disabled={updateMutation.isPending}
-              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50">
+              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50">
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>

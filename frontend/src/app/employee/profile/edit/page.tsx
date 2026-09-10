@@ -143,8 +143,8 @@ export default function EditProfilePage() {
     return (
       <EmployeeLayout>
         <div className="space-y-6 animate-pulse">
-          <div className="h-8 w-64 bg-neutral-900 rounded-xl"></div>
-          <div className="h-64 bg-neutral-900 rounded-3xl"></div>
+          <div className="h-8 w-64 bg-secondary rounded-xl"></div>
+          <div className="h-64 bg-secondary rounded-3xl"></div>
         </div>
       </EmployeeLayout>
     );
@@ -152,15 +152,15 @@ export default function EditProfilePage() {
 
   const InputField = ({ label, name, type = 'text', placeholder = '' }: { label: string; name: keyof ProfileFormValues; type?: string; placeholder?: string }) => (
     <div className="space-y-1.5">
-      <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">{label}</label>
+      <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{label}</label>
       <input
         type={type}
         placeholder={placeholder}
         {...register(name)}
-        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors"
+        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors"
       />
       {errors[name] && (
-        <span className="text-[11px] text-red-400 font-medium">{errors[name]?.message}</span>
+        <span className="text-[11px] text-red-600 font-medium">{errors[name]?.message}</span>
       )}
     </div>
   );
@@ -173,16 +173,16 @@ export default function EditProfilePage() {
           <div>
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-300 transition-colors mb-2 font-medium"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-card-foreground transition-colors mb-2 font-medium"
             >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
-            <h1 className="font-heading text-2xl font-extrabold text-white">Edit Profile Details</h1>
+            <h1 className="font-heading text-2xl font-extrabold text-foreground">Edit Profile Details</h1>
           </div>
         </div>
 
         {/* Tab Headers */}
-        <div className="flex gap-2 border-b border-neutral-800 overflow-x-auto pb-px">
+        <div className="flex gap-2 border-b border-border overflow-x-auto pb-px">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -190,8 +190,8 @@ export default function EditProfilePage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap -mb-px ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-white'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  ? 'border-blue-500 text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.icon}
@@ -202,7 +202,7 @@ export default function EditProfilePage() {
 
         {/* Form Container */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="bg-neutral-900/40 border border-neutral-800 rounded-3xl p-6 sm:p-8">
+          <div className="bg-card border border-border rounded-3xl p-6 sm:p-8">
             {activeTab === 'personal' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <InputField label="First Name *" name="firstName" />
@@ -211,8 +211,8 @@ export default function EditProfilePage() {
                 <InputField label="Mother's Name" name="motherName" />
                 <InputField label="Date of Birth" name="dob" type="date" />
                 <div className="space-y-1.5">
-                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Gender</label>
-                  <select {...register('gender')} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Gender</label>
+                  <select {...register('gender')} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500">
                     <option value="">Select Gender</option>
                     <option value="MALE">Male</option>
                     <option value="FEMALE">Female</option>
@@ -231,12 +231,12 @@ export default function EditProfilePage() {
                 <InputField label="Alternate Mobile Number" name="alternatePhone" placeholder="9876543210" />
                 <InputField label="Personal Email" name="personalEmail" placeholder="personal@gmail.com" />
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Permanent Address</label>
-                  <textarea {...register('permanentAddress')} rows={2} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-blue-500 resize-none" />
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Permanent Address</label>
+                  <textarea {...register('permanentAddress')} rows={2} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-blue-500 resize-none" />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Current Address</label>
-                  <textarea {...register('currentAddress')} rows={2} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-blue-500 resize-none" />
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Current Address</label>
+                  <textarea {...register('currentAddress')} rows={2} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-blue-500 resize-none" />
                 </div>
                 <InputField label="Emergency Contact Name" name="emergencyContactName" />
                 <InputField label="Emergency Contact Number" name="emergencyContactPhone" placeholder="9876543210" />
@@ -248,8 +248,8 @@ export default function EditProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <InputField label="Reporting Manager" name="reportingManager" />
                 <div className="space-y-1.5">
-                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Employment Type</label>
-                  <select {...register('employmentType')} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Employment Type</label>
+                  <select {...register('employmentType')} className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500">
                     <option value="">Select Type</option>
                     <option value="FULL_TIME">Full Time</option>
                     <option value="PART_TIME">Part Time</option>
@@ -286,14 +286,14 @@ export default function EditProfilePage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors"
+              className="px-5 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={updateMutation.isPending}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/30 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-bold shadow-lg shadow-blue-900/30 transition-all disabled:opacity-50"
             >
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {updateMutation.isPending ? 'Saving...' : 'Save Profile Details'}

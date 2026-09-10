@@ -20,23 +20,23 @@ import {
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
-  PRESENT: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  LATE: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  ABSENT: 'bg-red-500/10 text-red-400 border-red-500/20',
-  HALF_DAY: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  ON_LEAVE: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  WEEK_OFF: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+  PRESENT: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  LATE: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  ABSENT: 'bg-red-500/10 text-red-600 border-red-500/20',
+  HALF_DAY: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  ON_LEAVE: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  WEEK_OFF: 'bg-secondary text-muted-foreground border-border',
   HOLIDAY: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  PENDING: 'bg-neutral-800 text-neutral-400 border-neutral-700',
-  NOT_MARKED: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+  PENDING: 'bg-secondary text-muted-foreground border-border',
+  NOT_MARKED: 'bg-secondary text-muted-foreground border-border',
 };
 
 function StatCard({ title, value, icon: Icon, color }: any) {
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex items-center justify-between">
+    <div className="bg-secondary border border-border rounded-2xl p-5 flex items-center justify-between">
       <div>
-        <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">{title}</p>
-        <p className="text-2xl font-extrabold text-white mt-1.5">{value ?? 0}</p>
+        <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{title}</p>
+        <p className="text-2xl font-extrabold text-foreground mt-1.5">{value ?? 0}</p>
       </div>
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color} shrink-0`}>
         <Icon className="w-5 h-5" />
@@ -206,24 +206,24 @@ export default function HRAttendancePage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
               <Clock className="w-8 h-8 text-blue-500" /> Attendance Management
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Track and manage employee attendance records
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/hr/attendance/import/history')}
-              className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl text-sm font-semibold text-white transition-colors flex items-center gap-2"
+              className="px-4 py-2.5 bg-secondary hover:bg-secondary/50 border border-border rounded-xl text-sm font-semibold text-foreground transition-colors flex items-center gap-2"
             >
               <Clock className="w-4 h-4" />
               Upload History
             </button>
             <button
               onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors flex items-center gap-2"
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-foreground transition-colors flex items-center gap-2"
             >
               <Upload className="w-4 h-4" />
               Upload Excel
@@ -234,12 +234,12 @@ export default function HRAttendancePage() {
         {/* Date Selector */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="bg-black border border-neutral-850 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-xs text-foreground focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -250,38 +250,38 @@ export default function HRAttendancePage() {
             title="Total Employees"
             value={summary?.totalEmployees}
             icon={Users}
-            color="bg-blue-500/10 text-blue-400"
+            color="bg-blue-500/10 text-blue-600"
           />
           <StatCard
             title="Present"
             value={summary?.present}
             icon={CheckCircle2}
-            color="bg-emerald-500/10 text-emerald-400"
+            color="bg-emerald-500/10 text-emerald-600"
           />
           <StatCard
             title="Late"
             value={summary?.late}
             icon={AlertCircle}
-            color="bg-amber-500/10 text-amber-400"
+            color="bg-amber-500/10 text-amber-600"
           />
           <StatCard
             title="Absent"
             value={summary?.absent}
             icon={XCircle}
-            color="bg-red-500/10 text-red-400"
+            color="bg-red-500/10 text-red-600"
           />
         </div>
 
         {/* ✅ NEW: Uploaded Attendance Section */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+        <div className="bg-secondary border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Upload className="w-5 h-5 text-blue-500" />
               Uploaded Attendance
             </h2>
             <button
               onClick={() => router.push('/hr/attendance/import/history')}
-              className="text-xs text-blue-400 hover:text-blue-300 font-semibold"
+              className="text-xs text-blue-600 hover:text-blue-300 font-semibold"
             >
               View All →
             </button>
@@ -293,10 +293,10 @@ export default function HRAttendancePage() {
             </div>
           ) : !uploadHistory || !uploadHistory.data || uploadHistory.data.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-sm text-neutral-400">No attendance files uploaded yet</p>
+              <p className="text-sm text-muted-foreground">No attendance files uploaded yet</p>
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors"
+                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-foreground transition-colors"
               >
                 Upload First Attendance Excel
               </button>
@@ -305,20 +305,20 @@ export default function HRAttendancePage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-neutral-800">
-                    <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
+                  <tr className="border-b border-border">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase px-3 py-3">
                       File Name
                     </th>
-                    <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase px-3 py-3">
                       Uploaded By
                     </th>
-                    <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase px-3 py-3">
                       Date & Time
                     </th>
-                    <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase px-3 py-3">
                       Rows
                     </th>
-                    <th className="text-left text-xs font-bold text-neutral-400 uppercase px-3 py-3">
+                    <th className="text-left text-xs font-bold text-muted-foreground uppercase px-3 py-3">
                       Status
                     </th>
                   </tr>
@@ -330,10 +330,10 @@ export default function HRAttendancePage() {
                       : upload.uploadedByUser?.email || 'Unknown';
                     
                     const statusColor = 
-                      upload.status === 'COMPLETED' ? 'text-emerald-400' :
-                      upload.status === 'PARTIAL' ? 'text-amber-400' :
-                      upload.status === 'FAILED' ? 'text-red-400' :
-                      'text-neutral-400';
+                      upload.status === 'COMPLETED' ? 'text-emerald-600' :
+                      upload.status === 'PARTIAL' ? 'text-amber-600' :
+                      upload.status === 'FAILED' ? 'text-red-600' :
+                      'text-muted-foreground';
 
                     const statusText =
                       upload.status === 'COMPLETED' ? 'Uploaded Successfully' :
@@ -342,22 +342,22 @@ export default function HRAttendancePage() {
                       upload.status;
 
                     return (
-                      <tr key={upload.id} className="border-b border-neutral-800/40 hover:bg-neutral-800/20 transition-colors">
-                        <td className="px-3 py-3 text-sm text-white font-medium">
+                      <tr key={upload.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                        <td className="px-3 py-3 text-sm text-foreground font-medium">
                           <button
                             onClick={() => window.open(`/api/v1/attendance/import/file/${upload.id}`, '_blank')}
-                            className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                            className="text-blue-600 hover:text-blue-300 hover:underline transition-colors"
                           >
                             {upload.fileName}
                           </button>
                         </td>
-                        <td className="px-3 py-3 text-xs text-neutral-300">
+                        <td className="px-3 py-3 text-xs text-card-foreground">
                           {uploadedByName}
                         </td>
-                        <td className="px-3 py-3 text-xs text-neutral-300 font-mono">
+                        <td className="px-3 py-3 text-xs text-card-foreground font-mono">
                           {format(new Date(upload.uploadedAt), 'dd MMM yyyy HH:mm')}
                         </td>
-                        <td className="px-3 py-3 text-xs text-neutral-300">
+                        <td className="px-3 py-3 text-xs text-card-foreground">
                           {upload.totalRows}
                         </td>
                         <td className="px-3 py-3">
@@ -375,9 +375,9 @@ export default function HRAttendancePage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-4">
+        <div className="bg-secondary border border-border rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Filter className="w-4 h-4 text-blue-500" /> Filters
             </h2>
             {(search || statusFilter) && (
@@ -386,7 +386,7 @@ export default function HRAttendancePage() {
                   setSearch('');
                   setStatusFilter('');
                 }}
-                className="text-xs text-neutral-500 hover:text-white font-semibold"
+                className="text-xs text-muted-foreground hover:text-foreground font-semibold"
               >
                 Reset Filters
               </button>
@@ -396,12 +396,12 @@ export default function HRAttendancePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or employee ID..."
-                className="w-full bg-black border border-neutral-850 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2.5 text-xs text-foreground focus:outline-none focus:border-blue-500"
               />
             </div>
 
@@ -409,7 +409,7 @@ export default function HRAttendancePage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="bg-background border border-border rounded-xl px-4 py-2.5 text-xs text-foreground focus:outline-none focus:border-blue-500"
             >
               <option value="">All Statuses</option>
               <option value="PRESENT">Present</option>
@@ -424,33 +424,33 @@ export default function HRAttendancePage() {
         </div>
 
         {/* Attendance Table */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+        <div className="bg-secondary border border-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-neutral-800 bg-neutral-900/50">
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                <tr className="border-b border-border bg-secondary">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Employee
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Employee ID
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Department
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Check In
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Check Out
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Working Hours
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Status
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Late By
                   </th>
                 </tr>
@@ -464,7 +464,7 @@ export default function HRAttendancePage() {
                   </tr>
                 ) : records.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-20 text-neutral-500 text-sm">
+                    <td colSpan={8} className="text-center py-20 text-muted-foreground text-sm">
                       No attendance records found
                     </td>
                   </tr>
@@ -473,24 +473,24 @@ export default function HRAttendancePage() {
                     <tr 
                       key={record.id} 
                       onClick={() => router.push(`/hr/attendance/employee/${record.employee?.id}`)}
-                      className="hover:bg-neutral-800/35 transition-colors cursor-pointer"
+                      className="hover:bg-secondary/50 transition-colors cursor-pointer"
                     >
-                      <td className="px-6 py-4 text-sm font-semibold text-white hover:text-blue-400 transition-colors">
+                      <td className="px-6 py-4 text-sm font-semibold text-foreground hover:text-blue-600 transition-colors">
                         {record.employee?.firstName} {record.employee?.lastName}
                       </td>
-                      <td className="px-6 py-4 text-xs font-mono text-neutral-400">
+                      <td className="px-6 py-4 text-xs font-mono text-muted-foreground">
                         {record.employee?.employeeId}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-400">
+                      <td className="px-6 py-4 text-xs text-muted-foreground">
                         {record.employee?.department?.name || '—'}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-300 font-mono">
+                      <td className="px-6 py-4 text-xs text-card-foreground font-mono">
                         {formatTime(record.checkInTime)}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-300 font-mono">
+                      <td className="px-6 py-4 text-xs text-card-foreground font-mono">
                         {formatTime(record.checkOutTime)}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-300 font-mono">
+                      <td className="px-6 py-4 text-xs text-card-foreground font-mono">
                         {formatHours(record.workingHours ? record.workingHours * 60 : null)}
                       </td>
                       <td className="px-6 py-4">
@@ -502,7 +502,7 @@ export default function HRAttendancePage() {
                           {record.status.replace(/_/g, ' ')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-400 font-mono">
+                      <td className="px-6 py-4 text-xs text-muted-foreground font-mono">
                         {record.lateBy ? `${record.lateBy}m` : '—'}
                       </td>
                     </tr>
@@ -514,22 +514,22 @@ export default function HRAttendancePage() {
 
           {/* Pagination */}
           {!isLoading && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-800 bg-neutral-900/20">
-              <p className="text-[10px] text-neutral-550">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-secondary/30">
+              <p className="text-[10px] text-muted-foreground">
                 Showing page {meta.page} of {meta.totalPages} ({meta.total} total records)
               </p>
               <div className="flex items-center gap-2">
                 <button
                   disabled={page <= 1}
                   onClick={() => setPage(page - 1)}
-                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-750 disabled:opacity-40 rounded-xl text-[10px] font-bold text-neutral-300"
+                  className="px-3 py-1.5 bg-secondary hover:bg-secondary disabled:opacity-40 rounded-xl text-[10px] font-bold text-card-foreground"
                 >
                   Previous
                 </button>
                 <button
                   disabled={page >= meta.totalPages}
                   onClick={() => setPage(page + 1)}
-                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-750 disabled:opacity-40 rounded-xl text-[10px] font-bold text-neutral-300"
+                  className="px-3 py-1.5 bg-secondary hover:bg-secondary disabled:opacity-40 rounded-xl text-[10px] font-bold text-card-foreground"
                 >
                   Next
                 </button>
@@ -541,17 +541,17 @@ export default function HRAttendancePage() {
 
       {/* ✅ NEW: Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-secondary border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <Upload className="w-6 h-6 text-blue-500" />
                 Upload Attendance Excel
               </h3>
               <button
                 onClick={closeUploadModal}
                 disabled={uploading}
-                className="text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+                className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               >
                 <XCircle className="w-5 h-5" />
               </button>
@@ -560,10 +560,10 @@ export default function HRAttendancePage() {
             {uploadSuccess ? (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h4 className="text-lg font-bold text-white mb-2">Upload Successful!</h4>
-                <p className="text-sm text-neutral-400">
+                <h4 className="text-lg font-bold text-foreground mb-2">Upload Successful!</h4>
+                <p className="text-sm text-muted-foreground">
                   Attendance Excel uploaded successfully
                 </p>
               </div>
@@ -571,7 +571,7 @@ export default function HRAttendancePage() {
               <>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-neutral-300 mb-2">
+                    <label className="block text-sm font-semibold text-card-foreground mb-2">
                       Select Excel File
                     </label>
                     <input
@@ -579,17 +579,17 @@ export default function HRAttendancePage() {
                       accept=".xlsx,.xls"
                       onChange={handleFileSelect}
                       disabled={uploading}
-                      className="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer disabled:opacity-50"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-foreground hover:file:bg-blue-700 file:cursor-pointer disabled:opacity-50"
                     />
                     {selectedFile && (
-                      <p className="mt-2 text-xs text-neutral-400">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                       </p>
                     )}
                   </div>
 
-                  <div className="bg-neutral-800/50 border border-neutral-700 rounded-xl p-4">
-                    <p className="text-xs text-neutral-400">
+                  <div className="bg-secondary border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground">
                       📋 Your Excel can contain any columns (Agent ID, Name, dates, attendance marks, etc.). 
                       The system will preserve all columns and data as-is.
                     </p>
@@ -597,7 +597,7 @@ export default function HRAttendancePage() {
 
                   {uploadError && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                      <p className="text-sm text-red-400 flex items-center gap-2">
+                      <p className="text-sm text-red-600 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {uploadError}
                       </p>
@@ -609,14 +609,14 @@ export default function HRAttendancePage() {
                   <button
                     onClick={closeUploadModal}
                     disabled={uploading}
-                    className="flex-1 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-2.5 bg-secondary hover:bg-secondary/50 border border-border rounded-xl text-sm font-semibold text-foreground transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpload}
                     disabled={!selectedFile || uploading}
-                    className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {uploading ? (
                       <>

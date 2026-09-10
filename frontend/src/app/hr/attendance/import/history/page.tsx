@@ -18,10 +18,10 @@ import {
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
-  COMPLETED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  PARTIAL: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  FAILED: 'bg-red-500/10 text-red-400 border-red-500/20',
-  PROCESSING: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  COMPLETED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  PARTIAL: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  FAILED: 'bg-red-500/10 text-red-600 border-red-500/20',
+  PROCESSING: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
 };
 
 export default function ImportHistoryPage() {
@@ -86,51 +86,51 @@ export default function ImportHistoryPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-neutral-800 rounded-xl transition-colors"
+            className="p-2 hover:bg-secondary rounded-xl transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-neutral-400" />
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
               <Clock className="w-8 h-8 text-blue-500" /> Import History
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               View attendance import history and download error reports
             </p>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+        <div className="bg-secondary border border-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-neutral-800 bg-neutral-900/50">
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                <tr className="border-b border-border bg-secondary">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     File Name
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Uploaded By
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Upload Date
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Total Rows
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Successful
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Failed
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Duplicates
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Status
                   </th>
-                  <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Actions
                   </th>
                 </tr>
@@ -145,39 +145,39 @@ export default function ImportHistoryPage() {
                 ) : records.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center py-20">
-                      <FileText className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
-                      <p className="text-neutral-500 text-sm">No import history found</p>
+                      <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground text-sm">No import history found</p>
                     </td>
                   </tr>
                 ) : (
                   records.map((record: any) => (
-                    <tr key={record.id} className="hover:bg-neutral-800/35 transition-colors">
-                      <td className="px-6 py-4 text-sm font-semibold text-white">
+                    <tr key={record.id} className="hover:bg-secondary/50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-semibold text-foreground">
                         <button
                           onClick={() => downloadFile(record.id, record.fileName)}
-                          className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                          className="text-blue-600 hover:text-blue-300 hover:underline transition-colors"
                         >
                           {record.fileName}
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-400">
+                      <td className="px-6 py-4 text-xs text-muted-foreground">
                         {record.uploadedByUser?.employee
                           ? `${record.uploadedByUser.employee.firstName} ${record.uploadedByUser.employee.lastName}`
                           : record.uploadedByUser?.email || '—'}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-400 font-mono">
+                      <td className="px-6 py-4 text-xs text-muted-foreground font-mono">
                         {format(new Date(record.uploadedAt), 'MMM dd, yyyy HH:mm')}
                       </td>
-                      <td className="px-6 py-4 text-xs text-neutral-300 font-mono">
+                      <td className="px-6 py-4 text-xs text-card-foreground font-mono">
                         {record.totalRows}
                       </td>
-                      <td className="px-6 py-4 text-xs text-emerald-400 font-mono font-bold">
+                      <td className="px-6 py-4 text-xs text-emerald-600 font-mono font-bold">
                         {record.successfulRows}
                       </td>
-                      <td className="px-6 py-4 text-xs text-red-400 font-mono font-bold">
+                      <td className="px-6 py-4 text-xs text-red-600 font-mono font-bold">
                         {record.failedRows}
                       </td>
-                      <td className="px-6 py-4 text-xs text-amber-400 font-mono font-bold">
+                      <td className="px-6 py-4 text-xs text-amber-600 font-mono font-bold">
                         {record.duplicateRows}
                       </td>
                       <td className="px-6 py-4">
@@ -193,7 +193,7 @@ export default function ImportHistoryPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => downloadFile(record.id, record.fileName)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-800 hover:bg-blue-700 border border-blue-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-800 hover:bg-blue-700 border border-blue-700 rounded-lg text-[10px] font-semibold text-foreground transition-colors"
                           >
                             <Download className="w-3 h-3" />
                             File
@@ -201,7 +201,7 @@ export default function ImportHistoryPage() {
                           {record.failedRows > 0 && record.errorReport && (
                             <button
                               onClick={() => downloadErrorReport(record.id)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-secondary hover:bg-secondary/50 border border-border rounded-lg text-[10px] font-semibold text-foreground transition-colors"
                             >
                               <Download className="w-3 h-3" />
                               Errors
@@ -218,22 +218,22 @@ export default function ImportHistoryPage() {
 
           {/* Pagination */}
           {!isLoading && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-800 bg-neutral-900/20">
-              <p className="text-[10px] text-neutral-500">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-secondary/30">
+              <p className="text-[10px] text-muted-foreground">
                 Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total records)
               </p>
               <div className="flex items-center gap-2">
                 <button
                   disabled={page <= 1}
                   onClick={() => setPage(page - 1)}
-                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 rounded-xl text-[10px] font-bold text-neutral-300"
+                  className="px-3 py-1.5 bg-secondary hover:bg-secondary/50 disabled:opacity-40 rounded-xl text-[10px] font-bold text-card-foreground"
                 >
                   Previous
                 </button>
                 <button
                   disabled={page >= pagination.totalPages}
                   onClick={() => setPage(page + 1)}
-                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 rounded-xl text-[10px] font-bold text-neutral-300"
+                  className="px-3 py-1.5 bg-secondary hover:bg-secondary/50 disabled:opacity-40 rounded-xl text-[10px] font-bold text-card-foreground"
                 >
                   Next
                 </button>

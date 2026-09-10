@@ -994,40 +994,279 @@ export class SuperAdminService {
               role: { name: UserRole.EMPLOYEE },
             },
           },
-          select: {
-            id: true,
-            monthlySalary: true,
-            user: { select: { isActive: true } },
-          },
+          select: { id: true },
         },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return processes.map((process) => {
-      const activeEmployees = process.employees.filter(
-        (e) => e.user.isActive,
-      ).length;
-      let totalBasic = 0;
-
-      process.employees.forEach((emp) => {
-        totalBasic += emp.monthlySalary || 0;
-      });
-
-      return {
-        id: process.id,
-        name: process.name,
-        description: process.description,
-        totalEmployees: process.employees.length,
-        activeEmployees,
-        monthlyBasicSalary: totalBasic,
-        monthlyIncentive: 0,
-        totalMonthlyPayroll: totalBasic,
-        createdAt: process.createdAt,
-      };
-    });
+    return processes.map((process) => ({
+      ...process,
+      employeeCount: process.employees.length,
+    }));
   }
 
+  // ✅ NEW: Create Employee (Super Admin)
+  async createEmployee(requestUserId: string, dto: any) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    // Check if email exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    // Get EMPLOYEE role
+    const employeeRole = await this.prisma.role.findUnique({
+      where: { name: UserRole.EMPLOYEE },
+    });
+
+    if (!employeeRole) {
+      throw new BadRequestException('EMPLOYEE role not found');
+    }
+
+    // Generate employee ID if not provided
+    const employeeId = dto.employeeId || `EMP-${Date.now()}`;
+
+    // Hash default password (1234)
+    const hashedPassword = await bcrypt.hash(dto.password || '1234', 10);
+
+    // Create user and employee
+    const result = await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          roleId: employeeRole.id,
+          organizationId: user.organizationId,
+          isFirstLogin: true,
+          isActive: true,
+        },
+      });
+
+      const newEmployee = await tx.employee.create({
+        data: {
+          employeeId,
+          userId: newUser.id,
+          organizationId: user.organizationId,
+          createdByUserId: requestUserId, // Super Admin created this employee
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          phone: dto.phone || null,
+          dob: dto.dob ? new Date(dto.dob) : null,
+          gender: dto.gender || null,
+          departmentId: dto.departmentId || null,
+          designationId: dto.designationId || null,
+          joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : new Date(),
+          monthlySalary: dto.monthlySalary || null,
+          employmentType: dto.employmentType || null,
+        },
+      });
+
+      return { newUser, newEmployee };
+    });
+
+    return {
+      message: 'Employee created successfully',
+      employee: result.newEmployee,
+    };
+  }
+
+  // ✅ NEW: Update Employee (Super Admin)
+  async updateEmployee(requestUserId: string, employeeId: string, dto: any) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    // Find employee
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId: user.organizationId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    // Update employee
+    const updated = await this.prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        firstName: dto.firstName !== undefined ? dto.firstName : employee.firstName,
+        lastName: dto.lastName !== undefined ? dto.lastName : employee.lastName,
+        phone: dto.phone !== undefined ? dto.phone : employee.phone,
+        dob: dto.dob !== undefined ? (dto.dob ? new Date(dto.dob) : null) : employee.dob,
+        gender: dto.gender !== undefined ? dto.gender : employee.gender,
+        bloodGroup: dto.bloodGroup !== undefined ? dto.bloodGroup : employee.bloodGroup,
+        address: dto.address !== undefined ? dto.address : employee.address,
+        departmentId: dto.departmentId !== undefined ? dto.departmentId : employee.departmentId,
+        designationId: dto.designationId !== undefined ? dto.designationId : employee.designationId,
+        joiningDate: dto.joiningDate !== undefined ? new Date(dto.joiningDate) : employee.joiningDate,
+        monthlySalary: dto.monthlySalary !== undefined ? dto.monthlySalary : employee.monthlySalary,
+        employmentType: dto.employmentType !== undefined ? dto.employmentType : employee.employmentType,
+        bankAccountNumber: dto.bankAccountNumber !== undefined ? dto.bankAccountNumber : employee.bankAccountNumber,
+        bankIfsc: dto.bankIfsc !== undefined ? dto.bankIfsc : employee.bankIfsc,
+        bankName: dto.bankName !== undefined ? dto.bankName : employee.bankName,
+        panNumber: dto.panNumber !== undefined ? dto.panNumber : employee.panNumber,
+        aadhaarNumber: dto.aadhaarNumber !== undefined ? dto.aadhaarNumber : employee.aadhaarNumber,
+      },
+    });
+
+    return {
+      message: 'Employee updated successfully',
+      employee: updated,
+    };
+  }
+
+  // ✅ NEW: Delete Employee (Super Admin)
+  async deleteEmployee(requestUserId: string, employeeId: string) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId: user.organizationId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    // Delete user (cascades to employee)
+    await this.prisma.user.delete({
+      where: { id: employee.userId },
+    });
+
+    return {
+      message: 'Employee deleted successfully',
+    };
+  }
+
+  // ✅ NEW: Set Employee Activation (Super Admin)
+  async setEmployeeActivation(
+    requestUserId: string,
+    employeeId: string,
+    isActive: boolean,
+  ) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId: user.organizationId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    await this.prisma.user.update({
+      where: { id: employee.userId },
+      data: { isActive },
+    });
+
+    return {
+      message: `Employee ${isActive ? 'activated' : 'deactivated'} successfully`,
+    };
+  }
+
+  // ✅ NEW: Reset Employee Password (Super Admin)
+  async resetEmployeePassword(requestUserId: string, employeeId: string) {
+    await this.verifySuperAdmin(requestUserId);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      throw new BadRequestException('User not associated with organization');
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId: user.organizationId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const defaultPassword = '1234';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: employee.userId },
+      data: {
+        password: hashedPassword,
+        isFirstLogin: true,
+      },
+    });
+
+    return {
+      message: 'Password reset successfully',
+      defaultPassword,
+    };
+  }
+
+  // ==========================================
+  // PROCESS MANAGEMENT
+  // ==========================================
   async getProcessDetails(requestUserId: string, processId: string) {
     await this.verifySuperAdmin(requestUserId);
 

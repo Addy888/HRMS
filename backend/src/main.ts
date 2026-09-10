@@ -93,6 +93,11 @@ async function bootstrap() {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
 
+  const documentsPath = join(process.cwd(), 'uploads/documents');
+  if (!fs.existsSync(documentsPath)) {
+    fs.mkdirSync(documentsPath, { recursive: true });
+  }
+
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Global validation pipes

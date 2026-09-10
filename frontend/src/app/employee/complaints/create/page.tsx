@@ -122,16 +122,16 @@ export default function CreateComplaintPage() {
         <div>
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors mb-4"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Helpdesk
           </button>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
             <LifeBuoy className="w-8 h-8 text-blue-500" />
             File a Complaint
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Submit your issue or concern to the HR team
           </p>
         </div>
@@ -139,15 +139,15 @@ export default function CreateComplaintPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Category */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
+          <div className="bg-secondary border border-border rounded-2xl p-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
-                Category <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Category <span className="text-red-600">*</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-card border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="">Select a category</option>
@@ -161,8 +161,8 @@ export default function CreateComplaintPage() {
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
-                Priority <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Priority <span className="text-red-600">*</span>
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {PRIORITIES.map((p) => (
@@ -173,11 +173,11 @@ export default function CreateComplaintPage() {
                     className={`p-3 rounded-xl border-2 transition-all ${
                       priority === p.value
                         ? 'border-blue-500 bg-blue-500/10'
-                        : 'border-neutral-800 hover:border-neutral-700'
+                        : 'border-border hover:border-border'
                     }`}
                   >
-                    <div className="text-sm font-semibold text-white">{p.label}</div>
-                    <div className="text-xs text-neutral-500 mt-1">{p.desc}</div>
+                    <div className="text-sm font-semibold text-foreground">{p.label}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{p.desc}</div>
                   </button>
                 ))}
               </div>
@@ -185,54 +185,54 @@ export default function CreateComplaintPage() {
           </div>
 
           {/* Subject & Description */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
+          <div className="bg-secondary border border-border rounded-2xl p-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
-                Subject <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Subject <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Brief summary of your issue"
-                className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
-                Description <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Description <span className="text-red-600">*</span>
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Provide detailed information about your issue..."
                 rows={6}
-                className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 required
               />
             </div>
           </div>
 
           {/* Attachment */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-            <label className="block text-sm font-semibold text-white mb-2">
+          <div className="bg-secondary border border-border rounded-2xl p-6">
+            <label className="block text-sm font-semibold text-foreground mb-2">
               Attachment (Optional)
             </label>
-            <p className="text-xs text-neutral-500 mb-4">
+            <p className="text-xs text-muted-foreground mb-4">
               Upload supporting documents, screenshots, or evidence (Max 10MB)
             </p>
 
             {file ? (
-              <div className="flex items-center justify-between p-4 bg-neutral-950 border border-neutral-800 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                    <Upload className="w-5 h-5 text-blue-400" />
+                    <Upload className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-white">{file.name}</div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-sm font-medium text-foreground">{file.name}</div>
+                    <div className="text-xs text-muted-foreground">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </div>
                   </div>
@@ -242,7 +242,7 @@ export default function CreateComplaintPage() {
                   onClick={() => setFile(null)}
                   className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
                 >
-                  <X className="w-4 h-4 text-red-400" />
+                  <X className="w-4 h-4 text-red-600" />
                 </button>
               </div>
             ) : (
@@ -253,12 +253,12 @@ export default function CreateComplaintPage() {
                   accept="image/*,.pdf,.doc,.docx"
                   className="hidden"
                 />
-                <div className="border-2 border-dashed border-neutral-800 rounded-xl p-8 text-center hover:border-neutral-700 transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 text-neutral-600 mx-auto mb-3" />
-                  <p className="text-sm text-neutral-400">
+                <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-border transition-colors cursor-pointer">
+                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
                     Click to upload or drag and drop
                   </p>
-                  <p className="text-xs text-neutral-600 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     PNG, JPG, PDF, DOC up to 10MB
                   </p>
                 </div>
@@ -268,9 +268,9 @@ export default function CreateComplaintPage() {
 
           {/* Info Box */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-neutral-300">
-              <strong className="text-white">Note:</strong> Your complaint will be reviewed by the HR team.
+            <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <div className="text-sm text-card-foreground">
+              <strong className="text-foreground">Note:</strong> Your complaint will be reviewed by the HR team.
               You'll receive updates via notifications and can track the status in your helpdesk dashboard.
             </div>
           </div>
@@ -281,14 +281,14 @@ export default function CreateComplaintPage() {
               type="button"
               onClick={() => router.back()}
               disabled={createMutation.isPending}
-              className="flex-1 px-6 py-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white rounded-xl font-semibold transition-colors disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-secondary hover:bg-secondary border border-border text-foreground rounded-xl font-semibold transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-foreground rounded-xl font-semibold transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
             >
               {createMutation.isPending ? (
                 <>

@@ -85,23 +85,23 @@ export default function EmployeeSettingsPage() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Title */}
         <div>
-          <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
             <KeyRound className="w-8 h-8 text-amber-500" />
             Account Settings
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Update your account password, security settings, and notification delivery options.
           </p>
         </div>
 
         {/* Tab switcher bar */}
-        <div className="flex gap-2 border-b border-neutral-900 pb-px">
+        <div className="flex gap-2 border-b border-border pb-px">
           <button
             onClick={() => { setActiveTab('security'); setSuccess(''); setError(''); }}
             className={`text-xs font-bold px-4 py-2.5 rounded-t-xl border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'security'
-                ? 'border-blue-500 text-white bg-neutral-950/20'
-                : 'border-transparent text-neutral-450 hover:text-white'
+                ? 'border-blue-500 text-foreground bg-card'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             <KeyRound className="w-4 h-4" /> Security Settings
@@ -110,8 +110,8 @@ export default function EmployeeSettingsPage() {
             onClick={() => { setActiveTab('notifications'); setSuccess(''); setError(''); }}
             className={`text-xs font-bold px-4 py-2.5 rounded-t-xl border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'notifications'
-                ? 'border-blue-500 text-white bg-neutral-950/20'
-                : 'border-transparent text-neutral-450 hover:text-white'
+                ? 'border-blue-500 text-foreground bg-card'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             <Bell className="w-4 h-4" /> Notification Preferences
@@ -122,46 +122,46 @@ export default function EmployeeSettingsPage() {
           <div className="lg:col-span-2">
             {activeTab === 'security' ? (
               /* Change Password Form */
-              <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6">
+              <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6">
                 <div>
-                  <h2 className="font-heading text-lg font-bold text-white">Change Password</h2>
-                  <p className="text-xs text-neutral-500 mt-0.5">Protect your account with a strong, custom password.</p>
+                  <h2 className="font-heading text-lg font-bold text-foreground">Change Password</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Protect your account with a strong, custom password.</p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmitPassword)} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Current Password</label>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Current Password</label>
                     <input
                       type="password"
                       {...register('currentPassword')}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500"
                     />
                     {errors.currentPassword && (
-                      <span className="text-[11px] text-red-400 font-medium">{errors.currentPassword.message}</span>
+                      <span className="text-[11px] text-red-600 font-medium">{errors.currentPassword.message}</span>
                     )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">New Password</label>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">New Password</label>
                     <input
                       type="password"
                       {...register('newPassword')}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500"
                     />
                     {errors.newPassword && (
-                      <span className="text-[11px] text-red-400 font-medium">{errors.newPassword.message}</span>
+                      <span className="text-[11px] text-red-600 font-medium">{errors.newPassword.message}</span>
                     )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Confirm New Password</label>
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Confirm New Password</label>
                     <input
                       type="password"
                       {...register('confirmPassword')}
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500"
                     />
                     {errors.confirmPassword && (
-                      <span className="text-[11px] text-red-400 font-medium">{errors.confirmPassword.message}</span>
+                      <span className="text-[11px] text-red-600 font-medium">{errors.confirmPassword.message}</span>
                     )}
                   </div>
 
@@ -172,7 +172,7 @@ export default function EmployeeSettingsPage() {
                   )}
 
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-medium">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-600 font-medium">
                       {error}
                     </div>
                   )}
@@ -180,7 +180,7 @@ export default function EmployeeSettingsPage() {
                   <button
                     type="submit"
                     disabled={changeMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-900/30 transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-bold shadow-lg shadow-blue-900/30 transition-all disabled:opacity-50"
                   >
                     {changeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     {changeMutation.isPending ? 'Updating...' : 'Update Password'}
@@ -189,10 +189,10 @@ export default function EmployeeSettingsPage() {
               </div>
             ) : (
               /* Notification Preferences Form */
-              <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6">
+              <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6">
                 <div>
-                  <h2 className="font-heading text-lg font-bold text-white">Delivery Preferences</h2>
-                  <p className="text-xs text-neutral-500 mt-0.5">Control where and how you get alerted about work activity.</p>
+                  <h2 className="font-heading text-lg font-bold text-foreground">Delivery Preferences</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Control where and how you get alerted about work activity.</p>
                 </div>
 
                 {!preferences ? (
@@ -202,17 +202,17 @@ export default function EmployeeSettingsPage() {
                 ) : (
                   <div className="space-y-4">
                     {/* In App Alert Option */}
-                    <div className="flex items-center justify-between p-4 bg-neutral-900/50 border border-neutral-850 rounded-2xl">
+                    <div className="flex items-center justify-between p-4 bg-secondary/80 border border-border rounded-2xl">
                       <div className="space-y-0.5 pr-4">
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-blue-400" /> In-App Notifications
+                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-blue-600" /> In-App Notifications
                         </h4>
-                        <p className="text-xs text-neutral-500">Show notification items inside the portal top drawer alert feed.</p>
+                        <p className="text-xs text-muted-foreground">Show notification items inside the portal top drawer alert feed.</p>
                       </div>
                       <button
                         onClick={() => handleTogglePreference('inApp')}
                         className={`w-11 h-6 rounded-full p-1 transition-all ${
-                          preferences.inApp ? 'bg-blue-600' : 'bg-neutral-800'
+                          preferences.inApp ? 'bg-blue-600' : 'bg-secondary'
                         }`}
                       >
                         <div
@@ -224,17 +224,17 @@ export default function EmployeeSettingsPage() {
                     </div>
 
                     {/* Email Option */}
-                    <div className="flex items-center justify-between p-4 bg-neutral-900/50 border border-neutral-850 rounded-2xl">
+                    <div className="flex items-center justify-between p-4 bg-secondary/80 border border-border rounded-2xl">
                       <div className="space-y-0.5 pr-4">
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                           Email Notifications
                         </h4>
-                        <p className="text-xs text-neutral-500">Forward copy of alerts to your registered email account.</p>
+                        <p className="text-xs text-muted-foreground">Forward copy of alerts to your registered email account.</p>
                       </div>
                       <button
                         onClick={() => handleTogglePreference('email')}
                         className={`w-11 h-6 rounded-full p-1 transition-all ${
-                          preferences.email ? 'bg-blue-600' : 'bg-neutral-800'
+                          preferences.email ? 'bg-blue-600' : 'bg-secondary'
                         }`}
                       >
                         <div
@@ -246,17 +246,17 @@ export default function EmployeeSettingsPage() {
                     </div>
 
                     {/* Sound Alert Option */}
-                    <div className="flex items-center justify-between p-4 bg-neutral-900/50 border border-neutral-850 rounded-2xl">
+                    <div className="flex items-center justify-between p-4 bg-secondary/80 border border-border rounded-2xl">
                       <div className="space-y-0.5 pr-4">
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                          <Volume2 className="w-4 h-4 text-emerald-400" /> Sound Chime
+                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                          <Volume2 className="w-4 h-4 text-emerald-600" /> Sound Chime
                         </h4>
-                        <p className="text-xs text-neutral-500">Play a pleasant synth sound when a new alert drops in real-time.</p>
+                        <p className="text-xs text-muted-foreground">Play a pleasant synth sound when a new alert drops in real-time.</p>
                       </div>
                       <button
                         onClick={() => handleTogglePreference('sound')}
                         className={`w-11 h-6 rounded-full p-1 transition-all ${
-                          preferences.sound ? 'bg-blue-600' : 'bg-neutral-800'
+                          preferences.sound ? 'bg-blue-600' : 'bg-secondary'
                         }`}
                       >
                         <div
@@ -268,17 +268,17 @@ export default function EmployeeSettingsPage() {
                     </div>
 
                     {/* Do Not Disturb Option */}
-                    <div className="flex items-center justify-between p-4 bg-neutral-900/50 border border-neutral-850 rounded-2xl border-dashed">
+                    <div className="flex items-center justify-between p-4 bg-secondary/80 border border-border rounded-2xl border-dashed">
                       <div className="space-y-0.5 pr-4">
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                           <Moon className="w-4 h-4 text-indigo-400" /> Do Not Disturb (DND)
                         </h4>
-                        <p className="text-xs text-neutral-500">Mute all real-time audio and floating toast alerts. Unreads compile silently.</p>
+                        <p className="text-xs text-muted-foreground">Mute all real-time audio and floating toast alerts. Unreads compile silently.</p>
                       </div>
                       <button
                         onClick={() => handleTogglePreference('doNotDisturb')}
                         className={`w-11 h-6 rounded-full p-1 transition-all ${
-                          preferences.doNotDisturb ? 'bg-indigo-600' : 'bg-neutral-800'
+                          preferences.doNotDisturb ? 'bg-indigo-600' : 'bg-secondary'
                         }`}
                       >
                         <div
@@ -301,9 +301,9 @@ export default function EmployeeSettingsPage() {
           </div>
 
           {/* Checklist Sidebar */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 h-max space-y-4">
-            <h3 className="font-heading text-base font-bold text-white">Guidelines</h3>
-            <ul className="text-xs text-neutral-450 space-y-2.5 list-disc list-inside leading-relaxed">
+          <div className="bg-card border border-border rounded-3xl p-6 h-max space-y-4">
+            <h3 className="font-heading text-base font-bold text-foreground">Guidelines</h3>
+            <ul className="text-xs text-muted-foreground space-y-2.5 list-disc list-inside leading-relaxed">
               {activeTab === 'security' ? (
                 <>
                   <li>Must be at least 6 characters in length.</li>

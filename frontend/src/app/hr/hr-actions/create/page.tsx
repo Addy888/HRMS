@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HRLayout from '@/layouts/HRLayout';
 import api from '@/lib/api';
@@ -47,13 +47,13 @@ const isAttendanceRelated = (actionType: string) => {
 };
 
 const SEVERITIES = [
-  { value: 'LOW', label: 'Low', color: 'text-blue-400' },
+  { value: 'LOW', label: 'Low', color: 'text-blue-600' },
   { value: 'MEDIUM', label: 'Medium', color: 'text-yellow-400' },
   { value: 'HIGH', label: 'High', color: 'text-orange-400' },
-  { value: 'CRITICAL', label: 'Critical', color: 'text-red-400' },
+  { value: 'CRITICAL', label: 'Critical', color: 'text-red-600' },
 ];
 
-export default function CreateHRActionPage() {
+function CreateHRActionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const employeeId = searchParams.get('employeeId');
@@ -219,12 +219,12 @@ export default function CreateHRActionPage() {
     return (
       <HRLayout>
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-          <AlertCircle className="w-16 h-16 text-red-400" />
-          <h2 className="text-xl font-bold text-white">Employee ID Missing</h2>
-          <p className="text-neutral-400">Please select an employee from the Employees page.</p>
+          <AlertCircle className="w-16 h-16 text-red-600" />
+          <h2 className="text-xl font-bold text-foreground">Employee ID Missing</h2>
+          <p className="text-muted-foreground">Please select an employee from the Employees page.</p>
           <button
             onClick={() => router.push('/hr/employees')}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-foreground rounded-lg transition-colors"
           >
             Go to Employees
           </button>
@@ -237,12 +237,12 @@ export default function CreateHRActionPage() {
     return (
       <HRLayout>
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-          <AlertCircle className="w-16 h-16 text-red-400" />
-          <h2 className="text-xl font-bold text-white">Employee Not Found</h2>
-          <p className="text-neutral-400">Unable to load employee details.</p>
+          <AlertCircle className="w-16 h-16 text-red-600" />
+          <h2 className="text-xl font-bold text-foreground">Employee Not Found</h2>
+          <p className="text-muted-foreground">Unable to load employee details.</p>
           <button
             onClick={() => router.push('/hr/employees')}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-foreground rounded-lg transition-colors"
           >
             Go to Employees
           </button>
@@ -258,16 +258,16 @@ export default function CreateHRActionPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-white transition-colors"
+            className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <AlertTriangle className="w-7 h-7 text-amber-400" />
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <AlertTriangle className="w-7 h-7 text-amber-600" />
               Create HR Action
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Create a warning, notice, or disciplinary action for an employee
             </p>
           </div>
@@ -275,46 +275,46 @@ export default function CreateHRActionPage() {
 
         {/* Employee Information Card */}
         {loadingEmployee ? (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+          <div className="bg-secondary border border-border rounded-xl p-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-neutral-800 animate-pulse"></div>
+              <div className="w-16 h-16 rounded-full bg-secondary animate-pulse"></div>
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-neutral-800 rounded w-1/3 animate-pulse"></div>
-                <div className="h-3 bg-neutral-800 rounded w-1/4 animate-pulse"></div>
+                <div className="h-4 bg-secondary rounded w-1/3 animate-pulse"></div>
+                <div className="h-3 bg-secondary rounded w-1/4 animate-pulse"></div>
               </div>
             </div>
           </div>
         ) : employee ? (
-          <div className="bg-gradient-to-br from-neutral-900 to-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
               <User className="w-4 h-4" />
               Selected Employee
             </h3>
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-xl font-bold text-white uppercase shrink-0">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-xl font-bold text-foreground uppercase shrink-0">
                 {employee.firstName?.charAt(0)}{employee.lastName?.charAt(0)}
               </div>
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Name</div>
-                  <div className="font-semibold text-white">
+                  <div className="text-xs text-muted-foreground mb-1">Name</div>
+                  <div className="font-semibold text-foreground">
                     {employee.firstName} {employee.lastName}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Employee ID</div>
-                  <div className="font-mono text-neutral-300">{employee.employeeId}</div>
+                  <div className="text-xs text-muted-foreground mb-1">Employee ID</div>
+                  <div className="font-mono text-card-foreground">{employee.employeeId}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
+                  <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                     <Building className="w-3 h-3" />
                     Department
                   </div>
-                  <div className="text-neutral-300">{employee.department?.name || '—'}</div>
+                  <div className="text-card-foreground">{employee.department?.name || '—'}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Designation</div>
-                  <div className="text-neutral-300">{employee.designation?.name || '—'}</div>
+                  <div className="text-xs text-muted-foreground mb-1">Designation</div>
+                  <div className="text-card-foreground">{employee.designation?.name || '—'}</div>
                 </div>
               </div>
             </div>
@@ -322,9 +322,9 @@ export default function CreateHRActionPage() {
         ) : null}
 
         {/* HR Action Form */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-400" />
+        <div className="bg-secondary border border-border rounded-xl p-6">
+          <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
             HR Action Details
           </h3>
 
@@ -332,13 +332,13 @@ export default function CreateHRActionPage() {
             {/* Action Type & Severity */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                  Action Type <span className="text-red-400">*</span>
+                <label className="block text-sm font-semibold text-card-foreground mb-2">
+                  Action Type <span className="text-red-600">*</span>
                 </label>
                 <select
                   value={formData.actionType}
                   onChange={(e) => handleChange('actionType', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select action type</option>
                   
@@ -361,13 +361,13 @@ export default function CreateHRActionPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                  Severity <span className="text-red-400">*</span>
+                <label className="block text-sm font-semibold text-card-foreground mb-2">
+                  Severity <span className="text-red-600">*</span>
                 </label>
                 <select
                   value={formData.severity}
                   onChange={(e) => handleChange('severity', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select severity</option>
                   {SEVERITIES.map(severity => (
@@ -381,9 +381,9 @@ export default function CreateHRActionPage() {
 
             {/* Subject */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                Subject <span className="text-red-400">*</span>
-                <span className="text-xs text-neutral-500 ml-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
+                Subject <span className="text-red-600">*</span>
+                <span className="text-xs text-muted-foreground ml-2">
                   ({formData.subject.length}/200 characters)
                 </span>
               </label>
@@ -393,37 +393,37 @@ export default function CreateHRActionPage() {
                 onChange={(e) => handleChange('subject', e.target.value)}
                 maxLength={200}
                 placeholder="Brief summary of the HR action"
-                className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Reason */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                Reason / Description <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
+                Reason / Description <span className="text-red-600">*</span>
               </label>
               <textarea
                 value={formData.reason}
                 onChange={(e) => handleChange('reason', e.target.value)}
                 rows={5}
                 placeholder="Detailed explanation of why this HR action is being issued..."
-                className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
 
             {/* Incident Date */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                Incident Date <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
+                Incident Date <span className="text-red-600">*</span>
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="date"
                   value={formData.incidentDate}
                   onChange={(e) => handleChange('incidentDate', e.target.value)}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full pl-10 pr-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -432,10 +432,10 @@ export default function CreateHRActionPage() {
             {isAttendanceRelated(formData.actionType) && (
               <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-6 space-y-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-5 h-5 text-blue-400" />
-                  <h4 className="text-lg font-bold text-white">Attendance Context</h4>
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <h4 className="text-lg font-bold text-foreground">Attendance Context</h4>
                   {formData.actionType === 'REPEATED_LATE_ATTENDANCE' && lateCount > 0 && (
-                    <span className="ml-auto px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full">
+                    <span className="ml-auto px-3 py-1 bg-red-500/20 text-red-600 text-xs font-bold rounded-full">
                       {lateCount} Late Records in Last 30 Days
                     </span>
                   )}
@@ -443,20 +443,20 @@ export default function CreateHRActionPage() {
 
                 {loadingAttendance ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
-                    <span className="ml-2 text-neutral-400">Loading attendance records...</span>
+                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                    <span className="ml-2 text-muted-foreground">Loading attendance records...</span>
                   </div>
                 ) : attendanceRecords.length > 0 ? (
                   <div className="space-y-4">
                     {/* Attendance Date Selector */}
                     <div>
-                      <label className="block text-sm font-semibold text-neutral-300 mb-2">
+                      <label className="block text-sm font-semibold text-card-foreground mb-2">
                         Select Attendance Date
                       </label>
                       <select
                         value={formData.selectedAttendanceDate}
                         onChange={(e) => handleChange('selectedAttendanceDate', e.target.value)}
-                        className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select a date</option>
                         {attendanceRecords.map((record: any) => {
@@ -474,38 +474,38 @@ export default function CreateHRActionPage() {
 
                     {/* Selected Attendance Details */}
                     {selectedAttendance && (
-                      <div className="bg-black/40 border border-neutral-800 rounded-lg p-4 space-y-3">
+                      <div className="bg-background/40 border border-border rounded-lg p-4 space-y-3">
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div>
-                            <div className="text-xs text-neutral-500 mb-1">Date</div>
-                            <div className="text-white font-semibold">
+                            <div className="text-xs text-muted-foreground mb-1">Date</div>
+                            <div className="text-foreground font-semibold">
                               {new Date(selectedAttendance.date).toLocaleDateString('en-GB')}
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-neutral-500 mb-1">Status</div>
+                            <div className="text-xs text-muted-foreground mb-1">Status</div>
                             <div className={`font-semibold ${
                               selectedAttendance.status === 'PRESENT' ? 'text-green-400' :
-                              selectedAttendance.status === 'LATE' ? 'text-amber-400' :
-                              selectedAttendance.status === 'ABSENT' ? 'text-red-400' :
-                              'text-neutral-400'
+                              selectedAttendance.status === 'LATE' ? 'text-amber-600' :
+                              selectedAttendance.status === 'ABSENT' ? 'text-red-600' :
+                              'text-muted-foreground'
                             }`}>
                               {selectedAttendance.status || '—'}
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-neutral-500 mb-1">Working Hours</div>
-                            <div className="text-white font-semibold">
+                            <div className="text-xs text-muted-foreground mb-1">Working Hours</div>
+                            <div className="text-foreground font-semibold">
                               {selectedAttendance.workingHours?.toFixed(2) || '0.00'} hrs
                             </div>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-neutral-800">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-border">
                           {selectedAttendance.checkInTime && (
                             <div>
-                              <div className="text-xs text-neutral-500 mb-1">Check In</div>
-                              <div className="text-white font-mono text-sm">
+                              <div className="text-xs text-muted-foreground mb-1">Check In</div>
+                              <div className="text-foreground font-mono text-sm">
                                 {new Date(selectedAttendance.checkInTime).toLocaleTimeString('en-GB', { 
                                   hour: '2-digit', 
                                   minute: '2-digit' 
@@ -515,8 +515,8 @@ export default function CreateHRActionPage() {
                           )}
                           {selectedAttendance.checkOutTime && (
                             <div>
-                              <div className="text-xs text-neutral-500 mb-1">Check Out</div>
-                              <div className="text-white font-mono text-sm">
+                              <div className="text-xs text-muted-foreground mb-1">Check Out</div>
+                              <div className="text-foreground font-mono text-sm">
                                 {new Date(selectedAttendance.checkOutTime).toLocaleTimeString('en-GB', { 
                                   hour: '2-digit', 
                                   minute: '2-digit' 
@@ -526,15 +526,15 @@ export default function CreateHRActionPage() {
                           )}
                           {selectedAttendance.lateBy > 0 && (
                             <div>
-                              <div className="text-xs text-neutral-500 mb-1">Late By</div>
-                              <div className="text-red-400 font-semibold">
+                              <div className="text-xs text-muted-foreground mb-1">Late By</div>
+                              <div className="text-red-600 font-semibold">
                                 {selectedAttendance.lateBy} min
                               </div>
                             </div>
                           )}
                           {selectedAttendance.earlyExitBy > 0 && (
                             <div>
-                              <div className="text-xs text-neutral-500 mb-1">Early Exit By</div>
+                              <div className="text-xs text-muted-foreground mb-1">Early Exit By</div>
                               <div className="text-orange-400 font-semibold">
                                 {selectedAttendance.earlyExitBy} min
                               </div>
@@ -543,9 +543,9 @@ export default function CreateHRActionPage() {
                         </div>
 
                         {selectedAttendance.remarks && (
-                          <div className="pt-3 border-t border-neutral-800">
-                            <div className="text-xs text-neutral-500 mb-1">Remarks</div>
-                            <div className="text-neutral-300 text-sm">
+                          <div className="pt-3 border-t border-border">
+                            <div className="text-xs text-muted-foreground mb-1">Remarks</div>
+                            <div className="text-card-foreground text-sm">
                               {selectedAttendance.remarks}
                             </div>
                           </div>
@@ -555,63 +555,63 @@ export default function CreateHRActionPage() {
 
                     {/* Attendance History Table */}
                     <div className="pt-4">
-                      <div className="text-sm font-semibold text-neutral-400 mb-2">
+                      <div className="text-sm font-semibold text-muted-foreground mb-2">
                         Recent Attendance History (Last 30 Days)
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-neutral-800">
-                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Date</th>
-                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Check In</th>
-                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Check Out</th>
-                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Hours</th>
-                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Status</th>
-                              <th className="text-left py-2 px-3 text-neutral-500 font-semibold">Late</th>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-2 px-3 text-muted-foreground font-semibold">Date</th>
+                              <th className="text-left py-2 px-3 text-muted-foreground font-semibold">Check In</th>
+                              <th className="text-left py-2 px-3 text-muted-foreground font-semibold">Check Out</th>
+                              <th className="text-left py-2 px-3 text-muted-foreground font-semibold">Hours</th>
+                              <th className="text-left py-2 px-3 text-muted-foreground font-semibold">Status</th>
+                              <th className="text-left py-2 px-3 text-muted-foreground font-semibold">Late</th>
                             </tr>
                           </thead>
                           <tbody>
                             {attendanceRecords.slice(0, 10).map((record: any) => (
                               <tr 
                                 key={record.id} 
-                                className={`border-b border-neutral-800/50 hover:bg-neutral-800/30 cursor-pointer transition-colors ${
+                                className={`border-b border-border hover:bg-secondary/50 cursor-pointer transition-colors ${
                                   formData.selectedAttendanceDate === record.date.split('T')[0] ? 'bg-blue-500/10' : ''
                                 }`}
                                 onClick={() => handleChange('selectedAttendanceDate', record.date.split('T')[0])}
                               >
-                                <td className="py-2 px-3 text-white">
+                                <td className="py-2 px-3 text-foreground">
                                   {new Date(record.date).toLocaleDateString('en-GB')}
                                 </td>
-                                <td className="py-2 px-3 text-neutral-300 font-mono text-xs">
+                                <td className="py-2 px-3 text-card-foreground font-mono text-xs">
                                   {record.checkInTime 
                                     ? new Date(record.checkInTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
                                     : '—'}
                                 </td>
-                                <td className="py-2 px-3 text-neutral-300 font-mono text-xs">
+                                <td className="py-2 px-3 text-card-foreground font-mono text-xs">
                                   {record.checkOutTime 
                                     ? new Date(record.checkOutTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
                                     : '—'}
                                 </td>
-                                <td className="py-2 px-3 text-neutral-300">
+                                <td className="py-2 px-3 text-card-foreground">
                                   {record.workingHours?.toFixed(1) || '0.0'}h
                                 </td>
                                 <td className="py-2 px-3">
                                   <span className={`text-xs font-semibold ${
                                     record.status === 'PRESENT' ? 'text-green-400' :
-                                    record.status === 'LATE' ? 'text-amber-400' :
-                                    record.status === 'ABSENT' ? 'text-red-400' :
-                                    'text-neutral-400'
+                                    record.status === 'LATE' ? 'text-amber-600' :
+                                    record.status === 'ABSENT' ? 'text-red-600' :
+                                    'text-muted-foreground'
                                   }`}>
                                     {record.status || '—'}
                                   </span>
                                 </td>
                                 <td className="py-2 px-3">
                                   {record.lateBy > 0 ? (
-                                    <span className="text-red-400 font-semibold text-xs">
+                                    <span className="text-red-600 font-semibold text-xs">
                                       {record.lateBy}m
                                     </span>
                                   ) : (
-                                    <span className="text-neutral-600">—</span>
+                                    <span className="text-muted-foreground">—</span>
                                   )}
                                 </td>
                               </tr>
@@ -622,7 +622,7 @@ export default function CreateHRActionPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-neutral-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>No attendance records found for the last 30 days</p>
                   </div>
@@ -632,42 +632,42 @@ export default function CreateHRActionPage() {
 
             {/* Corrective Action */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Required Corrective Action
-                <span className="text-xs text-neutral-500 ml-2">(Optional)</span>
+                <span className="text-xs text-muted-foreground ml-2">(Optional)</span>
               </label>
               <textarea
                 value={formData.correctiveAction}
                 onChange={(e) => handleChange('correctiveAction', e.target.value)}
                 rows={3}
                 placeholder="What actions must the employee take to address this issue?"
-                className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
 
             {/* Additional Remarks */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Additional Remarks
-                <span className="text-xs text-neutral-500 ml-2">(Optional)</span>
+                <span className="text-xs text-muted-foreground ml-2">(Optional)</span>
               </label>
               <textarea
                 value={formData.additionalRemarks}
                 onChange={(e) => handleChange('additionalRemarks', e.target.value)}
                 rows={3}
                 placeholder="Any additional notes or comments..."
-                className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
 
             {/* Response Required */}
-            <div className="bg-black/40 border border-neutral-800 rounded-lg p-4">
+            <div className="bg-background/40 border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <div className="text-sm font-semibold text-white mb-1">
-                    Response Required <span className="text-red-400">*</span>
+                  <div className="text-sm font-semibold text-foreground mb-1">
+                    Response Required <span className="text-red-600">*</span>
                   </div>
-                  <div className="text-xs text-neutral-400">
+                  <div className="text-xs text-muted-foreground">
                     Does the employee need to provide a written response?
                   </div>
                 </div>
@@ -680,7 +680,7 @@ export default function CreateHRActionPage() {
                     }
                   }}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formData.responseRequired ? 'bg-blue-600' : 'bg-neutral-700'
+                    formData.responseRequired ? 'bg-blue-600' : 'bg-secondary'
                   }`}
                 >
                   <span
@@ -694,18 +694,18 @@ export default function CreateHRActionPage() {
               {/* Response Deadline - Only show if response required */}
               {formData.responseRequired && (
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-300 mb-2">
+                  <label className="block text-sm font-semibold text-card-foreground mb-2">
                     Response Deadline
-                    <span className="text-xs text-neutral-500 ml-2">(Optional)</span>
+                    <span className="text-xs text-muted-foreground ml-2">(Optional)</span>
                   </label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     <input
                       type="date"
                       value={formData.responseDeadline}
                       onChange={(e) => handleChange('responseDeadline', e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full pl-10 pr-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -715,11 +715,11 @@ export default function CreateHRActionPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+        <div className="flex items-center justify-between gap-4 bg-secondary border border-border rounded-xl p-6">
           <button
             onClick={() => router.back()}
             disabled={createMutation.isPending}
-            className="px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="px-6 py-2.5 bg-secondary hover:bg-secondary/50 text-foreground rounded-lg transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -728,7 +728,7 @@ export default function CreateHRActionPage() {
             <button
               onClick={() => handleSubmit(false)}
               disabled={createMutation.isPending}
-              className="px-6 py-2.5 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-2.5 bg-secondary hover:bg-secondary/70 text-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {createMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -741,7 +741,7 @@ export default function CreateHRActionPage() {
             <button
               onClick={() => handleSubmit(true)}
               disabled={createMutation.isPending}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/20"
+              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/20"
             >
               {createMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -754,5 +754,19 @@ export default function CreateHRActionPage() {
         </div>
       </div>
     </HRLayout>
+  );
+}
+
+export default function CreateHRActionPage() {
+  return (
+    <Suspense fallback={
+      <HRLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      </HRLayout>
+    }>
+      <CreateHRActionForm />
+    </Suspense>
   );
 }

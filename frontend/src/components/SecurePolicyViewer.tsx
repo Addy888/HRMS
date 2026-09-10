@@ -132,7 +132,7 @@ export default function SecurePolicyViewer({
     <div id="secure-policy-container" className="relative w-full h-full" style={containerStyle}>
       {/* DevTools Warning */}
       {devToolsOpen && (
-        <div className="absolute top-0 left-0 right-0 z-50 bg-red-600 text-white px-4 py-3 flex items-center gap-3 shadow-lg">
+        <div className="absolute top-0 left-0 right-0 z-50 bg-red-600 text-foreground px-4 py-3 flex items-center gap-3 shadow-lg">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <div className="text-sm font-semibold">
             Developer tools detected! This document is protected and monitored. Attempting to extract content is prohibited.
@@ -142,10 +142,10 @@ export default function SecurePolicyViewer({
 
       {/* Security Notice */}
       <div className="bg-blue-950/50 border border-blue-800 rounded-xl p-4 mb-4 flex items-start gap-3">
-        <Shield className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+        <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
         <div className="text-sm">
           <p className="font-semibold text-blue-300 mb-1">Protected Document - Read Only</p>
-          <p className="text-blue-400/80 text-xs">
+          <p className="text-blue-600/80 text-xs">
             This document is watermarked and monitored. You cannot download, print, copy, or save this file. 
             Screenshots are traceable to your account.
           </p>
@@ -153,7 +153,7 @@ export default function SecurePolicyViewer({
       </div>
 
       {/* PDF Viewer Container */}
-      <div className="relative bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden" style={{ height: '800px' }}>
+      <div className="relative bg-secondary border border-border rounded-xl overflow-hidden" style={{ height: '800px' }}>
         {/* Watermark Overlay */}
         <div 
           className="absolute inset-0 pointer-events-none z-10"
@@ -185,11 +185,11 @@ export default function SecurePolicyViewer({
 
         {/* Blur Overlay when tab inactive */}
         {isBlurred && (
-          <div className="absolute inset-0 backdrop-blur-xl bg-neutral-950/80 z-20 flex items-center justify-center">
+          <div className="absolute inset-0 backdrop-blur-xl bg-card z-20 flex items-center justify-center">
             <div className="text-center">
-              <Eye className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-              <p className="text-white font-semibold mb-1">Document Hidden</p>
-              <p className="text-neutral-400 text-sm">Return to tab to continue viewing</p>
+              <Eye className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+              <p className="text-foreground font-semibold mb-1">Document Hidden</p>
+              <p className="text-muted-foreground text-sm">Return to tab to continue viewing</p>
             </div>
           </div>
         )}
@@ -213,9 +213,9 @@ export default function SecurePolicyViewer({
       </div>
 
       {/* Footer Notice */}
-      <div className="mt-4 bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-        <div className="flex items-center gap-2 text-xs text-neutral-500">
-          <Shield className="w-4 h-4 text-neutral-600" />
+      <div className="mt-4 bg-secondary border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Shield className="w-4 h-4 text-muted-foreground" />
           <span>
             This document is confidential and for your viewing only. 
             Unauthorized distribution, copying, or sharing is prohibited and may result in disciplinary action.

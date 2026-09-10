@@ -13,22 +13,22 @@ import {
 import { toast } from '@/lib/toast';
 
 const STATUSES = [
-  { value: 'DRAFT', label: 'Draft', color: 'bg-neutral-500/10 text-neutral-400' },
-  { value: 'ISSUED', label: 'Issued', color: 'bg-blue-500/10 text-blue-400' },
-  { value: 'SENT', label: 'Sent', color: 'bg-purple-500/10 text-purple-400' },
+  { value: 'DRAFT', label: 'Draft', color: 'bg-background0/10 text-muted-foreground' },
+  { value: 'ISSUED', label: 'Issued', color: 'bg-blue-500/10 text-blue-600' },
+  { value: 'SENT', label: 'Sent', color: 'bg-purple-500/10 text-purple-600' },
   { value: 'VIEWED', label: 'Viewed', color: 'bg-cyan-500/10 text-cyan-400' },
   { value: 'ACKNOWLEDGED', label: 'Acknowledged', color: 'bg-indigo-500/10 text-indigo-400' },
-  { value: 'RESPONSE_PENDING', label: 'Response Pending', color: 'bg-amber-500/10 text-amber-400' },
-  { value: 'RESPONSE_SUBMITTED', label: 'Response Submitted', color: 'bg-emerald-500/10 text-emerald-400' },
+  { value: 'RESPONSE_PENDING', label: 'Response Pending', color: 'bg-amber-500/10 text-amber-600' },
+  { value: 'RESPONSE_SUBMITTED', label: 'Response Submitted', color: 'bg-emerald-500/10 text-emerald-600' },
   { value: 'RESOLVED', label: 'Resolved', color: 'bg-green-500/10 text-green-400' },
-  { value: 'CANCELLED', label: 'Cancelled', color: 'bg-red-500/10 text-red-400' },
+  { value: 'CANCELLED', label: 'Cancelled', color: 'bg-red-500/10 text-red-600' },
 ];
 
 const SEVERITIES = [
-  { value: 'LOW', label: 'Low', color: 'text-blue-400' },
+  { value: 'LOW', label: 'Low', color: 'text-blue-600' },
   { value: 'MEDIUM', label: 'Medium', color: 'text-yellow-400' },
   { value: 'HIGH', label: 'High', color: 'text-orange-400' },
-  { value: 'CRITICAL', label: 'Critical', color: 'text-red-400' },
+  { value: 'CRITICAL', label: 'Critical', color: 'text-red-600' },
 ];
 
 export default function HRActionDetailPage() {
@@ -129,11 +129,11 @@ export default function HRActionDetailPage() {
     return (
       <HRLayout>
         <div className="text-center py-16">
-          <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">HR Action Not Found</h2>
+          <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-foreground mb-2">HR Action Not Found</h2>
           <button
             onClick={() => router.push('/hr/hr-actions')}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-foreground rounded-lg transition-colors"
           >
             Back to HR Actions
           </button>
@@ -153,16 +153,16 @@ export default function HRActionDetailPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-white transition-colors"
+              className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                <AlertTriangle className="w-7 h-7 text-amber-400" />
+              <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+                <AlertTriangle className="w-7 h-7 text-amber-600" />
                 HR Action Details
               </h1>
-              <p className="text-sm text-neutral-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {action.actionNumber}
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function HRActionDetailPage() {
               <button
                 onClick={() => issueMutation.mutate()}
                 disabled={issueMutation.isPending}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-500/20"
               >
                 {issueMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -189,14 +189,14 @@ export default function HRActionDetailPage() {
               <>
                 <button
                   onClick={() => setShowResolveModal(true)}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-lg transition-colors flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Resolve
                 </button>
                 <button
                   onClick={() => setShowCancelModal(true)}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-foreground rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Ban className="w-4 h-4" />
                   Cancel
@@ -210,73 +210,73 @@ export default function HRActionDetailPage() {
           {/* Left Column - Employee & Status */}
           <div className="space-y-6">
             {/* Employee Info */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-400" />
+            <div className="bg-secondary border border-border rounded-xl p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-600" />
                 Employee Information
               </h3>
               
               <div className="space-y-4">
                 <div className="flex justify-center mb-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-2xl font-bold text-white uppercase">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-2xl font-bold text-foreground uppercase">
                     {action.employee?.firstName?.charAt(0)}{action.employee?.lastName?.charAt(0)}
                   </div>
                 </div>
 
                 <div className="space-y-3 text-sm">
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Name</div>
-                    <div className="font-semibold text-white">
+                    <div className="text-xs text-muted-foreground mb-1">Name</div>
+                    <div className="font-semibold text-foreground">
                       {action.employee?.firstName} {action.employee?.lastName}
                     </div>
                   </div>
                   
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Employee ID</div>
-                    <div className="font-mono text-neutral-300">{action.employee?.employeeId}</div>
+                    <div className="text-xs text-muted-foreground mb-1">Employee ID</div>
+                    <div className="font-mono text-card-foreground">{action.employee?.employeeId}</div>
                   </div>
                   
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
+                    <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                       <Mail className="w-3 h-3" />
                       Email
                     </div>
-                    <div className="text-neutral-300">{action.employee?.user?.email}</div>
+                    <div className="text-card-foreground">{action.employee?.user?.email}</div>
                   </div>
                   
                   {action.employee?.phone && (
                     <div>
-                      <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
+                      <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                         <Phone className="w-3 h-3" />
                         Phone
                       </div>
-                      <div className="text-neutral-300">{action.employee?.phone}</div>
+                      <div className="text-card-foreground">{action.employee?.phone}</div>
                     </div>
                   )}
                   
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
+                    <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                       <Building className="w-3 h-3" />
                       Department
                     </div>
-                    <div className="text-neutral-300">{action.employee?.department?.name || '—'}</div>
+                    <div className="text-card-foreground">{action.employee?.department?.name || '—'}</div>
                   </div>
                   
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Designation</div>
-                    <div className="text-neutral-300">{action.employee?.designation?.name || '—'}</div>
+                    <div className="text-xs text-muted-foreground mb-1">Designation</div>
+                    <div className="text-card-foreground">{action.employee?.designation?.name || '—'}</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Status Timeline */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Status Timeline</h3>
+            <div className="bg-secondary border border-border rounded-xl p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4">Status Timeline</h3>
               
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-400">Current Status</span>
+                  <span className="text-muted-foreground">Current Status</span>
                   <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${statusConfig?.color}`}>
                     {statusConfig?.label}
                   </span>
@@ -284,8 +284,8 @@ export default function HRActionDetailPage() {
 
                 {action.issuedAt && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Issued At</div>
-                    <div className="text-neutral-300">
+                    <div className="text-xs text-muted-foreground mb-1">Issued At</div>
+                    <div className="text-card-foreground">
                       {new Date(action.issuedAt).toLocaleString()}
                     </div>
                   </div>
@@ -293,8 +293,8 @@ export default function HRActionDetailPage() {
 
                 {action.sentAt && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Sent At</div>
-                    <div className="text-neutral-300">
+                    <div className="text-xs text-muted-foreground mb-1">Sent At</div>
+                    <div className="text-card-foreground">
                       {new Date(action.sentAt).toLocaleString()}
                     </div>
                   </div>
@@ -302,8 +302,8 @@ export default function HRActionDetailPage() {
 
                 {action.viewedAt && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Viewed At</div>
-                    <div className="text-neutral-300">
+                    <div className="text-xs text-muted-foreground mb-1">Viewed At</div>
+                    <div className="text-card-foreground">
                       {new Date(action.viewedAt).toLocaleString()}
                     </div>
                   </div>
@@ -311,8 +311,8 @@ export default function HRActionDetailPage() {
 
                 {action.acknowledgedAt && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Acknowledged At</div>
-                    <div className="text-neutral-300">
+                    <div className="text-xs text-muted-foreground mb-1">Acknowledged At</div>
+                    <div className="text-card-foreground">
                       {new Date(action.acknowledgedAt).toLocaleString()}
                     </div>
                   </div>
@@ -320,8 +320,8 @@ export default function HRActionDetailPage() {
 
                 {action.responseSubmittedAt && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Response Submitted At</div>
-                    <div className="text-neutral-300">
+                    <div className="text-xs text-muted-foreground mb-1">Response Submitted At</div>
+                    <div className="text-card-foreground">
                       {new Date(action.responseSubmittedAt).toLocaleString()}
                     </div>
                   </div>
@@ -329,8 +329,8 @@ export default function HRActionDetailPage() {
 
                 {action.resolvedAt && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Resolved At</div>
-                    <div className="text-neutral-300">
+                    <div className="text-xs text-muted-foreground mb-1">Resolved At</div>
+                    <div className="text-card-foreground">
                       {new Date(action.resolvedAt).toLocaleString()}
                     </div>
                   </div>
@@ -342,20 +342,20 @@ export default function HRActionDetailPage() {
           {/* Right Column - Action Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Action Details */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-6">Action Details</h3>
+            <div className="bg-secondary border border-border rounded-xl p-6">
+              <h3 className="text-lg font-bold text-foreground mb-6">Action Details</h3>
               
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Action Type</div>
-                    <div className="font-semibold text-white">
+                    <div className="text-xs text-muted-foreground mb-1">Action Type</div>
+                    <div className="font-semibold text-foreground">
                       {action.actionType?.replace(/_/g, ' ')}
                     </div>
                   </div>
                   
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Severity</div>
+                    <div className="text-xs text-muted-foreground mb-1">Severity</div>
                     <span className={`text-sm font-bold ${severityConfig?.color}`}>
                       {severityConfig?.label}
                     </span>
@@ -363,31 +363,31 @@ export default function HRActionDetailPage() {
                 </div>
 
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
+                  <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     Incident Date
                   </div>
-                  <div className="text-white">
+                  <div className="text-foreground">
                     {new Date(action.incidentDate).toLocaleDateString()}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs text-neutral-500 mb-2">Subject</div>
-                  <div className="text-white font-semibold">{action.subject}</div>
+                  <div className="text-xs text-muted-foreground mb-2">Subject</div>
+                  <div className="text-foreground font-semibold">{action.subject}</div>
                 </div>
 
                 <div>
-                  <div className="text-xs text-neutral-500 mb-2">Reason / Description</div>
-                  <div className="text-neutral-300 whitespace-pre-wrap bg-black/40 rounded-lg p-4 border border-neutral-800">
+                  <div className="text-xs text-muted-foreground mb-2">Reason / Description</div>
+                  <div className="text-card-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-4 border border-border">
                     {action.reason}
                   </div>
                 </div>
 
                 {action.correctiveAction && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-2">Required Corrective Action</div>
-                    <div className="text-neutral-300 whitespace-pre-wrap bg-black/40 rounded-lg p-4 border border-neutral-800">
+                    <div className="text-xs text-muted-foreground mb-2">Required Corrective Action</div>
+                    <div className="text-card-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-4 border border-border">
                       {action.correctiveAction}
                     </div>
                   </div>
@@ -395,8 +395,8 @@ export default function HRActionDetailPage() {
 
                 {action.additionalRemarks && (
                   <div>
-                    <div className="text-xs text-neutral-500 mb-2">Additional Remarks</div>
-                    <div className="text-neutral-300 whitespace-pre-wrap bg-black/40 rounded-lg p-4 border border-neutral-800">
+                    <div className="text-xs text-muted-foreground mb-2">Additional Remarks</div>
+                    <div className="text-card-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-4 border border-border">
                       {action.additionalRemarks}
                     </div>
                   </div>
@@ -404,19 +404,19 @@ export default function HRActionDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Response Required</div>
-                    <div className={`font-semibold ${action.responseRequired ? 'text-amber-400' : 'text-neutral-400'}`}>
+                    <div className="text-xs text-muted-foreground mb-1">Response Required</div>
+                    <div className={`font-semibold ${action.responseRequired ? 'text-amber-600' : 'text-muted-foreground'}`}>
                       {action.responseRequired ? 'Yes' : 'No'}
                     </div>
                   </div>
                   
                   {action.responseRequired && action.responseDeadline && (
                     <div>
-                      <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
+                      <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         Response Deadline
                       </div>
-                      <div className="text-amber-400 font-semibold">
+                      <div className="text-amber-600 font-semibold">
                         {new Date(action.responseDeadline).toLocaleDateString()}
                       </div>
                     </div>
@@ -427,12 +427,12 @@ export default function HRActionDetailPage() {
 
             {/* Employee Response */}
             {action.responseText && (
-              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-emerald-400" />
+              <div className="bg-secondary border border-border rounded-xl p-6">
+                <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-emerald-600" />
                   Employee Response
                 </h3>
-                <div className="text-neutral-300 whitespace-pre-wrap bg-black/40 rounded-lg p-4 border border-neutral-800">
+                <div className="text-card-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-4 border border-border">
                   {action.responseText}
                 </div>
               </div>
@@ -440,12 +440,12 @@ export default function HRActionDetailPage() {
 
             {/* Resolution Details */}
             {action.resolvedRemarks && (
-              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <div className="bg-secondary border border-border rounded-xl p-6">
+                <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   Resolution Details
                 </h3>
-                <div className="text-neutral-300 whitespace-pre-wrap bg-black/40 rounded-lg p-4 border border-neutral-800">
+                <div className="text-card-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-4 border border-border">
                   {action.resolvedRemarks}
                 </div>
               </div>
@@ -453,12 +453,12 @@ export default function HRActionDetailPage() {
 
             {/* Cancellation Details */}
             {action.cancelledReason && (
-              <div className="bg-neutral-900 border border-red-500/20 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-red-400" />
+              <div className="bg-secondary border border-red-500/20 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-600" />
                   Cancellation Reason
                 </h3>
-                <div className="text-neutral-300 whitespace-pre-wrap bg-black/40 rounded-lg p-4 border border-neutral-800">
+                <div className="text-card-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-4 border border-border">
                   {action.cancelledReason}
                 </div>
               </div>
@@ -469,33 +469,33 @@ export default function HRActionDetailPage() {
 
       {/* Resolve Modal */}
       {showResolveModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 max-w-lg w-full">
-            <h3 className="text-xl font-bold text-white mb-4">Resolve HR Action</h3>
+        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-secondary border border-border rounded-xl p-6 max-w-lg w-full">
+            <h3 className="text-xl font-bold text-foreground mb-4">Resolve HR Action</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                  Resolution Remarks <span className="text-red-400">*</span>
+                <label className="block text-sm font-semibold text-card-foreground mb-2">
+                  Resolution Remarks <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   value={resolveRemarks}
                   onChange={(e) => setResolveRemarks(e.target.value)}
                   placeholder="Enter resolution details..."
                   rows={4}
-                  className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowResolveModal(false)}
-                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-secondary hover:bg-secondary/50 text-foreground rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => resolveMutation.mutate({ resolvedRemarks: resolveRemarks })}
                   disabled={!resolveRemarks.trim() || resolveMutation.isPending}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {resolveMutation.isPending ? (
                     <>
@@ -517,33 +517,33 @@ export default function HRActionDetailPage() {
 
       {/* Cancel Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 max-w-lg w-full">
-            <h3 className="text-xl font-bold text-white mb-4">Cancel HR Action</h3>
+        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-secondary border border-border rounded-xl p-6 max-w-lg w-full">
+            <h3 className="text-xl font-bold text-foreground mb-4">Cancel HR Action</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                  Cancellation Reason <span className="text-red-400">*</span>
+                <label className="block text-sm font-semibold text-card-foreground mb-2">
+                  Cancellation Reason <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="Enter reason for cancellation..."
                   rows={4}
-                  className="w-full px-4 py-2.5 bg-black border border-neutral-800 rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowCancelModal(false)}
-                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-secondary hover:bg-secondary/50 text-foreground rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => cancelMutation.mutate({ cancelledReason: cancelReason })}
                   disabled={!cancelReason.trim() || cancelMutation.isPending}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-foreground rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {cancelMutation.isPending ? (
                     <>

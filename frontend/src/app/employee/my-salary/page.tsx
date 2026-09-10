@@ -57,32 +57,32 @@ export default function MySalaryPage() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
+                <Wallet className="w-6 h-6 text-foreground" />
               </div>
               <div>
-                <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+                <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
                   My Salary
                 </h1>
-                <p className="text-sm text-neutral-400">View your salary structure and payment history</p>
+                <p className="text-sm text-muted-foreground">View your salary structure and payment history</p>
               </div>
             </div>
           </div>
 
           {/* Loading Skeletons */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 animate-pulse">
-            <div className="h-6 w-48 bg-neutral-800 rounded mb-4"></div>
-            <div className="h-20 bg-neutral-900 rounded"></div>
+          <div className="bg-card border border-border rounded-2xl p-6 animate-pulse">
+            <div className="h-6 w-48 bg-secondary rounded mb-4"></div>
+            <div className="h-20 bg-secondary rounded"></div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-6 w-32 bg-neutral-800 rounded mb-6"></div>
+              <div key={i} className="bg-card border border-border rounded-2xl p-6 animate-pulse">
+                <div className="h-6 w-32 bg-secondary rounded mb-6"></div>
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((j) => (
                     <div key={j} className="flex justify-between">
-                      <div className="h-4 w-32 bg-neutral-800 rounded"></div>
-                      <div className="h-4 w-24 bg-neutral-800 rounded"></div>
+                      <div className="h-4 w-32 bg-secondary rounded"></div>
+                      <div className="h-4 w-24 bg-secondary rounded"></div>
                     </div>
                   ))}
                 </div>
@@ -90,11 +90,11 @@ export default function MySalaryPage() {
             ))}
           </div>
 
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 animate-pulse">
-            <div className="h-6 w-48 bg-neutral-800 rounded mb-4"></div>
+          <div className="bg-card border border-border rounded-2xl p-6 animate-pulse">
+            <div className="h-6 w-48 bg-secondary rounded mb-4"></div>
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 bg-neutral-900 rounded"></div>
+                <div key={i} className="h-20 bg-secondary rounded"></div>
               ))}
             </div>
           </div>
@@ -108,9 +108,9 @@ export default function MySalaryPage() {
     return (
       <EmployeeLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-          <AlertCircle className="w-14 h-14 text-red-400" />
-          <h2 className="font-heading text-xl font-bold text-white">Failed to load salary information</h2>
-          <p className="text-sm text-neutral-400">Please contact HR if this issue persists</p>
+          <AlertCircle className="w-14 h-14 text-red-600" />
+          <h2 className="font-heading text-xl font-bold text-foreground">Failed to load salary information</h2>
+          <p className="text-sm text-muted-foreground">Please contact HR if this issue persists</p>
         </div>
       </EmployeeLayout>
     );
@@ -125,32 +125,32 @@ export default function MySalaryPage() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
+                <Wallet className="w-6 h-6 text-foreground" />
               </div>
               <div>
-                <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+                <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
                   My Salary
                 </h1>
-                <p className="text-sm text-neutral-400">View your salary structure and payment history</p>
+                <p className="text-sm text-muted-foreground">View your salary structure and payment history</p>
               </div>
             </div>
           </div>
 
           {/* Empty State */}
           <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-            <div className="w-20 h-20 bg-neutral-800/50 rounded-full flex items-center justify-center">
-              <Wallet className="w-10 h-10 text-neutral-500" />
+            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center">
+              <Wallet className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h2 className="font-heading text-xl font-bold text-white">Salary Not Assigned</h2>
-            <p className="text-sm text-neutral-400 text-center max-w-md">
+            <h2 className="font-heading text-xl font-bold text-foreground">Salary Not Assigned</h2>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
               Your HR department has not assigned a salary structure yet.
             </p>
             <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 max-w-md">
               <div className="flex gap-3">
-                <InfoIcon className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-400">
+                <InfoIcon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-600">
                   <p className="font-semibold mb-1">Need Help?</p>
-                  <p className="text-blue-400/80">
+                  <p className="text-blue-600/80">
                     Please contact HR if you believe your salary structure should be available.
                   </p>
                 </div>
@@ -165,22 +165,22 @@ export default function MySalaryPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PAID':
-        return <CheckCircle className="w-5 h-5 text-emerald-400" />;
+        return <CheckCircle className="w-5 h-5 text-emerald-600" />;
       case 'PROCESSED':
-        return <Clock className="w-5 h-5 text-amber-400" />;
+        return <Clock className="w-5 h-5 text-amber-600" />;
       case 'PENDING':
-        return <Clock className="w-5 h-5 text-blue-400" />;
+        return <Clock className="w-5 h-5 text-blue-600" />;
       default:
-        return <InfoIcon className="w-5 h-5 text-neutral-400" />;
+        return <InfoIcon className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { bg: string; text: string; label: string }> = {
-      PAID: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Paid' },
-      PROCESSED: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Processed' },
-      PENDING: { bg: 'bg-blue-500/10', text: 'text-blue-400', label: 'Pending' },
-      NOT_GENERATED: { bg: 'bg-neutral-500/10', text: 'text-neutral-400', label: 'Not Generated' },
+      PAID: { bg: 'bg-emerald-500/10', text: 'text-emerald-600', label: 'Paid' },
+      PROCESSED: { bg: 'bg-amber-500/10', text: 'text-amber-600', label: 'Processed' },
+      PENDING: { bg: 'bg-blue-500/10', text: 'text-blue-600', label: 'Pending' },
+      NOT_GENERATED: { bg: 'bg-background0/10', text: 'text-muted-foreground', label: 'Not Generated' },
     };
     const badge = badges[status] || badges.NOT_GENERATED;
     return (
@@ -199,40 +199,40 @@ export default function MySalaryPage() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <Wallet className="w-6 h-6 text-white" />
+              <Wallet className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
                 My Salary
               </h1>
-              <p className="text-sm text-neutral-400">View your salary structure and payment history</p>
+              <p className="text-sm text-muted-foreground">View your salary structure and payment history</p>
             </div>
           </div>
         </div>
 
         {/* Current Month Payroll Status */}
         {!statusLoading && payrollStatus?.currentMonth && (
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+          <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-lg font-bold text-white mb-1">Current Month Status</h3>
-                <p className="text-sm text-neutral-400">
+                <h3 className="text-lg font-bold text-foreground mb-1">Current Month Status</h3>
+                <p className="text-sm text-muted-foreground">
                   {monthNames[payrollStatus.currentMonth.month - 1]} {payrollStatus.currentMonth.year}
                 </p>
               </div>
               {getStatusBadge(payrollStatus.currentMonth.status)}
             </div>
             {payrollStatus.currentMonth.status !== 'NOT_GENERATED' && (
-              <div className="flex items-center justify-between bg-neutral-900/50 rounded-xl p-4 border border-neutral-800">
-                <span className="text-sm text-neutral-400">Net Salary</span>
-                <span className="text-2xl font-bold text-emerald-400">
+              <div className="flex items-center justify-between bg-secondary/80 rounded-xl p-4 border border-border">
+                <span className="text-sm text-muted-foreground">Net Salary</span>
+                <span className="text-2xl font-bold text-emerald-600">
                   ₹{(payrollStatus.currentMonth.netSalary ?? 0).toLocaleString('en-IN')}
                 </span>
               </div>
             )}
             {payrollStatus.currentMonth.status === 'NOT_GENERATED' && (
               <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
-                <p className="text-sm text-blue-400 flex items-center gap-2">
+                <p className="text-sm text-blue-600 flex items-center gap-2">
                   <InfoIcon className="w-4 h-4" />
                   Payroll for this month has not been generated yet
                 </p>
@@ -245,57 +245,57 @@ export default function MySalaryPage() {
         {salaryData && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Earnings Card */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Earnings</h3>
+                <h3 className="text-lg font-bold text-foreground">Earnings</h3>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">Basic Salary</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">Basic Salary</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.basicSalary ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">HRA</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">HRA</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.hra ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">Conveyance</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">Conveyance</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.conveyance ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">Medical Allowance</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">Medical Allowance</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.medicalAllowance ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">Special Allowance</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">Special Allowance</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.specialAllowance ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 {(salaryData?.otherAllowances ?? 0) > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-neutral-400">Other Allowances</span>
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm text-muted-foreground">Other Allowances</span>
+                    <span className="text-sm font-semibold text-foreground">
                       ₹{(salaryData?.otherAllowances ?? 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                 )}
-                <div className="border-t border-neutral-800 pt-3 mt-3">
+                <div className="border-t border-border pt-3 mt-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold text-white">Gross Salary</span>
-                    <span className="text-lg font-bold text-emerald-400">
+                    <span className="text-sm font-bold text-foreground">Gross Salary</span>
+                    <span className="text-lg font-bold text-emerald-600">
                       ₹{(salaryData?.grossSalary ?? 0).toLocaleString('en-IN')}
                     </span>
                   </div>
@@ -304,50 +304,50 @@ export default function MySalaryPage() {
             </div>
 
             {/* Deductions Card */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-rose-500/10 rounded-lg flex items-center justify-center">
                   <TrendingDown className="w-5 h-5 text-rose-400" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Deductions</h3>
+                <h3 className="text-lg font-bold text-foreground">Deductions</h3>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">PF (Provident Fund)</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">PF (Provident Fund)</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.pf ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">ESI</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">ESI</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.esi ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">Professional Tax</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">Professional Tax</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.professionalTax ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">TDS</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm text-muted-foreground">TDS</span>
+                  <span className="text-sm font-semibold text-foreground">
                     ₹{(salaryData?.tds ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 {(salaryData?.otherDeductions ?? 0) > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-neutral-400">Other Deductions</span>
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm text-muted-foreground">Other Deductions</span>
+                    <span className="text-sm font-semibold text-foreground">
                       ₹{(salaryData?.otherDeductions ?? 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                 )}
-                <div className="border-t border-neutral-800 pt-3 mt-3">
+                <div className="border-t border-border pt-3 mt-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold text-white">Total Deductions</span>
+                    <span className="text-sm font-bold text-foreground">Total Deductions</span>
                     <span className="text-lg font-bold text-rose-400">
                       ₹{((salaryData?.pf ?? 0) + (salaryData?.esi ?? 0) + (salaryData?.professionalTax ?? 0) + (salaryData?.tds ?? 0) + (salaryData?.otherDeductions ?? 0)).toLocaleString('en-IN')}
                     </span>
@@ -361,39 +361,39 @@ export default function MySalaryPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                    <DollarSign className="w-6 h-6 text-emerald-400" />
+                    <DollarSign className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-emerald-400/80 font-medium">Net Salary (Take Home)</p>
-                    <p className="text-xs text-emerald-400/60 mt-1">Gross Salary - Total Deductions</p>
+                    <p className="text-sm text-emerald-600/80 font-medium">Net Salary (Take Home)</p>
+                    <p className="text-xs text-emerald-600/60 mt-1">Gross Salary - Total Deductions</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-bold text-emerald-400">
+                  <p className="text-3xl font-bold text-emerald-600">
                     ₹{(salaryData?.netSalary ?? 0).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-xs text-emerald-400/60 mt-1">per month</p>
+                  <p className="text-xs text-emerald-600/60 mt-1">per month</p>
                 </div>
               </div>
             </div>
 
             {/* CTC Card */}
-            <div className="lg:col-span-2 bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-purple-400" />
+                    <FileText className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-400 font-medium">Cost to Company (CTC)</p>
-                    <p className="text-xs text-neutral-500 mt-1">Annual package including all benefits</p>
+                    <p className="text-sm text-muted-foreground font-medium">Cost to Company (CTC)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Annual package including all benefits</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-purple-400">
+                  <p className="text-2xl font-bold text-purple-600">
                     ₹{(salaryData?.ctc ?? 0).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-1">per month</p>
+                  <p className="text-xs text-muted-foreground mt-1">per month</p>
                 </div>
               </div>
             </div>
@@ -402,32 +402,32 @@ export default function MySalaryPage() {
 
         {/* Salary History */}
         {salaryHistory && salaryHistory.length > 0 && (
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+          <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-blue-400" />
+                <Calendar className="w-5 h-5 text-blue-600" />
               </div>
-              <h3 className="text-lg font-bold text-white">Recent Payroll History</h3>
+              <h3 className="text-lg font-bold text-foreground">Recent Payroll History</h3>
             </div>
 
             <div className="space-y-3">
               {salaryHistory.slice(0, 6).map((record: any) => (
                 <div
                   key={record.payrollRunId}
-                  className="flex items-center justify-between p-4 bg-neutral-900/50 rounded-xl border border-neutral-800 hover:border-neutral-700 transition-colors"
+                  className="flex items-center justify-between p-4 bg-secondary/80 rounded-xl border border-border hover:border-border transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     {getStatusIcon(record.status)}
                     <div>
-                      <p className="text-sm font-semibold text-white">{record.period}</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">
+                      <p className="text-sm font-semibold text-foreground">{record.period}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Gross: ₹{(record?.grossSalary ?? 0).toLocaleString('en-IN')}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-400">
+                      <p className="text-sm font-bold text-emerald-600">
                         ₹{(record?.netSalary ?? 0).toLocaleString('en-IN')}
                       </p>
                       {getStatusBadge(record.status)}
@@ -442,10 +442,10 @@ export default function MySalaryPage() {
         {/* Info Note */}
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
           <div className="flex gap-3">
-            <InfoIcon className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-400">
+            <InfoIcon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-600">
               <p className="font-semibold mb-1">Employee Access - Read Only</p>
-              <p className="text-blue-400/80">
+              <p className="text-blue-600/80">
                 You can view your salary structure and payment history. For any changes or concerns, please contact HR.
               </p>
             </div>

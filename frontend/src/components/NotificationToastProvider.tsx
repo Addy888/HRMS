@@ -47,13 +47,13 @@ const playHarmonicChime = () => {
 const getModuleIcon = (module: string) => {
   switch (module.toUpperCase()) {
     case 'AUTH':
-      return <ShieldAlert className="w-5 h-5 text-amber-400" />;
+      return <ShieldAlert className="w-5 h-5 text-amber-600" />;
     case 'DOCUMENT':
-      return <FileText className="w-5 h-5 text-blue-400" />;
+      return <FileText className="w-5 h-5 text-blue-600" />;
     case 'COMPLAINT':
       return <MessageSquare className="w-5 h-5 text-rose-400" />;
     case 'POLICY':
-      return <Sparkles className="w-5 h-5 text-emerald-400" />;
+      return <Sparkles className="w-5 h-5 text-emerald-600" />;
     default:
       return <Bell className="w-5 h-5 text-indigo-400" />;
   }
@@ -66,7 +66,7 @@ const getPriorityColor = (priority: string) => {
     case 'HIGH':
       return 'border-amber-500 bg-amber-950/20 text-amber-300';
     case 'LOW':
-      return 'border-neutral-800 bg-neutral-900/50 text-neutral-400';
+      return 'border-border bg-secondary/80 text-muted-foreground';
     default:
       return 'border-blue-500 bg-blue-950/20 text-blue-300';
   }
@@ -145,9 +145,9 @@ export default function NotificationToastProvider({ children }: { children: Reac
                 className="absolute bottom-0 left-0 h-0.5 bg-current opacity-30"
               />
 
-              <div className="shrink-0 p-2.5 rounded-xl bg-neutral-950/80 border border-neutral-850 h-max">
+              <div className="shrink-0 p-2.5 rounded-xl bg-card border border-border h-max">
                 {toast.type === 'announcement.created' ? (
-                  <Megaphone className="w-5 h-5 text-amber-400" />
+                  <Megaphone className="w-5 h-5 text-amber-600" />
                 ) : (
                   getModuleIcon(toast.module)
                 )}
@@ -155,19 +155,19 @@ export default function NotificationToastProvider({ children }: { children: Reac
 
               <div className="flex-1 space-y-1.5 min-w-0 pr-6">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     {toast.module}
                   </h4>
                   {toast.priority !== 'MEDIUM' && (
-                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-neutral-950 border border-neutral-800">
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-card border border-border">
                       {toast.priority}
                     </span>
                   )}
                 </div>
-                <h3 className="text-sm font-bold text-white leading-snug truncate">
+                <h3 className="text-sm font-bold text-foreground leading-snug truncate">
                   {toast.title}
                 </h3>
-                <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2">
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                   {toast.description}
                 </p>
 
@@ -175,7 +175,7 @@ export default function NotificationToastProvider({ children }: { children: Reac
                   <Link
                     href={toast.actionUrl}
                     onClick={() => removeToastFromQueue(toast.id)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors pt-1"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-300 transition-colors pt-1"
                   >
                     View details &rarr;
                   </Link>
@@ -184,7 +184,7 @@ export default function NotificationToastProvider({ children }: { children: Reac
 
               <button
                 onClick={() => removeToastFromQueue(toast.id)}
-                className="absolute top-3 right-3 p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-850 transition-all"
+                className="absolute top-3 right-3 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
               >
                 <X className="w-4 h-4" />
               </button>

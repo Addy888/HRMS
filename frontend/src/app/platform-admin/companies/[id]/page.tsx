@@ -116,8 +116,8 @@ export default function CompanyDetailsPage() {
     return (
       <div className="container mx-auto p-6">
         <Card className="p-12 text-center">
-          <Building2 className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <Building2 className="h-12 w-12 text-card-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             Company not found
           </h3>
           <button
@@ -140,11 +140,11 @@ export default function CompanyDetailsPage() {
             onClick={() => router.back()}
             className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-5 w-5 text-neutral-600" />
+            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-neutral-900">
+              <h1 className="text-3xl font-bold text-foreground">
                 {company.name}
               </h1>
               <span
@@ -162,14 +162,14 @@ export default function CompanyDetailsPage() {
                 {company.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
-            <p className="text-neutral-600 mt-1">Code: {company.code}</p>
+            <p className="text-muted-foreground mt-1">Code: {company.code}</p>
           </div>
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={() => router.push(`/platform-admin/companies/${company.id}/edit`)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-600 text-white rounded-lg hover:bg-neutral-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-600 text-foreground rounded-lg hover:bg-secondary/50 transition-colors"
           >
             <Edit className="h-4 w-4" />
             Edit
@@ -203,25 +203,25 @@ export default function CompanyDetailsPage() {
         <CardContent className="space-y-3">
           {company.email && (
             <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-neutral-500" />
-              <span className="text-neutral-900">{company.email}</span>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground">{company.email}</span>
             </div>
           )}
           {company.phone && (
             <div className="flex items-center gap-3 text-sm">
-              <Phone className="h-4 w-4 text-neutral-500" />
-              <span className="text-neutral-900">{company.phone}</span>
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground">{company.phone}</span>
             </div>
           )}
           {company.address && (
             <div className="flex items-start gap-3 text-sm">
-              <MapPin className="h-4 w-4 text-neutral-500 mt-0.5" />
-              <span className="text-neutral-900">{company.address}</span>
+              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <span className="text-foreground">{company.address}</span>
             </div>
           )}
           <div className="flex items-center gap-3 text-sm">
-            <Calendar className="h-4 w-4 text-neutral-500" />
-            <span className="text-neutral-600">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">
               Created: {new Date(company.createdAt).toLocaleDateString()}
             </span>
           </div>
@@ -232,13 +232,13 @@ export default function CompanyDetailsPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-neutral-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Users
             </CardTitle>
             <Users className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-neutral-900">
+            <div className="text-3xl font-bold text-foreground">
               {company._count.users}
             </div>
           </CardContent>
@@ -246,13 +246,13 @@ export default function CompanyDetailsPage() {
 
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-neutral-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Employees
             </CardTitle>
             <Shield className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-neutral-900">
+            <div className="text-3xl font-bold text-foreground">
               {company._count.employees}
             </div>
           </CardContent>
@@ -260,13 +260,13 @@ export default function CompanyDetailsPage() {
 
         <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-neutral-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Departments
             </CardTitle>
             <Activity className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-neutral-900">
+            <div className="text-3xl font-bold text-foreground">
               {company._count.departments}
             </div>
           </CardContent>
@@ -274,13 +274,13 @@ export default function CompanyDetailsPage() {
 
         <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-neutral-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Designations
             </CardTitle>
             <TrendingUp className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-neutral-900">
+            <div className="text-3xl font-bold text-foreground">
               {company._count.designations}
             </div>
           </CardContent>
@@ -288,13 +288,13 @@ export default function CompanyDetailsPage() {
 
         <Card className="border-l-4 border-l-teal-500">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-neutral-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Attendance Records
             </CardTitle>
             <Activity className="h-5 w-5 text-teal-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-neutral-900">
+            <div className="text-3xl font-bold text-foreground">
               {company._count.attendances}
             </div>
           </CardContent>
@@ -302,13 +302,13 @@ export default function CompanyDetailsPage() {
 
         <Card className="border-l-4 border-l-pink-500">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-neutral-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               HR Actions
             </CardTitle>
             <Shield className="h-5 w-5 text-pink-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-neutral-900">
+            <div className="text-3xl font-bold text-foreground">
               {company._count.hrActions}
             </div>
           </CardContent>
@@ -325,7 +325,7 @@ export default function CompanyDetailsPage() {
         </CardHeader>
         <CardContent>
           {company.users.length === 0 ? (
-            <p className="text-sm text-neutral-600">No super admins found</p>
+            <p className="text-sm text-muted-foreground">No super admins found</p>
           ) : (
             <div className="space-y-3">
               {company.users.map((admin) => (
@@ -334,8 +334,8 @@ export default function CompanyDetailsPage() {
                   className="flex items-center justify-between p-3 border border-neutral-200 rounded-lg"
                 >
                   <div>
-                    <p className="font-medium text-neutral-900">{admin.email}</p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="font-medium text-foreground">{admin.email}</p>
+                    <p className="text-xs text-muted-foreground">
                       Created: {new Date(admin.createdAt).toLocaleDateString()}
                     </p>
                   </div>

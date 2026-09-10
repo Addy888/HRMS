@@ -24,17 +24,17 @@ import {
 } from '@/lib/timezone-utils';
 
 const STATUS_COLORS: Record<string, string> = {
-  PRESENT: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  LATE: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  ABSENT: 'bg-red-500/10 text-red-400 border-red-500/20',
-  HALF_DAY: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  LEAVE: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  WEEK_OFF: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+  PRESENT: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  LATE: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  ABSENT: 'bg-red-500/10 text-red-600 border-red-500/20',
+  HALF_DAY: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  LEAVE: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  WEEK_OFF: 'bg-secondary text-muted-foreground border-border',
   HOLIDAY: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   WFH: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   ON_DUTY: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  PENDING: 'bg-neutral-800 text-neutral-400 border-neutral-700',
-  NOT_MARKED: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+  PENDING: 'bg-secondary text-muted-foreground border-border',
+  NOT_MARKED: 'bg-secondary text-muted-foreground border-border',
 };
 
 export default function EmployeeAttendancePage() {
@@ -331,7 +331,7 @@ export default function EmployeeAttendancePage() {
     return (
       <div className="grid grid-cols-7 gap-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center text-xs font-bold text-neutral-500 py-2">
+          <div key={day} className="text-center text-xs font-bold text-muted-foreground py-2">
             {day}
           </div>
         ))}
@@ -357,8 +357,8 @@ export default function EmployeeAttendancePage() {
             <div
               key={dateKey}
               className={`relative border rounded-lg p-2 min-h-[100px] ${
-                isToday ? 'border-blue-500 bg-blue-500/5' : 'border-neutral-800'
-              } ${dayAttendance || isMonday ? STATUS_COLORS[status] : 'bg-neutral-900'}`}
+                isToday ? 'border-blue-500 bg-blue-500/5' : 'border-border'
+              } ${dayAttendance || isMonday ? STATUS_COLORS[status] : 'bg-secondary'}`}
             >
               <div className="text-[11px] font-bold mb-1">{format(day, 'd')}</div>
               {/* Show WEEK OFF for Monday even without attendance record */}
@@ -372,17 +372,17 @@ export default function EmployeeAttendancePage() {
                     {status.replace(/_/g, ' ')}
                   </div>
                   {dayAttendance.checkInTime && (
-                    <div className="text-[8px] text-neutral-400">
+                    <div className="text-[8px] text-muted-foreground">
                       IN: {formatAttendanceTime(dayAttendance.checkInTime, 'hh:mm a')}
                     </div>
                   )}
                   {dayAttendance.checkOutTime && (
-                    <div className="text-[8px] text-neutral-400">
+                    <div className="text-[8px] text-muted-foreground">
                       OUT: {formatAttendanceTime(dayAttendance.checkOutTime, 'hh:mm a')}
                     </div>
                   )}
                   {dayAttendance.workingHours && (
-                    <div className="text-[8px] text-neutral-400 font-mono">
+                    <div className="text-[8px] text-muted-foreground font-mono">
                       {formatWorkingHours(dayAttendance.workingHours)}
                     </div>
                   )}
@@ -400,22 +400,22 @@ export default function EmployeeAttendancePage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
             <Clock className="w-8 h-8 text-blue-500" /> My Attendance
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Mark your daily attendance and track your attendance history
           </p>
         </div>
 
         {/* Today's Attendance Card */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8">
+        <div className="bg-secondary border border-border rounded-2xl p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
               Today's Attendance
             </h2>
-            <span className="text-xs text-neutral-500 font-mono">
+            <span className="text-xs text-muted-foreground font-mono">
               {formatISTDate(new Date(), 'dd MMM yyyy, EEEE')}
             </span>
           </div>
@@ -428,7 +428,7 @@ export default function EmployeeAttendancePage() {
             <>
               {/* Status Badge */}
               <div className="mb-6">
-                <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-2">
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-2">
                   Status
                 </p>
                 <span
@@ -439,7 +439,7 @@ export default function EmployeeAttendancePage() {
                   {getStatusDisplay()}
                 </span>
                 {attendance?.lateBy && attendance.lateBy > 0 && (
-                  <span className="ml-3 text-xs text-amber-400">
+                  <span className="ml-3 text-xs text-amber-600">
                     Late by {attendance.lateBy} minutes
                   </span>
                 )}
@@ -447,27 +447,27 @@ export default function EmployeeAttendancePage() {
 
               {/* Time Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-2">
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-2">
                     Check In
                   </p>
-                  <p className="text-2xl font-bold text-white font-mono">
+                  <p className="text-2xl font-bold text-foreground font-mono">
                     {formatAttendanceTime(attendance?.checkInTime)}
                   </p>
                 </div>
-                <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-2">
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-2">
                     Check Out
                   </p>
-                  <p className="text-2xl font-bold text-white font-mono">
+                  <p className="text-2xl font-bold text-foreground font-mono">
                     {formatAttendanceTime(attendance?.checkOutTime)}
                   </p>
                 </div>
-                <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                  <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-2">
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-2">
                     Working Hours
                   </p>
-                  <p className="text-2xl font-bold text-white font-mono">
+                  <p className="text-2xl font-bold text-foreground font-mono">
                     {formatWorkingHours(attendance?.workingHours)}
                   </p>
                 </div>
@@ -475,8 +475,8 @@ export default function EmployeeAttendancePage() {
 
               {/* Action Buttons */}
               {todayData?.isMonday ? (
-                <div className="p-4 bg-neutral-800/50 border border-neutral-700 rounded-xl">
-                  <p className="text-sm text-neutral-400 text-center font-medium">
+                <div className="p-4 bg-secondary border border-border rounded-xl">
+                  <p className="text-sm text-muted-foreground text-center font-medium">
                     ðŸ“… Today is a weekly off.
                   </p>
                 </div>
@@ -486,7 +486,7 @@ export default function EmployeeAttendancePage() {
                     <button
                       onClick={handleCheckIn}
                       disabled={!canCheckIn || checkInMutation.isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-foreground font-bold rounded-xl transition-all"
                     >
                       {checkInMutation.isPending ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -498,7 +498,7 @@ export default function EmployeeAttendancePage() {
                     <button
                       onClick={handleCheckOut}
                       disabled={!canCheckOut || checkOutMutation.isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-secondary disabled:text-muted-foreground disabled:cursor-not-allowed text-foreground font-bold rounded-xl transition-all"
                     >
                       {checkOutMutation.isPending ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -514,8 +514,8 @@ export default function EmployeeAttendancePage() {
               {/* Location Warning */}
               {settings?.locationVerificationEnabled && !location && !locationError && (
                 <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-amber-400 mt-0.5" />
-                  <p className="text-xs text-amber-400">
+                  <MapPin className="w-4 h-4 text-amber-600 mt-0.5" />
+                  <p className="text-xs text-amber-600">
                     Location verification is enabled. Please allow location access to mark attendance.
                   </p>
                 </div>
@@ -524,24 +524,24 @@ export default function EmployeeAttendancePage() {
               {/* Location Error */}
               {locationError && (
                 <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />
-                  <p className="text-xs text-red-400">{locationError}</p>
+                  <AlertCircle className="w-4 h-4 text-red-600 mt-0.5" />
+                  <p className="text-xs text-red-600">{locationError}</p>
                 </div>
               )}
 
               {/* Error Messages */}
               {checkInMutation.isError && (
                 <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
-                  <XCircle className="w-4 h-4 text-red-400 mt-0.5" />
-                  <p className="text-xs text-red-400">
+                  <XCircle className="w-4 h-4 text-red-600 mt-0.5" />
+                  <p className="text-xs text-red-600">
                     {getErrorMessage(checkInMutation.error)}
                   </p>
                 </div>
               )}
               {checkOutMutation.isError && (
                 <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
-                  <XCircle className="w-4 h-4 text-red-400 mt-0.5" />
-                  <p className="text-xs text-red-400">
+                  <XCircle className="w-4 h-4 text-red-600 mt-0.5" />
+                  <p className="text-xs text-red-600">
                     {getErrorMessage(checkOutMutation.error)}
                   </p>
                 </div>
@@ -550,16 +550,16 @@ export default function EmployeeAttendancePage() {
               {/* Success Messages */}
               {checkInMutation.isSuccess && (
                 <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5" />
-                  <p className="text-xs text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5" />
+                  <p className="text-xs text-emerald-600">
                     Checked in successfully!
                   </p>
                 </div>
               )}
               {checkOutMutation.isSuccess && (
                 <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 mt-0.5" />
-                  <p className="text-xs text-blue-400">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5" />
+                  <p className="text-xs text-blue-600">
                     Checked out successfully!
                   </p>
                 </div>
@@ -570,38 +570,38 @@ export default function EmployeeAttendancePage() {
 
         {/* Monthly Summary */}
         {monthlyData?.summary && (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-white mb-4">Monthly Summary</h2>
+          <div className="bg-secondary border border-border rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-foreground mb-4">Monthly Summary</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                <p className="text-xs text-neutral-500 mb-1">Total Present</p>
-                <p className="text-2xl font-bold text-emerald-400">{monthlyData.summary.totalPresent}</p>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <p className="text-xs text-muted-foreground mb-1">Total Present</p>
+                <p className="text-2xl font-bold text-emerald-600">{monthlyData.summary.totalPresent}</p>
               </div>
-              <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                <p className="text-xs text-neutral-500 mb-1">Total Late</p>
-                <p className="text-2xl font-bold text-amber-400">{monthlyData.summary.totalLate}</p>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <p className="text-xs text-muted-foreground mb-1">Total Late</p>
+                <p className="text-2xl font-bold text-amber-600">{monthlyData.summary.totalLate}</p>
               </div>
-              <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                <p className="text-xs text-neutral-500 mb-1">Total Absent</p>
-                <p className="text-2xl font-bold text-red-400">{monthlyData.summary.totalAbsent}</p>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <p className="text-xs text-muted-foreground mb-1">Total Absent</p>
+                <p className="text-2xl font-bold text-red-600">{monthlyData.summary.totalAbsent}</p>
               </div>
-              <div className="bg-black/40 border border-neutral-850 rounded-xl p-4">
-                <p className="text-xs text-neutral-500 mb-1">Attendance %</p>
-                <p className="text-2xl font-bold text-blue-400">{monthlyData.summary.attendancePercentage}%</p>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <p className="text-xs text-muted-foreground mb-1">Attendance %</p>
+                <p className="text-2xl font-bold text-blue-600">{monthlyData.summary.attendancePercentage}%</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Monthly Calendar */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+        <div className="bg-secondary border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-white">Monthly Calendar</h2>
+            <h2 className="text-lg font-bold text-foreground">Monthly Calendar</h2>
             <div className="flex items-center gap-2">
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="bg-black border border-neutral-800 rounded-lg px-3 py-2 text-xs text-white"
+                className="bg-background border border-border rounded-lg px-3 py-2 text-xs text-foreground"
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>
@@ -612,7 +612,7 @@ export default function EmployeeAttendancePage() {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-black border border-neutral-800 rounded-lg px-3 py-2 text-xs text-white"
+                className="bg-background border border-border rounded-lg px-3 py-2 text-xs text-foreground"
               >
                 {[2024, 2025, 2026, 2027].map((year) => (
                   <option key={year} value={year}>
@@ -814,8 +814,8 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
 
   if (isLoading || uploadMonth === null || uploadYear === null) {
     return (
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+      <div className="bg-secondary border border-border rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-foreground mb-4">Uploaded Attendance</h2>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         </div>
@@ -825,15 +825,15 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
 
   if (!uploadedData || !uploadedData.records || uploadedData.records.length === 0) {
     return (
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+      <div className="bg-secondary border border-border rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-foreground mb-4">Uploaded Attendance</h2>
         
         {/* Month/Year Filters */}
         <div className="flex items-center gap-3 mb-6">
           <select
             value={uploadMonth}
             onChange={(e) => setUploadMonth(Number(e.target.value))}
-            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white"
+            className="bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground"
           >
             {monthNames.map((name, idx) => (
               <option key={idx + 1} value={idx + 1}>{name}</option>
@@ -842,7 +842,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
           <select
             value={uploadYear}
             onChange={(e) => setUploadYear(Number(e.target.value))}
-            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white"
+            className="bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground"
           >
             {availableYears.length > 0 ? (
               availableYears.map((year) => (
@@ -857,7 +857,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
         </div>
         
         <div className="text-center py-12">
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             No attendance Excel uploaded for {monthNames[uploadMonth - 1]} {uploadYear}
           </p>
         </div>
@@ -873,8 +873,8 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
   console.log('[UPLOADED-ATTENDANCE-UI] Rendering table with', records.length, 'rows and', allColumns.length, 'columns');
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-      <h2 className="text-lg font-bold text-white mb-4">Uploaded Attendance</h2>
+    <div className="bg-secondary border border-border rounded-2xl p-6">
+      <h2 className="text-lg font-bold text-foreground mb-4">Uploaded Attendance</h2>
       
       {/* Month/Year Filters + File Name */}
       <div className="mb-6 space-y-3">
@@ -882,7 +882,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
           <select
             value={uploadMonth}
             onChange={(e) => setUploadMonth(Number(e.target.value))}
-            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white font-semibold"
+            className="bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground font-semibold"
           >
             {monthNames.map((name, idx) => (
               <option key={idx + 1} value={idx + 1}>{name}</option>
@@ -891,7 +891,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
           <select
             value={uploadYear}
             onChange={(e) => setUploadYear(Number(e.target.value))}
-            className="bg-black border border-neutral-800 rounded-lg px-4 py-2 text-sm text-white font-semibold"
+            className="bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground font-semibold"
           >
             {availableYears.length > 0 ? (
               availableYears.map((year) => (
@@ -906,25 +906,25 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
         </div>
         
         {fileName && (
-          <div className="text-xs text-neutral-400 font-mono">
+          <div className="text-xs text-muted-foreground font-mono">
             ðŸ“„ {fileName}
           </div>
         )}
         
-        <div className="text-xs text-neutral-500">
+        <div className="text-xs text-muted-foreground">
           Showing complete attendance sheet: {records.length} employees, {allColumns.length} columns
         </div>
       </div>
 
       {/* Horizontally Scrollable Table */}
-      <div className="overflow-x-auto overflow-y-auto max-h-[600px] border border-neutral-800 rounded-xl">
+      <div className="overflow-x-auto overflow-y-auto max-h-[600px] border border-border rounded-xl">
         <table className="w-full border-collapse min-w-max">
-          <thead className="sticky top-0 bg-neutral-900 z-10">
-            <tr className="border-b border-neutral-800">
+          <thead className="sticky top-0 bg-secondary z-10">
+            <tr className="border-b border-border">
               {allColumns.map((col: string, idx: number) => (
                 <th
                   key={idx}
-                  className="text-left text-[10px] font-bold text-neutral-400 uppercase tracking-wider px-4 py-3 border-r border-neutral-800 whitespace-nowrap bg-neutral-900"
+                  className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-4 py-3 border-r border-border whitespace-nowrap bg-secondary"
                 >
                   {col}
                 </th>
@@ -936,7 +936,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
               const data = record.data || {};
               
               return (
-                <tr key={record.id || rowIdx} className="border-b border-neutral-800/40 hover:bg-neutral-800/20 transition-colors">
+                <tr key={record.id || rowIdx} className="border-b border-border hover:bg-secondary/50 transition-colors">
                   {allColumns.map((col: string, colIdx: number) => {
                     const value = data[col];
                     const displayValue = value !== undefined && value !== null && value !== '' ? String(value) : '--';
@@ -944,7 +944,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
                     return (
                       <td
                         key={colIdx}
-                        className="px-4 py-3 text-xs text-neutral-300 border-r border-neutral-800/40 whitespace-nowrap"
+                        className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap"
                       >
                         {displayValue}
                       </td>
@@ -957,7 +957,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
         </table>
       </div>
 
-      <div className="mt-4 text-xs text-neutral-500 italic">
+      <div className="mt-4 text-xs text-muted-foreground italic">
         â„¹ï¸ This is a read-only view of the uploaded attendance Excel. Scroll horizontally to see all columns.
       </div>
     </div>

@@ -105,14 +105,14 @@ export default function CompaniesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Companies</h1>
-          <p className="text-neutral-600 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Companies</h1>
+          <p className="text-muted-foreground mt-1">
             Manage all organizations on the platform
           </p>
         </div>
         <button
           onClick={() => router.push('/platform-admin/companies/create')}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-5 w-5" />
           Create Company
@@ -123,7 +123,7 @@ export default function CompaniesPage() {
       <Card className="p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search companies..."
@@ -151,11 +151,11 @@ export default function CompaniesPage() {
         </div>
       ) : companies.length === 0 ? (
         <Card className="p-12 text-center">
-          <Building2 className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <Building2 className="h-12 w-12 text-card-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             No companies found
           </h3>
-          <p className="text-neutral-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             {searchTerm || filterActive !== 'all'
               ? 'Try adjusting your filters'
               : 'Get started by creating your first company'}
@@ -163,7 +163,7 @@ export default function CompaniesPage() {
           {!searchTerm && filterActive === 'all' && (
             <button
               onClick={() => router.push('/platform-admin/companies/create')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Create Company
@@ -181,10 +181,10 @@ export default function CompaniesPage() {
                       <Building2 className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-neutral-900">
+                      <h3 className="text-lg font-semibold text-foreground">
                         {company.name}
                       </h3>
-                      <p className="text-sm text-neutral-600">
+                      <p className="text-sm text-muted-foreground">
                         Code: {company.code}
                       </p>
                     </div>
@@ -192,33 +192,33 @@ export default function CompaniesPage() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                     <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-4 w-4 text-neutral-500" />
-                      <span className="text-neutral-600">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
                         <strong>{company._count.employees}</strong> Employees
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Shield className="h-4 w-4 text-neutral-500" />
-                      <span className="text-neutral-600">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
                         <strong>{company._count.users}</strong> Users
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-neutral-500" />
-                      <span className="text-neutral-600">
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
                         <strong>{company._count.departments}</strong> Departments
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-neutral-500" />
-                      <span className="text-neutral-600">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
                         {new Date(company.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
 
                   {(company.email || company.phone) && (
-                    <div className="mt-4 flex gap-4 text-sm text-neutral-600">
+                    <div className="mt-4 flex gap-4 text-sm text-muted-foreground">
                       {company.email && <span>✉ {company.email}</span>}
                       {company.phone && <span>📞 {company.phone}</span>}
                     </div>
@@ -244,14 +244,14 @@ export default function CompaniesPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/platform-admin/companies/${company.id}`)}
-                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="p-2 bg-blue-600 text-foreground rounded-lg hover:bg-blue-700 transition-colors"
                       title="View Details"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => router.push(`/platform-admin/companies/${company.id}/edit`)}
-                      className="p-2 bg-neutral-600 text-white rounded-lg hover:bg-neutral-700 transition-colors"
+                      className="p-2 bg-neutral-600 text-foreground rounded-lg hover:bg-secondary/50 transition-colors"
                       title="Edit"
                     >
                       <Edit className="h-4 w-4" />

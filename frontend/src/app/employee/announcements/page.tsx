@@ -19,13 +19,13 @@ interface Announcement {
 const getCategoryIcon = (category: string) => {
   switch (category.toUpperCase()) {
     case 'HOLIDAY_NOTICE':
-      return <Calendar className="w-5 h-5 text-emerald-400" />;
+      return <Calendar className="w-5 h-5 text-emerald-600" />;
     case 'MEETING_NOTICE':
-      return <Clock className="w-5 h-5 text-blue-400" />;
+      return <Clock className="w-5 h-5 text-blue-600" />;
     case 'TRAINING_NOTICE':
-      return <Award className="w-5 h-5 text-purple-400" />;
+      return <Award className="w-5 h-5 text-purple-600" />;
     case 'COMPANY_NEWS':
-      return <Megaphone className="w-5 h-5 text-amber-400" />;
+      return <Megaphone className="w-5 h-5 text-amber-600" />;
     default:
       return <BookOpen className="w-5 h-5 text-indigo-400" />;
   }
@@ -73,35 +73,35 @@ export default function EmployeeAnnouncementsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+            <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
               <Megaphone className="w-8 h-8 text-indigo-500" />
               Company Announcements
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Stay up to date with official company news, holiday schedules, and training notices.
             </p>
           </div>
           <button
             onClick={fetchAnnouncements}
-            className="p-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl text-neutral-450 hover:text-white transition-all"
+            className="p-2.5 bg-secondary hover:bg-secondary border border-border rounded-xl text-muted-foreground hover:text-foreground transition-all"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
         {loading ? (
-          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-16 flex flex-col items-center justify-center text-neutral-500 gap-2">
+          <div className="bg-card border border-border rounded-3xl p-16 flex flex-col items-center justify-center text-muted-foreground gap-2">
             <div className="w-8 h-8 border-2 border-t-transparent border-blue-500 rounded-full animate-spin" />
             <span className="text-xs">Loading announcements...</span>
           </div>
         ) : announcements.length === 0 ? (
-          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-16 flex flex-col items-center justify-center text-center text-neutral-500 gap-4">
-            <div className="p-4 bg-neutral-900 border border-neutral-850 rounded-2xl">
-              <Inbox className="w-10 h-10 text-neutral-600" />
+          <div className="bg-card border border-border rounded-3xl p-16 flex flex-col items-center justify-center text-center text-muted-foreground gap-4">
+            <div className="p-4 bg-secondary border border-border rounded-2xl">
+              <Inbox className="w-10 h-10 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-neutral-350">No announcements yet</h3>
-              <p className="text-xs text-neutral-500 max-w-[280px] mx-auto mt-1">
+              <h3 className="text-base font-bold text-foreground">No announcements yet</h3>
+              <p className="text-xs text-muted-foreground max-w-[280px] mx-auto mt-1">
                 Your HR department has not posted any announcements recently. Check back later!
               </p>
             </div>
@@ -114,8 +114,8 @@ export default function EmployeeAnnouncementsPage() {
                 onMouseEnter={() => !ann.read && markRead(ann.recipientId)}
                 className={`border rounded-3xl p-6 flex flex-col justify-between transition-all relative overflow-hidden ${
                   ann.read
-                    ? 'border-neutral-900 bg-neutral-950/20 text-neutral-450 hover:bg-neutral-900/10'
-                    : 'border-neutral-850 bg-neutral-900/20 text-neutral-100 hover:bg-neutral-900/40 shadow-xl'
+                    ? 'border-border bg-card text-muted-foreground hover:bg-card'
+                    : 'border-border bg-secondary/30 text-neutral-100 hover:bg-secondary/30 shadow-xl'
                 }`}
               >
                 {/* Unread Indicator Glow */}
@@ -126,7 +126,7 @@ export default function EmployeeAnnouncementsPage() {
                 <div className="space-y-4">
                   {/* Category Header */}
                   <div className="flex items-center justify-between">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       {getCategoryIcon(ann.category)}
                       {getCategoryLabel(ann.category)}
                     </div>
@@ -140,19 +140,19 @@ export default function EmployeeAnnouncementsPage() {
 
                   {/* Title & Content */}
                   <div className="space-y-2">
-                    <h3 className={`text-lg font-bold ${ann.read ? 'text-neutral-350' : 'text-white'}`}>
+                    <h3 className={`text-lg font-bold ${ann.read ? 'text-foreground' : 'text-foreground'}`}>
                       {ann.title}
                     </h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed whitespace-pre-line">
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                       {ann.content}
                     </p>
                   </div>
                 </div>
 
                 {/* Footer Metadata */}
-                <div className="border-t border-neutral-900/60 pt-4 mt-6 flex items-center justify-between text-xs text-neutral-500">
+                <div className="border-t border-border pt-4 mt-6 flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-neutral-600" />
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>Posted by {ann.author}</span>
                   </div>
                   <span className="font-mono">

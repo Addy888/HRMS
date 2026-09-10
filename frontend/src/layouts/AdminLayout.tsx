@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface SidebarLinkProps {
   href: string;
@@ -31,8 +32,8 @@ const SidebarLink = ({ href, icon, children, active, onClick }: SidebarLinkProps
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
         active
-          ? 'bg-neutral-800 text-white shadow-md border border-neutral-700'
-          : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50'
+          ? 'bg-secondary text-card-foreground shadow-sm border border-border'
+          : 'text-muted-foreground hover:text-card-foreground hover:bg-secondary/50'
       }`}
     >
       {icon}
@@ -73,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!isHydrated || !isAuthenticated || !user || !isSuperAdmin) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-t-transparent border-purple-500 rounded-full animate-spin"></div>
       </div>
     );
@@ -93,34 +94,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-neutral-950 border-b border-neutral-800 z-50 px-4 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 px-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+            className="lg:hidden p-2 hover:bg-secondary rounded-lg transition-colors"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+              <Shield className="w-5 h-5 text-foreground" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-sm font-bold text-white">Super Admin Portal</h1>
-              <p className="text-xs text-neutral-500">System Management</p>
+              <h1 className="text-sm font-bold text-card-foreground">Super Admin Portal</h1>
+              <p className="text-xs text-muted-foreground">System Management</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-3 px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-lg">
-            <div className="w-8 h-8 bg-purple-500/10 text-purple-400 rounded-lg flex items-center justify-center font-bold text-sm">
+          <ThemeToggle />
+          <div className="hidden md:flex items-center gap-3 px-3 py-2 bg-secondary/50 border border-border rounded-lg">
+            <div className="w-8 h-8 bg-purple-500/10 text-purple-600 rounded-lg flex items-center justify-center font-bold text-sm">
               SA
             </div>
             <div className="text-left">
-              <p className="text-xs font-semibold text-white">Super Admin</p>
-              <p className="text-xs text-neutral-500">{user.email}</p>
+              <p className="text-xs font-semibold text-card-foreground">Super Admin</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
           </div>
         </div>
@@ -129,7 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="pt-16 flex">
         {/* Sidebar */}
         <aside
-          className={`fixed top-16 left-0 bottom-0 w-64 bg-neutral-950 border-r border-neutral-800 p-4 space-y-2 overflow-y-auto transition-transform lg:translate-x-0 z-40 ${
+          className={`fixed top-16 left-0 bottom-0 w-64 bg-card border-r border-border p-4 space-y-2 overflow-y-auto transition-transform lg:translate-x-0 z-40 shadow-sm ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -147,7 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all w-full mt-8"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-500/10 hover:text-red-300 transition-all w-full mt-8"
           >
             <LogOut className="w-5 h-5" />
             Logout

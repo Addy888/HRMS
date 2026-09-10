@@ -122,15 +122,15 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* Modal Header - Fixed */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
           <div>
-            <h2 className="font-heading text-xl font-bold text-white">Create New Employee</h2>
-            <p className="text-sm text-neutral-400 mt-0.5">A login will be automatically generated with password: <code className="text-amber-400 font-mono">1234</code></p>
+            <h2 className="font-heading text-xl font-bold text-foreground">Create New Employee</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">A login will be automatically generated with password: <code className="text-amber-600 font-mono">1234</code></p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -140,8 +140,8 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto">
             {/* Employee ID Mode Selection */}
-            <div className="px-6 pt-6 pb-4 border-b border-neutral-800">
-              <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider mb-3 block">
+            <div className="px-6 pt-6 pb-4 border-b border-border">
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3 block">
                 Employee ID
               </label>
               <div className="flex gap-3 mb-4">
@@ -150,8 +150,8 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                   onClick={() => setEmployeeIdMode('auto')}
                   className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
                     employeeIdMode === 'auto'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
+                      ? 'bg-blue-600 text-foreground'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary/50'
                   }`}
                 >
                   Auto Generate
@@ -161,8 +161,8 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                   onClick={() => setEmployeeIdMode('manual')}
                   className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
                     employeeIdMode === 'manual'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'
+                      ? 'bg-blue-600 text-foreground'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary/50'
                   }`}
                 >
                   Enter Manually
@@ -170,19 +170,19 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
               </div>
 
               {employeeIdMode === 'auto' ? (
-                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+                <div className="bg-secondary border border-border rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <Info className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs text-neutral-400 font-semibold">Next Employee ID</span>
+                    <Info className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs text-muted-foreground font-semibold">Next Employee ID</span>
                   </div>
-                  <div className="text-lg font-bold text-white font-mono">{nextEmployeeId}</div>
-                  <p className="text-xs text-neutral-500 mt-2">
+                  <div className="text-lg font-bold text-foreground font-mono">{nextEmployeeId}</div>
+                  <p className="text-xs text-muted-foreground mt-2">
                     Employee ID will be automatically assigned upon creation.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                     Employee ID *
                   </label>
                   <input
@@ -191,10 +191,10 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                     value={form.employeeId}
                     onChange={handleChange}
                     placeholder="FCS0155"
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                    className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors font-mono"
                     required={employeeIdMode === 'manual'}
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Enter a unique Employee ID for this employee (format: FCS####)
                   </p>
                 </div>
@@ -211,26 +211,26 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                 { label: 'Joining Date', name: 'joiningDate', type: 'date', placeholder: '' },
               ].map((field) => (
                 <div key={field.name} className="space-y-1.5">
-                  <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">{field.label}</label>
+                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{field.label}</label>
                   <input
                     type={field.type}
                     name={field.name}
                     value={(form as any)[field.name]}
                     onChange={handleChange}
                     placeholder={field.placeholder}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
               ))}
 
               {/* Gender Select */}
               <div className="space-y-1.5">
-                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Gender</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Gender</label>
                 <select
                   name="gender"
                   value={form.gender}
                   onChange={handleChange}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 >
                   <option value="">Select Gender</option>
                   <option value="MALE">Male</option>
@@ -241,7 +241,7 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
 
               {/* Process Text Input */}
               <div className="space-y-1.5">
-                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                   Process
                 </label>
                 <input
@@ -253,16 +253,16 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                     handleChange(e);
                   }}
                   placeholder="IT, Manager, VTP, Administration, etc."
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 />
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Type the process/department name (e.g., IT, VTP, Sales)
                 </p>
               </div>
 
               {/* Designation Select */}
               <div className="space-y-1.5">
-                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                   Designation {loadingDesignations && '(Loading...)'}
                 </label>
                 <select
@@ -276,7 +276,7 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                     handleChange(e);
                   }}
                   disabled={loadingDesignations}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
                 >
                   <option value="">Select Designation</option>
                   {designations.map((d: any) => {
@@ -285,13 +285,13 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                   })}
                 </select>
                 {designations.length === 0 && !loadingDesignations && (
-                  <p className="text-xs text-amber-400">No designations found. You can create one or leave empty.</p>
+                  <p className="text-xs text-amber-600">No designations found. You can create one or leave empty.</p>
                 )}
               </div>
 
               {/* Monthly Salary */}
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Monthly Salary (₹ INR) *</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Monthly Salary (₹ INR) *</label>
                 <input
                   type="number"
                   name="monthlySalary"
@@ -301,32 +301,32 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
                   min="1"
                   step="1"
                   required
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
 
             {/* Info Box */}
             <div className="mx-6 mb-6 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-              <p className="text-xs text-amber-400/80 font-medium leading-relaxed">
+              <p className="text-xs text-amber-600/80 font-medium leading-relaxed">
                 The employee will receive temporary password: <code className="font-mono font-bold">1234</code>. They will be prompted to change it on first login.
               </p>
             </div>
           </div>
 
           {/* Modal Footer - Fixed */}
-          <div className="flex gap-3 px-6 py-4 border-t border-neutral-800 shrink-0 bg-neutral-950">
+          <div className="flex gap-3 px-6 py-4 border-t border-border shrink-0 bg-card">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors"
+              className="flex-1 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {createMutation.isPending ? 'Creating...' : 'Create Employee'}

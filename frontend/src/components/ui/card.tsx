@@ -37,7 +37,7 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
     return (
       <h3
         ref={ref}
-        className={`text-lg font-semibold text-neutral-900 ${className}`}
+        className={`text-lg font-semibold text-foreground ${className}`}
         {...props}
       />
     );

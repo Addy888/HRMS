@@ -8,6 +8,7 @@ import useAuthStore from '@/store/authStore';
 import { Eye, EyeOff, Loader2, Users, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import OtpVerification from '@/components/auth/OtpVerification';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function EmployeeLoginPage() {
   const router = useRouter();
@@ -139,7 +140,12 @@ export default function EmployeeLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[120px]" />
       </div>
@@ -148,13 +154,13 @@ export default function EmployeeLoginPage() {
         {!requiresOtp && (
           <button
             onClick={() => router.push('/login')}
-            className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-355 transition-colors mb-6 font-semibold"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6 font-semibold"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Selection
           </button>
         )}
 
-        <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl">
+        <div className="bg-card border border-border rounded-3xl p-8 shadow-2xl">
           {requiresOtp ? (
             <OtpVerification
               maskedPhone={maskedPhone}
@@ -169,18 +175,18 @@ export default function EmployeeLoginPage() {
           ) : (
             <>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-xl flex items-center justify-center">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="font-heading text-lg font-bold text-white">Employee Login</h2>
-                  <p className="text-xs text-neutral-500">FCS Corporate Operations</p>
+                  <h2 className="font-heading text-lg font-bold text-foreground">Employee Login</h2>
+                  <p className="text-xs text-muted-foreground">FCS Corporate Operations</p>
                 </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-neutral-400 uppercase">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase">
                     Corporate Email
                   </label>
                   <input
@@ -188,16 +194,16 @@ export default function EmployeeLoginPage() {
                     placeholder="you@fcs.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-neutral-400 uppercase">Password</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Password</label>
                     <Link
                       href="/forgot-password"
-                      className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+                      className="text-xs text-emerald-600 hover:text-emerald-300 font-medium"
                     >
                       Forgot Password?
                     </Link>
@@ -208,12 +214,12 @@ export default function EmployeeLoginPage() {
                       placeholder="Enter password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 pr-12 text-sm text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-2.5 pr-12 text-sm text-foreground focus:outline-none focus:border-emerald-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-355"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -227,18 +233,18 @@ export default function EmployeeLoginPage() {
                     id="remember-emp"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 bg-neutral-950 border border-neutral-800 rounded text-emerald-500 focus:ring-0 cursor-pointer"
+                    className="w-4 h-4 bg-background border border-border rounded text-emerald-500 focus:ring-0 cursor-pointer"
                   />
                   <label
                     htmlFor="remember-emp"
-                    className="text-xs text-neutral-400 font-medium select-none cursor-pointer"
+                    className="text-xs text-muted-foreground font-medium select-none cursor-pointer"
                   >
                     Remember me for 30 days
                   </label>
                 </div>
 
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-400 font-semibold leading-relaxed">
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-600 font-semibold leading-relaxed">
                     {error}
                   </div>
                 )}
@@ -246,7 +252,7 @@ export default function EmployeeLoginPage() {
                 <button
                   type="submit"
                   disabled={loginMutation.isPending}
-                  className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-950/20"
+                  className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-950/20"
                 >
                   {loginMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {loginMutation.isPending ? 'Authenticating...' : 'Sign In as Employee'}

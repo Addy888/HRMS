@@ -2474,6 +2474,7 @@ model CompanyPolicy {
   @@index([organizationId])
   @@index([status])
   @@index([createdAt])
+  @@map("companypolicy") // Map to lowercase table name in database
 }
 
 // Company Policy Acceptance Tracking
@@ -2494,6 +2495,7 @@ model CompanyPolicyAcceptance {
   @@unique([companyPolicyId, employeeId])
   @@index([employeeId])
   @@index([status])
+  @@map("companypolicyacceptance") // Map to lowercase table name in database
 }
 
 // ==========================================

@@ -26,18 +26,18 @@ import { format, getDaysInMonth, startOfMonth, endOfMonth, eachDayOfInterval } f
 import { toZonedTime } from 'date-fns-tz';
 
 const STATUS_COLORS: Record<string, string> = {
-  PRESENT: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  LATE: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  ABSENT: 'bg-red-500/10 text-red-400 border-red-500/20',
-  HALF_DAY: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  ON_LEAVE: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  LEAVE: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  WEEK_OFF: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+  PRESENT: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  LATE: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  ABSENT: 'bg-red-500/10 text-red-600 border-red-500/20',
+  HALF_DAY: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  ON_LEAVE: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  LEAVE: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  WEEK_OFF: 'bg-secondary text-muted-foreground border-border',
   HOLIDAY: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   WFH: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   ON_DUTY: 'bg-green-500/10 text-green-400 border-green-500/20',
-  PENDING: 'bg-neutral-800 text-neutral-400 border-neutral-700',
-  NOT_MARKED: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+  PENDING: 'bg-secondary text-muted-foreground border-border',
+  NOT_MARKED: 'bg-secondary text-muted-foreground border-border',
 };
 
 // Helper to unwrap API response envelope
@@ -50,10 +50,10 @@ function unwrapResponse(response: any) {
 
 function StatCard({ title, value, icon: Icon, color }: any) {
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex items-center justify-between">
+    <div className="bg-secondary border border-border rounded-2xl p-5 flex items-center justify-between">
       <div>
-        <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">{title}</p>
-        <p className="text-2xl font-extrabold text-white mt-1.5">{value ?? 0}</p>
+        <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{title}</p>
+        <p className="text-2xl font-extrabold text-foreground mt-1.5">{value ?? 0}</p>
       </div>
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color} shrink-0`}>
         <Icon className="w-5 h-5" />
@@ -172,7 +172,7 @@ export default function EmployeeMonthlyAttendancePage() {
       <HRLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
           <XCircle className="w-12 h-12 text-red-500" />
-          <p className="text-neutral-400">Employee not found</p>
+          <p className="text-muted-foreground">Employee not found</p>
         </div>
       </HRLayout>
     );
@@ -202,7 +202,7 @@ export default function EmployeeMonthlyAttendancePage() {
         <div className="print:hidden">
           <button
             onClick={() => router.push('/hr/attendance')}
-            className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Back to Attendance</span>
@@ -212,11 +212,11 @@ export default function EmployeeMonthlyAttendancePage() {
         {/* Header */}
         <div className="flex items-start justify-between print:mb-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-3">
               <Calendar className="w-8 h-8 text-blue-500" />
               Employee Attendance
             </h1>
-            <p className="text-sm text-neutral-400 mt-1 print:text-neutral-600">
+            <p className="text-sm text-muted-foreground mt-1 print:text-muted-foreground">
               {employee.firstName} {employee.lastName}
             </p>
           </div>
@@ -225,21 +225,21 @@ export default function EmployeeMonthlyAttendancePage() {
           <div className="flex items-center gap-2 print:hidden">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-sm font-medium text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 rounded-xl text-sm font-medium text-foreground transition-colors"
             >
               <Printer className="w-4 h-4" />
               Print
             </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-medium text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-medium text-foreground transition-colors"
             >
               <FileSpreadsheet className="w-4 h-4" />
               Export Excel
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-medium text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-medium text-foreground transition-colors"
             >
               <FileText className="w-4 h-4" />
               Export PDF
@@ -248,37 +248,37 @@ export default function EmployeeMonthlyAttendancePage() {
         </div>
 
         {/* Employee Information Card */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 print:border-neutral-300">
+        <div className="bg-secondary border border-border rounded-2xl p-6 print:border-neutral-300">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider print:text-neutral-600">
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider print:text-muted-foreground">
                 Employee Name
               </p>
-              <p className="text-sm font-semibold text-white mt-1 print:text-black">
+              <p className="text-sm font-semibold text-foreground mt-1 print:text-black">
                 {employee.firstName} {employee.lastName}
               </p>
             </div>
             <div>
-              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider print:text-neutral-600">
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider print:text-muted-foreground">
                 Employee ID
               </p>
-              <p className="text-sm font-semibold text-white mt-1 font-mono print:text-black">
+              <p className="text-sm font-semibold text-foreground mt-1 font-mono print:text-black">
                 {employee.employeeId}
               </p>
             </div>
             <div>
-              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider print:text-neutral-600">
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider print:text-muted-foreground">
                 Department
               </p>
-              <p className="text-sm font-semibold text-white mt-1 print:text-black">
+              <p className="text-sm font-semibold text-foreground mt-1 print:text-black">
                 {employee.department?.name || '—'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider print:text-neutral-600">
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider print:text-muted-foreground">
                 Designation
               </p>
-              <p className="text-sm font-semibold text-white mt-1 print:text-black">
+              <p className="text-sm font-semibold text-foreground mt-1 print:text-black">
                 {employee.designation?.name || '—'}
               </p>
             </div>
@@ -288,13 +288,13 @@ export default function EmployeeMonthlyAttendancePage() {
         {/* Month & Year Selector - Hide on print */}
         <div className="flex items-center gap-3 print:hidden">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-neutral-500" />
-            <span className="text-sm text-neutral-400 font-semibold">Select Period:</span>
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground font-semibold">Select Period:</span>
           </div>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="bg-black border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            className="bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {months.map((month) => (
               <option key={month.value} value={month.value}>
@@ -305,7 +305,7 @@ export default function EmployeeMonthlyAttendancePage() {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="bg-black border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            className="bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500"
           >
             {years.map((year) => (
               <option key={year} value={year}>
@@ -334,43 +334,43 @@ export default function EmployeeMonthlyAttendancePage() {
                 title="Total Working Days"
                 value={summary.totalWorkingDays || 0}
                 icon={Calendar}
-                color="bg-blue-500/10 text-blue-400"
+                color="bg-blue-500/10 text-blue-600"
               />
               <StatCard
                 title="Present"
                 value={summary.totalPresent || 0}
                 icon={CheckCircle2}
-                color="bg-emerald-500/10 text-emerald-400"
+                color="bg-emerald-500/10 text-emerald-600"
               />
               <StatCard
                 title="Late"
                 value={summary.totalLate || 0}
                 icon={AlertCircle}
-                color="bg-amber-500/10 text-amber-400"
+                color="bg-amber-500/10 text-amber-600"
               />
               <StatCard
                 title="Half Day"
                 value={summary.totalHalfDay || 0}
                 icon={MinusCircle}
-                color="bg-blue-500/10 text-blue-400"
+                color="bg-blue-500/10 text-blue-600"
               />
               <StatCard
                 title="Absent"
                 value={summary.totalAbsent || 0}
                 icon={XCircle}
-                color="bg-red-500/10 text-red-400"
+                color="bg-red-500/10 text-red-600"
               />
               <StatCard
                 title="Week Off"
                 value={summary.totalWeekOffs || 0}
                 icon={Home}
-                color="bg-neutral-700/50 text-neutral-300"
+                color="bg-secondary/50 text-card-foreground"
               />
               <StatCard
                 title="Leave"
                 value={(summary.totalWFH || 0) + (summary.totalOnDuty || 0)}
                 icon={Coffee}
-                color="bg-purple-500/10 text-purple-400"
+                color="bg-purple-500/10 text-purple-600"
               />
               <StatCard
                 title="Attendance %"
@@ -382,31 +382,31 @@ export default function EmployeeMonthlyAttendancePage() {
 
             {/* Working Hours Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-2">
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 print:border-neutral-300">
+              <div className="bg-secondary border border-border rounded-2xl p-5 print:border-neutral-300">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-indigo-500/10 text-indigo-400 shrink-0">
                     <Clock className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider print:text-neutral-600">
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider print:text-muted-foreground">
                       Total Working Hours
                     </p>
-                    <p className="text-2xl font-extrabold text-white mt-0.5 print:text-black">
+                    <p className="text-2xl font-extrabold text-foreground mt-0.5 print:text-black">
                       {formatHours(summary.totalWorkingHours)}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 print:border-neutral-300">
+              <div className="bg-secondary border border-border rounded-2xl p-5 print:border-neutral-300">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-cyan-500/10 text-cyan-400 shrink-0">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider print:text-neutral-600">
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider print:text-muted-foreground">
                       Average Working Hours
                     </p>
-                    <p className="text-2xl font-extrabold text-white mt-0.5 print:text-black">
+                    <p className="text-2xl font-extrabold text-foreground mt-0.5 print:text-black">
                       {formatHours(summary.averageWorkingHours)}
                     </p>
                   </div>
@@ -415,30 +415,30 @@ export default function EmployeeMonthlyAttendancePage() {
             </div>
 
             {/* Monthly Attendance Table */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden print:border-neutral-300">
+            <div className="bg-secondary border border-border rounded-2xl overflow-hidden print:border-neutral-300">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-neutral-800 bg-neutral-900/50 print:bg-neutral-100 print:border-neutral-300">
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                    <tr className="border-b border-border bg-secondary print:bg-neutral-100 print:border-neutral-300">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Date
                       </th>
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Day
                       </th>
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Check In
                       </th>
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Check Out
                       </th>
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Working Hours
                       </th>
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Status
                       </th>
-                      <th className="text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-6 py-4 print:text-neutral-700">
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Late By
                       </th>
                     </tr>
@@ -456,21 +456,21 @@ export default function EmployeeMonthlyAttendancePage() {
                       return (
                         <tr
                           key={day.dateKey}
-                          className="hover:bg-neutral-800/35 transition-colors print:hover:bg-transparent"
+                          className="hover:bg-secondary/50 transition-colors print:hover:bg-transparent"
                         >
-                          <td className="px-6 py-4 text-sm font-semibold text-white print:text-black">
+                          <td className="px-6 py-4 text-sm font-semibold text-foreground print:text-black">
                             {format(day.date, 'dd MMM')}
                           </td>
-                          <td className="px-6 py-4 text-xs text-neutral-400 print:text-neutral-700">
+                          <td className="px-6 py-4 text-xs text-muted-foreground print:text-card-foreground">
                             {day.dayName}
                           </td>
-                          <td className="px-6 py-4 text-xs text-neutral-300 font-mono print:text-black">
+                          <td className="px-6 py-4 text-xs text-card-foreground font-mono print:text-black">
                             {att ? formatTime(att.checkInTime) : '—'}
                           </td>
-                          <td className="px-6 py-4 text-xs text-neutral-300 font-mono print:text-black">
+                          <td className="px-6 py-4 text-xs text-card-foreground font-mono print:text-black">
                             {att ? formatTime(att.checkOutTime) : '—'}
                           </td>
-                          <td className="px-6 py-4 text-xs text-neutral-300 font-mono print:text-black">
+                          <td className="px-6 py-4 text-xs text-card-foreground font-mono print:text-black">
                             {att && att.workingHours ? formatHours(att.workingHours) : '00h 00m'}
                           </td>
                           <td className="px-6 py-4">
@@ -482,7 +482,7 @@ export default function EmployeeMonthlyAttendancePage() {
                               {status.replace(/_/g, ' ')}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-xs text-neutral-400 font-mono print:text-neutral-700">
+                          <td className="px-6 py-4 text-xs text-muted-foreground font-mono print:text-card-foreground">
                             {att?.lateBy ? `${att.lateBy}m` : '—'}
                           </td>
                         </tr>

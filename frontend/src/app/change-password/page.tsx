@@ -62,7 +62,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-card flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-200px] right-[-100px] w-[500px] h-[500px] bg-amber-600/8 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] bg-blue-600/8 rounded-full blur-[100px]" />
@@ -71,21 +71,21 @@ export default function ChangePasswordPage() {
       <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-xl shadow-amber-900/40 mb-4">
-            <Lock className="w-8 h-8 text-white" />
+            <Lock className="w-8 h-8 text-foreground" />
           </div>
-          <h1 className="font-heading text-2xl font-extrabold text-white">Change Your Password</h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <h1 className="font-heading text-2xl font-extrabold text-foreground">Change Your Password</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             A new password is required before you continue.
           </p>
         </div>
 
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 mb-6">
-          <p className="text-xs text-amber-400/80 font-medium text-center">
+          <p className="text-xs text-amber-600/80 font-medium text-center">
             🔐 For your security, please set a strong personal password to replace your temporary credentials.
           </p>
         </div>
 
-        <div className="bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-2xl p-8 shadow-2xl shadow-black/40">
+        <div className="bg-neutral-900/80 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-2xl shadow-black/40">
           <form onSubmit={handleSubmit} className="space-y-5">
             {[
               { label: 'Current Password (Temporary)', value: currentPassword, onChange: setCurrentPassword, id: 'current-pw', show: true },
@@ -93,17 +93,17 @@ export default function ChangePasswordPage() {
               { label: 'Confirm New Password', value: confirmPassword, onChange: setConfirmPassword, id: 'confirm-pw', show: showNew },
             ].map((field) => (
               <div key={field.id} className="space-y-1.5">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">{field.label}</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{field.label}</label>
                 <div className="relative">
                   <input
                     id={field.id}
                     type={field.show ? 'text' : 'password'}
                     value={field.value}
                     onChange={(e) => field.onChange(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all"
+                    className="w-full bg-card border border-border rounded-xl px-4 py-3 pr-12 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all"
                   />
                   {field.toggle && (
-                    <button type="button" onClick={field.toggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors">
+                    <button type="button" onClick={field.toggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground transition-colors">
                       {field.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   )}
@@ -112,7 +112,7 @@ export default function ChangePasswordPage() {
             ))}
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-medium animate-in fade-in duration-200">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-600 font-medium animate-in fade-in duration-200">
                 {error}
               </div>
             )}
@@ -120,7 +120,7 @@ export default function ChangePasswordPage() {
             <button
               type="submit"
               disabled={changeMutation.isPending}
-              className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-900/30 mt-2"
+              className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 text-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-900/30 mt-2"
             >
               {changeMutation.isPending ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Updating password...</>
@@ -129,7 +129,7 @@ export default function ChangePasswordPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-neutral-600 mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-6">
           © {new Date().getFullYear()} FCS · Secure Enterprise HRMS
         </p>
       </div>

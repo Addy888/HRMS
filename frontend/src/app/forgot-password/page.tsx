@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-card flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-200px] left-[-200px] w-[500px] h-[500px] bg-amber-600/5 rounded-full blur-[120px]" />
       </div>
@@ -112,13 +112,13 @@ export default function ForgotPasswordPage() {
         {!requiresOtp && (
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-350 transition-colors mb-6 font-semibold"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-neutral-350 transition-colors mb-6 font-semibold"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
         )}
 
-        <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl space-y-6">
+        <div className="bg-secondary border border-border rounded-3xl p-8 shadow-2xl space-y-6">
           {requiresOtp ? (
             <OtpVerification
               maskedPhone={maskedPhone}
@@ -133,40 +133,40 @@ export default function ForgotPasswordPage() {
           ) : (
             <>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-xl flex items-center justify-center">
                   <KeyRound className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="font-heading text-lg font-bold text-white">Reset Password</h2>
-                  <p className="text-xs text-neutral-500">Recover your account credentials</p>
+                  <h2 className="font-heading text-lg font-bold text-foreground">Reset Password</h2>
+                  <p className="text-xs text-muted-foreground">Recover your account credentials</p>
                 </div>
               </div>
 
               {success ? (
                 <div className="space-y-4">
                   <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                    <div className="text-xs text-neutral-300 leading-relaxed">
-                      <p className="font-semibold text-emerald-400">Request Sent Successfully</p>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="text-xs text-card-foreground leading-relaxed">
+                      <p className="font-semibold text-emerald-600">Request Sent Successfully</p>
                       <p className="mt-1">{success}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => router.push('/reset-password')}
-                    className="w-full py-2.5 bg-neutral-800 hover:bg-neutral-750 text-white rounded-xl text-xs font-bold transition-colors border border-neutral-700"
+                    className="w-full py-2.5 bg-secondary hover:bg-neutral-750 text-foreground rounded-xl text-xs font-bold transition-colors border border-border"
                   >
                     Proceed to Enter Reset Token
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <p className="text-xs text-neutral-400 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Enter your registered corporate email address. Employees will receive an OTP on their
                     registered mobile number.
                   </p>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-400 uppercase">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">
                       Email Address
                     </label>
                     <div className="relative">
@@ -175,14 +175,14 @@ export default function ForgotPasswordPage() {
                         placeholder="you@fcs.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                        className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-amber-500"
                       />
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
 
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-400 font-semibold leading-relaxed">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-600 font-semibold leading-relaxed">
                       {error}
                     </div>
                   )}
@@ -190,7 +190,7 @@ export default function ForgotPasswordPage() {
                   <button
                     type="submit"
                     disabled={forgotMutation.isPending}
-                    className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-950/20"
+                    className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 text-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-950/20"
                   >
                     {forgotMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     {forgotMutation.isPending ? 'Sending...' : 'Request Password Reset'}

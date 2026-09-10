@@ -72,10 +72,11 @@ export class AuthService implements OnModuleInit {
       
       // 2. Ensure Super Admin role exists
       const superAdminRole = await this.prisma.role.upsert({
-        where: { name: 'Super Admin' },
+        where: { name: 'SUPER_ADMIN' },
         update: {},
         create: {
-          name: 'Super Admin',
+          name: 'SUPER_ADMIN',
+          displayName: 'Super Admin',
           description: 'System Super Administrator with full access',
           level: 100,
           isSystem: true,
@@ -89,14 +90,14 @@ export class AuthService implements OnModuleInit {
       });
 
       if (existingUser) {
-        // If user exists but role is not Super Admin, update it
-        if (existingUser.role.name !== 'Super Admin') {
+        // If user exists but role is not SUPER_ADMIN, update it
+        if (existingUser.role.name !== 'SUPER_ADMIN') {
           await this.prisma.user.update({
             where: { email: superAdminEmail },
             data: { roleId: superAdminRole.id },
           });
           this.logger.log(
-            `✔ User role updated to Super Admin: ${superAdminEmail}`,
+            `✔ User role updated to SUPER_ADMIN: ${superAdminEmail}`,
           );
         } else {
           this.logger.log(`✔ Super Admin already exists: ${superAdminEmail}`);

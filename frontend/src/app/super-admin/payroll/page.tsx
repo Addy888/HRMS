@@ -18,16 +18,16 @@ import {
 
 function StatCard({ title, value, icon: Icon, gradient }: any) {
   return (
-    <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+    <div className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-2">
+          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
             {title}
           </p>
-          <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
+          <h3 className="text-3xl font-bold text-foreground mb-1">{value}</h3>
         </div>
         <div className={`p-3 rounded-xl ${gradient}`}>
-          <Icon className="w-6 h-6 text-white" />
+          <Icon className="w-6 h-6 text-foreground" />
         </div>
       </div>
     </div>
@@ -85,11 +85,11 @@ export default function SuperAdminPayrollPage() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Header */}
           <div>
-            <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+            <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
               <DollarSign className="w-8 h-8 text-purple-500" />
               Payroll Overview
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Company-wide payroll summary by department and process
             </p>
           </div>
@@ -123,15 +123,15 @@ export default function SuperAdminPayrollPage() {
           </div>
 
           {/* Search */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search by process/department..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-full bg-secondary border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
           </div>
@@ -139,27 +139,27 @@ export default function SuperAdminPayrollPage() {
           {/* Summary Cards */}
           {!isLoading && filteredProcesses.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
-                <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-2">
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
                   Total Basic Salary
                 </p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-foreground">
                   ₹{totalBasicSalary.toLocaleString('en-IN')}
                 </p>
               </div>
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
-                <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-2">
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
                   Total Incentive
                 </p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-foreground">
                   ₹{totalIncentive.toLocaleString('en-IN')}
                 </p>
               </div>
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
-                <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-2">
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
                   Total Monthly Payroll
                 </p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-foreground">
                   ₹{totalPayroll.toLocaleString('en-IN')}
                 </p>
               </div>
@@ -167,13 +167,13 @@ export default function SuperAdminPayrollPage() {
           )}
 
           {/* Process Payroll Table */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-neutral-800">
-              <h2 className="font-heading text-xl font-bold text-white flex items-center gap-2">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
                 <Layers className="w-5 h-5 text-purple-500" />
                 Payroll by Process/Department
               </h2>
-              <p className="text-sm text-neutral-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Detailed payroll breakdown by organizational structure
               </p>
             </div>
@@ -181,7 +181,7 @@ export default function SuperAdminPayrollPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
-                  <tr className="bg-neutral-900 border-b border-neutral-800 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                  <tr className="bg-secondary border-b border-border text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                     <th className="px-6 py-4">Process/Department</th>
                     <th className="px-6 py-4 text-center">Employees</th>
                     <th className="px-6 py-4 text-center">Active</th>
@@ -192,7 +192,7 @@ export default function SuperAdminPayrollPage() {
                     <th className="px-6 py-4 text-right">Avg Salary</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-900">
+                <tbody className="divide-y divide-border">
                   {isLoading ? (
                     <tr>
                       <td colSpan={8} className="text-center py-20">
@@ -203,8 +203,8 @@ export default function SuperAdminPayrollPage() {
                     <tr>
                       <td colSpan={8} className="text-center py-20">
                         <div className="flex flex-col items-center gap-3">
-                          <Layers className="w-12 h-12 text-neutral-700" />
-                          <span className="text-neutral-400 font-medium">
+                          <Layers className="w-12 h-12 text-card-foreground" />
+                          <span className="text-muted-foreground font-medium">
                             {search ? 'No matching processes found' : 'No payroll data available'}
                           </span>
                         </div>
@@ -212,41 +212,41 @@ export default function SuperAdminPayrollPage() {
                     </tr>
                   ) : (
                     filteredProcesses.map((process: any) => (
-                      <tr key={process.id} className="hover:bg-neutral-900/30 transition-colors text-sm">
+                      <tr key={process.id} className="hover:bg-secondary/30 transition-colors text-sm">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
-                              <Layers className="w-4 h-4 text-white" />
+                              <Layers className="w-4 h-4 text-foreground" />
                             </div>
-                            <span className="font-semibold text-white">{process.name}</span>
+                            <span className="font-semibold text-foreground">{process.name}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="text-neutral-300">{process.totalEmployees}</span>
+                          <span className="text-card-foreground">{process.totalEmployees}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="text-emerald-400">{process.activeEmployees}</span>
+                          <span className="text-emerald-600">{process.activeEmployees}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="text-red-400">{process.inactiveEmployees}</span>
+                          <span className="text-red-600">{process.inactiveEmployees}</span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-neutral-300">
+                          <span className="text-card-foreground">
                             ₹{process.monthlyBasicSalary.toLocaleString('en-IN')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-neutral-300">
+                          <span className="text-card-foreground">
                             ₹{process.monthlyIncentive.toLocaleString('en-IN')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="font-semibold text-white">
-                            ₹{process.totalMonthlyPayroll.toLocaleString('en-IN')}
+                          <span className="font-semibold text-foreground">
+                            ₹{(process.totalMonthlyPayroll || 0).toLocaleString('en-IN')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-neutral-400">
+                          <span className="text-muted-foreground">
                             ₹{process.avgSalary.toLocaleString('en-IN')}
                           </span>
                         </td>
@@ -258,8 +258,8 @@ export default function SuperAdminPayrollPage() {
             </div>
 
             {!isLoading && filteredProcesses.length > 0 && (
-              <div className="px-6 py-4 border-t border-neutral-800 bg-neutral-900/30">
-                <div className="text-sm text-neutral-400">
+              <div className="px-6 py-4 border-t border-border bg-secondary/50">
+                <div className="text-sm text-muted-foreground">
                   Total: {filteredProcesses.length} process{filteredProcesses.length !== 1 ? 'es' : ''}
                 </div>
               </div>

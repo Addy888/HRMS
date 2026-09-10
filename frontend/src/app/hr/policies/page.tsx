@@ -20,20 +20,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  DRAFT: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  PUBLISHED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  ARCHIVED: 'bg-neutral-600/20 text-neutral-400 border-neutral-600/20',
+  DRAFT: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  PUBLISHED: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  ARCHIVED: 'bg-neutral-600/20 text-muted-foreground border-neutral-600/20',
 };
 
 function MetricCard({ icon: Icon, label, value, color }: any) {
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex items-center gap-4">
+    <div className="bg-secondary border border-border rounded-2xl p-5 flex items-center gap-4">
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <p className="text-2xl font-bold text-white">{value ?? '—'}</p>
-        <p className="text-xs text-neutral-500 font-medium">{label}</p>
+        <p className="text-2xl font-bold text-foreground">{value ?? '—'}</p>
+        <p className="text-xs text-muted-foreground font-medium">{label}</p>
       </div>
     </div>
   );
@@ -170,20 +170,20 @@ export default function HRPoliciesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white font-heading">Policy Management</h1>
-            <p className="text-sm text-neutral-500 mt-0.5">Manage company policies and track employee acceptance</p>
+            <h1 className="text-2xl font-bold text-foreground font-heading">Policy Management</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage company policies and track employee acceptance</p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleUploadClick}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-purple-950/30"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-xs font-bold text-foreground transition-all shadow-lg shadow-purple-950/30"
             >
               <Upload className="w-4 h-4" /> Upload Company Policy
             </button>
-            <Link href="/hr/policies/tracking" className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-xl text-xs font-semibold text-neutral-300 transition-colors">
+            <Link href="/hr/policies/tracking" className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary border border-border rounded-xl text-xs font-semibold text-card-foreground transition-colors">
               <BarChart2 className="w-4 h-4" /> Tracking
             </Link>
-            <Link href="/hr/policies/create" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg shadow-blue-950/30">
+            <Link href="/hr/policies/create" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl text-xs font-bold text-foreground transition-all shadow-lg shadow-blue-950/30">
               <Plus className="w-4 h-4" /> New Policy
             </Link>
           </div>
@@ -191,31 +191,31 @@ export default function HRPoliciesPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4">
-        <MetricCard icon={FileText} label="Total Policies" value={metrics.total} color="bg-blue-500/10 text-blue-400" />
-        <MetricCard icon={Globe} label="Published" value={metrics.published} color="bg-emerald-500/10 text-emerald-400" />
-        <MetricCard icon={Edit2} label="Drafts" value={metrics.draft} color="bg-amber-500/10 text-amber-400" />
-        <MetricCard icon={Archive} label="Archived" value={metrics.archived} color="bg-neutral-600/20 text-neutral-400" />
-        <MetricCard icon={AlertCircle} label="Emp. Pending" value={metrics.employeesPending} color="bg-red-500/10 text-red-400" />
-        <MetricCard icon={CheckCircle2} label="Emp. Completed" value={metrics.employeesCompleted} color="bg-purple-500/10 text-purple-400" />
+        <MetricCard icon={FileText} label="Total Policies" value={metrics.total} color="bg-blue-500/10 text-blue-600" />
+        <MetricCard icon={Globe} label="Published" value={metrics.published} color="bg-emerald-500/10 text-emerald-600" />
+        <MetricCard icon={Edit2} label="Drafts" value={metrics.draft} color="bg-amber-500/10 text-amber-600" />
+        <MetricCard icon={Archive} label="Archived" value={metrics.archived} color="bg-neutral-600/20 text-muted-foreground" />
+        <MetricCard icon={AlertCircle} label="Emp. Pending" value={metrics.employeesPending} color="bg-red-500/10 text-red-600" />
+        <MetricCard icon={CheckCircle2} label="Emp. Completed" value={metrics.employeesCompleted} color="bg-purple-500/10 text-purple-600" />
       </div>
 
       {/* Recent Audit Logs */}
       {dashboard?.recentLogs?.length > 0 && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
-          <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-blue-400" /> Recent Activity
+        <div className="bg-secondary border border-border rounded-2xl p-5">
+          <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-blue-600" /> Recent Activity
           </h2>
           <div className="space-y-2">
             {dashboard.recentLogs.map((log: any) => (
-              <div key={log.id} className="flex items-center justify-between py-2 border-b border-neutral-800/60 last:border-0">
+              <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                 <div className="flex items-center gap-3">
                   <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
                   <div>
-                    <p className="text-xs text-white font-medium">{log.policy?.title}</p>
-                    <p className="text-[10px] text-neutral-500">{log.action} · {log.details}</p>
+                    <p className="text-xs text-foreground font-medium">{log.policy?.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{log.action} · {log.details}</p>
                   </div>
                 </div>
-                <p className="text-[10px] text-neutral-600">
+                <p className="text-[10px] text-muted-foreground">
                   {new Date(log.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
@@ -226,39 +226,39 @@ export default function HRPoliciesPage() {
 
       {/* Quick Links Panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/hr/policies/create" className="bg-neutral-900 border border-neutral-800 hover:border-blue-500/40 rounded-2xl p-5 group transition-all">
-          <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-3">
+        <Link href="/hr/policies/create" className="bg-secondary border border-border hover:border-blue-500/40 rounded-2xl p-5 group transition-all">
+          <div className="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center mb-3">
             <Plus className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-white">Create New Policy</h3>
-          <p className="text-xs text-neutral-500 mt-1">Draft a new company policy with rich content editor</p>
-          <div className="flex items-center gap-1 text-xs text-blue-400 mt-3 font-semibold group-hover:translate-x-0.5 transition-transform">
+          <h3 className="text-sm font-bold text-foreground">Create New Policy</h3>
+          <p className="text-xs text-muted-foreground mt-1">Draft a new company policy with rich content editor</p>
+          <div className="flex items-center gap-1 text-xs text-blue-600 mt-3 font-semibold group-hover:translate-x-0.5 transition-transform">
             Get started <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </Link>
-        <Link href="/hr/policies/tracking" className="bg-neutral-900 border border-neutral-800 hover:border-emerald-500/40 rounded-2xl p-5 group transition-all">
-          <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mb-3">
+        <Link href="/hr/policies/tracking" className="bg-secondary border border-border hover:border-emerald-500/40 rounded-2xl p-5 group transition-all">
+          <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center mb-3">
             <Users className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-white">Employee Tracking</h3>
-          <p className="text-xs text-neutral-500 mt-1">Monitor policy acceptance status across all employees</p>
-          <div className="flex items-center gap-1 text-xs text-emerald-400 mt-3 font-semibold group-hover:translate-x-0.5 transition-transform">
+          <h3 className="text-sm font-bold text-foreground">Employee Tracking</h3>
+          <p className="text-xs text-muted-foreground mt-1">Monitor policy acceptance status across all employees</p>
+          <div className="flex items-center gap-1 text-xs text-emerald-600 mt-3 font-semibold group-hover:translate-x-0.5 transition-transform">
             View Report <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </Link>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
-          <div className="w-10 h-10 bg-purple-500/10 text-purple-400 rounded-xl flex items-center justify-center mb-3">
+        <div className="bg-secondary border border-border rounded-2xl p-5">
+          <div className="w-10 h-10 bg-purple-500/10 text-purple-600 rounded-xl flex items-center justify-center mb-3">
             <Send className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-white">Policy Summary</h3>
+          <h3 className="text-sm font-bold text-foreground">Policy Summary</h3>
           <div className="mt-3 space-y-1.5">
             {[
-              { label: 'Total Published', val: metrics.published ?? '—', color: 'text-emerald-400' },
-              { label: 'Pending Acceptance', val: metrics.employeesPending ?? '—', color: 'text-amber-400' },
-              { label: 'All Completed', val: metrics.employeesCompleted ?? '—', color: 'text-blue-400' },
+              { label: 'Total Published', val: metrics.published ?? '—', color: 'text-emerald-600' },
+              { label: 'Pending Acceptance', val: metrics.employeesPending ?? '—', color: 'text-amber-600' },
+              { label: 'All Completed', val: metrics.employeesCompleted ?? '—', color: 'text-blue-600' },
             ].map((item) => (
               <div key={item.label} className="flex justify-between items-center">
-                <span className="text-[11px] text-neutral-500">{item.label}</span>
+                <span className="text-[11px] text-muted-foreground">{item.label}</span>
                 <span className={`text-xs font-bold ${item.color}`}>{item.val}</span>
               </div>
             ))}
@@ -268,25 +268,25 @@ export default function HRPoliciesPage() {
 
       {/* Company Policies Section */}
       {companyPolicies.length > 0 && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
-          <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-purple-400" /> Company Policy Documents
+        <div className="bg-secondary border border-border rounded-2xl p-5">
+          <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-purple-600" /> Company Policy Documents
           </h2>
           <div className="space-y-2">
             {companyPolicies.map((policy: any) => (
-              <div key={policy.id} className="flex items-center justify-between p-4 bg-neutral-950 border border-neutral-800 rounded-xl">
+              <div key={policy.id} className="flex items-center justify-between p-4 bg-card border border-border rounded-xl">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <FileText className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  <FileText className="w-5 h-5 text-purple-600 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white truncate">{policy.policyName}</p>
-                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1">
+                    <p className="text-sm font-semibold text-foreground truncate">{policy.policyName}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <span>v{policy.version}</span>
                       <span>•</span>
                       <span>{(policy.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
                       <span>•</span>
                       <span>{new Date(policy.createdAt).toLocaleDateString()}</span>
                       <span>•</span>
-                      <span className={policy.status === 'ACTIVE' ? 'text-emerald-400' : 'text-neutral-500'}>
+                      <span className={policy.status === 'ACTIVE' ? 'text-emerald-600' : 'text-neutral-500'}>
                         {policy.status}
                       </span>
                     </div>
@@ -295,7 +295,7 @@ export default function HRPoliciesPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleDownloadPolicy(policy.id, policy.fileName)}
-                    className="p-2 hover:bg-neutral-800 rounded-lg transition-colors text-blue-400"
+                    className="p-2 hover:bg-secondary rounded-lg transition-colors text-blue-600"
                     title="Download"
                   >
                     <Download className="w-4 h-4" />
@@ -306,7 +306,7 @@ export default function HRPoliciesPage() {
                         deleteCompanyPolicyMutation.mutate(policy.id);
                       }
                     }}
-                    className="p-2 hover:bg-neutral-800 rounded-lg transition-colors text-red-400"
+                    className="p-2 hover:bg-secondary rounded-lg transition-colors text-red-600"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -320,34 +320,34 @@ export default function HRPoliciesPage() {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-secondary border border-border rounded-2xl p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">Upload Company Policy</h3>
+              <h3 className="text-lg font-bold text-foreground">Upload Company Policy</h3>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="p-1 hover:bg-neutral-800 rounded-lg transition-colors"
+                className="p-1 hover:bg-secondary rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-neutral-400" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  Policy Name <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-card-foreground mb-2">
+                  Policy Name <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
                   value={uploadData.policyName}
                   onChange={(e) => setUploadData({ ...uploadData, policyName: e.target.value })}
                   placeholder="Company Handbook 2026"
-                  className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Version
                 </label>
                 <input
@@ -355,13 +355,13 @@ export default function HRPoliciesPage() {
                   value={uploadData.version}
                   onChange={(e) => setUploadData({ ...uploadData, version: e.target.value })}
                   placeholder="1.0"
-                  className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  PDF File <span className="text-red-400">*</span>
+                <label className="block text-sm font-medium text-card-foreground mb-2">
+                  PDF File <span className="text-red-600">*</span>
                 </label>
                 <input
                   ref={fileInputRef}
@@ -372,25 +372,25 @@ export default function HRPoliciesPage() {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-4 py-3 bg-neutral-950 border-2 border-dashed border-neutral-700 hover:border-purple-500 rounded-lg text-neutral-400 hover:text-purple-400 transition-colors flex flex-col items-center gap-2"
+                  className="w-full px-4 py-3 bg-card border-2 border-dashed border-border hover:border-purple-500 rounded-lg text-muted-foreground hover:text-purple-600 transition-colors flex flex-col items-center gap-2"
                 >
                   <Upload className="w-6 h-6" />
                   <span className="text-sm font-medium">
                     {uploadData.file ? uploadData.file.name : 'Click to select PDF file'}
                   </span>
                   {uploadData.file && (
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-muted-foreground">
                       {(uploadData.file.size / (1024 * 1024)).toFixed(2)} MB
                     </span>
                   )}
                 </button>
-                <p className="text-xs text-neutral-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Maximum file size: 20 MB. Only PDF files allowed.
                 </p>
               </div>
 
               <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3">
-                <p className="text-xs text-blue-400">
+                <p className="text-xs text-blue-600">
                   <strong>Note:</strong> Uploading a new policy will automatically make it active. 
                   The previous active policy will be archived to version history.
                 </p>
@@ -399,14 +399,14 @@ export default function HRPoliciesPage() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowUploadModal(false)}
-                  className="flex-1 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-white font-medium transition-colors"
+                  className="flex-1 px-4 py-2 bg-secondary hover:bg-secondary/50 rounded-lg text-foreground font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUploadSubmit}
                   disabled={uploading || !uploadData.policyName || !uploadData.file}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-neutral-700 disabled:to-neutral-700 rounded-lg text-white font-bold transition-all flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-neutral-700 disabled:to-neutral-700 rounded-lg text-foreground font-bold transition-all flex items-center justify-center gap-2"
                 >
                   {uploading ? (
                     <>

@@ -76,57 +76,57 @@ export default function AdminLoginPage() {
         {/* Logo & Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl mb-4 shadow-lg shadow-purple-950/50">
-            <Shield className="w-8 h-8 text-white" />
+            <Shield className="w-8 h-8 text-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-white font-heading mb-2">
+          <h1 className="text-3xl font-bold text-foreground font-heading mb-2">
             Super Admin Portal
           </h1>
-          <p className="text-neutral-500">System Administrator Access</p>
+          <p className="text-muted-foreground">System Administrator Access</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl p-8">
+        <div className="bg-secondary border border-border rounded-2xl shadow-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Alert */}
             {error && (
               <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-200">{error}</p>
               </div>
             )}
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Admin Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@company.com"
                   required
-                  className="w-full pl-12 pr-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                 />
               </div>
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-12 pr-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                 />
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-purple-950/30"
+              className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-foreground font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-purple-950/30"
             >
               {loading ? (
                 <>
@@ -152,19 +152,19 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 pt-6 border-t border-neutral-800 text-center text-sm text-neutral-500">
+          <div className="mt-6 pt-6 border-t border-border text-center text-sm text-muted-foreground">
             <p>Not a Super Admin?</p>
             <div className="flex items-center justify-center gap-4 mt-2">
               <a
                 href="/login/hr"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-blue-600 hover:text-blue-300 transition-colors"
               >
                 HR Login
               </a>
               <span>•</span>
               <a
                 href="/login"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-blue-600 hover:text-blue-300 transition-colors"
               >
                 Employee Login
               </a>
@@ -173,7 +173,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Security Notice */}
-        <div className="mt-6 text-center text-xs text-neutral-600">
+        <div className="mt-6 text-center text-xs text-muted-foreground">
           <p>🔒 Secure connection • System administrator access only</p>
         </div>
       </div>

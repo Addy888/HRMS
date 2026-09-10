@@ -16,11 +16,11 @@ import {
 } from 'lucide-react';
 
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) => (
-  <div className="flex items-start gap-3 py-3 border-b border-neutral-800/50 last:border-0">
-    <div className="text-neutral-500 mt-0.5 shrink-0">{icon}</div>
+  <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+    <div className="text-muted-foreground mt-0.5 shrink-0">{icon}</div>
     <div className="flex-1 min-w-0">
-      <div className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">{label}</div>
-      <div className="text-sm text-white font-medium mt-0.5 truncate">{value || '—'}</div>
+      <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{label}</div>
+      <div className="text-sm text-foreground font-medium mt-0.5 truncate">{value || '—'}</div>
     </div>
   </div>
 );
@@ -41,9 +41,9 @@ function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
   const [rejectionReason, setRejectionReason] = React.useState('');
 
   const docStatusColor: Record<string, string> = {
-    APPROVED: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    REJECTED: 'text-red-400 bg-red-500/10 border-red-500/20',
-    PENDING: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+    APPROVED: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
+    REJECTED: 'text-red-600 bg-red-500/10 border-red-500/20',
+    PENDING: 'text-amber-600 bg-amber-500/10 border-amber-500/20',
   };
 
   const approveMutation = useMutation({
@@ -115,24 +115,24 @@ function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
 
   return (
     <>
-      <div className="flex flex-col p-3 bg-neutral-900 border border-neutral-800 rounded-xl space-y-2">
+      <div className="flex flex-col p-3 bg-secondary border border-border rounded-xl space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-white">{doc.type.replace(/_/g, ' ')}</div>
-            <div className="text-[10px] text-neutral-500 mt-0.5 truncate">{doc.fileName}</div>
+            <div className="text-xs font-semibold text-foreground">{doc.type.replace(/_/g, ' ')}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{doc.fileName}</div>
             {doc.verification?.rejectionReason && (
-              <div className="text-[10px] text-red-400 mt-1 italic">Reason: {doc.verification.rejectionReason}</div>
+              <div className="text-[10px] text-red-600 mt-1 italic">Reason: {doc.verification.rejectionReason}</div>
             )}
           </div>
-          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border shrink-0 ${docStatusColor[doc.status] || 'text-neutral-400 bg-neutral-800 border-neutral-700'}`}>
+          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border shrink-0 ${docStatusColor[doc.status] || 'text-muted-foreground bg-secondary border-border'}`}>
             {doc.status}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 pt-2 border-t border-neutral-800">
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
           <button
             onClick={handleView}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-[11px] font-semibold transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-lg text-[11px] font-semibold transition-colors"
             title="View Document"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
             <button
               onClick={handleApprove}
               disabled={approveMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 border border-emerald-500/20"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 border border-emerald-500/20"
               title="Approve Document"
             >
               <Check className="w-3.5 h-3.5" />
@@ -155,7 +155,7 @@ function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
             <button
               onClick={() => setShowRejectModal(true)}
               disabled={rejectMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 border border-red-500/20"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 border border-red-500/20"
               title="Reject Document"
             >
               <X className="w-3.5 h-3.5" />
@@ -167,45 +167,45 @@ function DocumentCard({ doc, onRefresh }: { doc: any; onRefresh: () => void }) {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-md w-full space-y-4">
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-secondary border border-border rounded-2xl p-6 max-w-md w-full space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-heading text-lg font-bold text-white">Reject Document</h3>
+              <h3 className="font-heading text-lg font-bold text-foreground">Reject Document</h3>
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="text-neutral-500 hover:text-neutral-300 transition-colors"
+                className="text-muted-foreground hover:text-card-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="text-sm text-neutral-400">
-              Document: <span className="font-semibold text-white">{doc.type.replace(/_/g, ' ')}</span>
+            <div className="text-sm text-muted-foreground">
+              Document: <span className="font-semibold text-foreground">{doc.type.replace(/_/g, ' ')}</span>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
-                Rejection Reason <span className="text-red-400">*</span>
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
+                Rejection Reason <span className="text-red-600">*</span>
               </label>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="e.g., Image is blurred, Document is expired, etc."
-                className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-sm min-h-[100px]"
+                className="w-full px-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-sm min-h-[100px]"
               />
             </div>
 
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="flex-1 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors"
+                className="flex-1 px-4 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReject}
                 disabled={rejectMutation.isPending || !rejectionReason.trim()}
-                className="flex-1 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 border border-red-500/20"
+                className="flex-1 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 border border-red-500/20"
               >
                 {rejectMutation.isPending ? 'Rejecting...' : 'Reject Document'}
               </button>
@@ -287,14 +287,14 @@ export default function EmployeeDetailPage() {
       <HRLayout>
         <div className="max-w-2xl mx-auto mt-12 text-center">
           <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8">
-            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h2 className="font-heading text-xl font-bold text-white mb-2">Failed to Load Employee</h2>
-            <p className="text-sm text-neutral-400 mb-4">
+            <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">Failed to Load Employee</h2>
+            <p className="text-sm text-muted-foreground mb-4">
               {error instanceof Error ? error.message : 'Unable to fetch employee details. Please try again.'}
             </p>
             <button
               onClick={() => router.back()}
-              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              className="px-4 py-2 bg-secondary hover:bg-secondary/50 text-foreground rounded-xl text-sm font-semibold transition-colors"
             >
               Back to Employees
             </button>
@@ -316,9 +316,9 @@ export default function EmployeeDetailPage() {
   });
 
   const docStatusColor: Record<string, string> = {
-    APPROVED: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    REJECTED: 'text-red-400 bg-red-500/10 border-red-500/20',
-    PENDING: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+    APPROVED: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
+    REJECTED: 'text-red-600 bg-red-500/10 border-red-500/20',
+    PENDING: 'text-amber-600 bg-amber-500/10 border-amber-500/20',
   };
 
   if (isLoading) {
@@ -326,9 +326,9 @@ export default function EmployeeDetailPage() {
     return (
       <HRLayout>
         <div className="space-y-6 animate-pulse">
-          <div className="h-8 w-64 bg-neutral-900 rounded-xl"></div>
+          <div className="h-8 w-64 bg-secondary rounded-xl"></div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-48 bg-neutral-900 rounded-2xl"></div>)}
+            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-48 bg-secondary rounded-2xl"></div>)}
           </div>
         </div>
       </HRLayout>
@@ -353,19 +353,19 @@ export default function EmployeeDetailPage() {
           <div>
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-300 transition-colors mb-3 font-medium"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-card-foreground transition-colors mb-3 font-medium"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Employees
             </button>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-heading text-xl font-bold text-white uppercase">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-heading text-xl font-bold text-foreground uppercase">
                 {emp.firstName?.charAt(0)}{emp.lastName?.charAt(0)}
               </div>
               <div>
-                <h1 className="font-heading text-2xl font-extrabold text-white">{emp.fullName || `${emp.firstName} ${emp.lastName}`}</h1>
+                <h1 className="font-heading text-2xl font-extrabold text-foreground">{emp.fullName || `${emp.firstName} ${emp.lastName}`}</h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-xs text-neutral-400 bg-neutral-800 border border-neutral-700 px-2 py-0.5 rounded">{emp.employeeId}</span>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${emp.isActive ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
+                  <span className="font-mono text-xs text-muted-foreground bg-secondary border border-border px-2 py-0.5 rounded">{emp.employeeId}</span>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${emp.isActive ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' : 'text-red-600 bg-red-500/10 border-red-500/20'}`}>
                     {emp.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
@@ -377,19 +377,19 @@ export default function EmployeeDetailPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowEdit(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl text-sm font-semibold transition-colors border border-neutral-700"
+              className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/50 text-foreground rounded-xl text-sm font-semibold transition-colors border border-border"
             >
               <Edit2 className="w-4 h-4" /> Edit Profile
             </button>
             <button
               onClick={() => { if (confirm('Reset password to 1234?')) resetPasswordMutation.mutate(emp.id); }}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-semibold transition-colors border border-amber-500/20"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 rounded-xl text-sm font-semibold transition-colors border border-amber-500/20"
             >
               <KeyRound className="w-4 h-4" /> Reset Password
             </button>
             <button
               onClick={() => activationMutation.mutate({ id: emp.id, active: !emp.isActive })}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${emp.isActive ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors border ${emp.isActive ? 'bg-red-500/10 hover:bg-red-500/20 text-red-600 border-red-500/20' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20'}`}
             >
               {emp.isActive ? <><UserX className="w-4 h-4" /> Deactivate</> : <><UserCheck className="w-4 h-4" /> Activate</>}
             </button>
@@ -397,12 +397,12 @@ export default function EmployeeDetailPage() {
         </div>
 
         {/* Profile Completion Banner */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+        <div className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-neutral-300">Profile Completion</span>
-            <span className="font-mono text-sm font-bold text-white">{emp.profileCompletion || 0}%</span>
+            <span className="text-sm font-semibold text-card-foreground">Profile Completion</span>
+            <span className="font-mono text-sm font-bold text-foreground">{emp.profileCompletion || 0}%</span>
           </div>
-          <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-secondary rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
@@ -416,8 +416,8 @@ export default function EmployeeDetailPage() {
         {/* Detail Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {/* Basic Information */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
-            <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><User className="w-4 h-4 text-blue-400" /> Basic Information</h3>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-1">
+            <h3 className="font-heading text-base font-bold text-foreground mb-2 flex items-center gap-2"><User className="w-4 h-4 text-blue-600" /> Basic Information</h3>
             <InfoRow icon={<User className="w-4 h-4" />} label="Full Name" value={`${emp.firstName} ${emp.lastName}`} />
             <InfoRow icon={<CalendarDays className="w-4 h-4" />} label="Date of Birth" value={emp.dob ? new Date(emp.dob).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : null} />
             <InfoRow icon={<User className="w-4 h-4" />} label="Gender" value={emp.gender} />
@@ -425,8 +425,8 @@ export default function EmployeeDetailPage() {
           </div>
 
           {/* Contact Information */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
-            <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><Phone className="w-4 h-4 text-teal-400" /> Contact Details</h3>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-1">
+            <h3 className="font-heading text-base font-bold text-foreground mb-2 flex items-center gap-2"><Phone className="w-4 h-4 text-teal-400" /> Contact Details</h3>
             <InfoRow icon={<Mail className="w-4 h-4" />} label="Email Address" value={emp.email} />
             <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone Number" value={emp.phone} />
             <InfoRow icon={<Building2 className="w-4 h-4" />} label="Address" value={emp.address} />
@@ -434,8 +434,8 @@ export default function EmployeeDetailPage() {
           </div>
 
           {/* Employment Details */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
-            <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><Briefcase className="w-4 h-4 text-purple-400" /> Employment Details</h3>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-1">
+            <h3 className="font-heading text-base font-bold text-foreground mb-2 flex items-center gap-2"><Briefcase className="w-4 h-4 text-purple-600" /> Employment Details</h3>
             <InfoRow icon={<Building2 className="w-4 h-4" />} label="Department" value={emp.departmentName} />
             <InfoRow icon={<Briefcase className="w-4 h-4" />} label="Designation" value={emp.designationTitle} />
             <InfoRow icon={<CalendarDays className="w-4 h-4" />} label="Date of Joining" value={emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : null} />
@@ -443,8 +443,8 @@ export default function EmployeeDetailPage() {
           </div>
 
           {/* Bank Details */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-1">
-            <h3 className="font-heading text-base font-bold text-white mb-2 flex items-center gap-2"><Wallet className="w-4 h-4 text-emerald-400" /> Bank Details</h3>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-1">
+            <h3 className="font-heading text-base font-bold text-foreground mb-2 flex items-center gap-2"><Wallet className="w-4 h-4 text-emerald-600" /> Bank Details</h3>
             <InfoRow icon={<User className="w-4 h-4" />} label="Account Holder" value={emp.bankAccountHolder} />
             <InfoRow icon={<Building className="w-4 h-4" />} label="Bank Name" value={emp.bankName} />
             <InfoRow icon={<Building2 className="w-4 h-4" />} label="Branch" value={emp.bankBranch} />
@@ -455,28 +455,28 @@ export default function EmployeeDetailPage() {
         </div>
 
         {/* Documents Section */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-heading text-base font-bold text-white flex items-center gap-2">
+            <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
               <FileText className="w-4 h-4 text-indigo-400" /> Uploaded Documents
             </h3>
             {emp.documents?.length > 0 && (
               <div className="flex items-center gap-3 text-xs">
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-white">{emp.documents.length}</span>
-                  <span className="text-neutral-500">Total</span>
+                  <span className="font-bold text-foreground">{emp.documents.length}</span>
+                  <span className="text-muted-foreground">Total</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-emerald-400">{emp.documents.filter((d: any) => d.status === 'APPROVED').length}</span>
-                  <span className="text-neutral-500">Approved</span>
+                  <span className="font-bold text-emerald-600">{emp.documents.filter((d: any) => d.status === 'APPROVED').length}</span>
+                  <span className="text-muted-foreground">Approved</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-amber-400">{emp.documents.filter((d: any) => d.status === 'PENDING').length}</span>
-                  <span className="text-neutral-500">Pending</span>
+                  <span className="font-bold text-amber-600">{emp.documents.filter((d: any) => d.status === 'PENDING').length}</span>
+                  <span className="text-muted-foreground">Pending</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-red-400">{emp.documents.filter((d: any) => d.status === 'REJECTED').length}</span>
-                  <span className="text-neutral-500">Rejected</span>
+                  <span className="font-bold text-red-600">{emp.documents.filter((d: any) => d.status === 'REJECTED').length}</span>
+                  <span className="text-muted-foreground">Rejected</span>
                 </div>
               </div>
             )}
@@ -492,7 +492,7 @@ export default function EmployeeDetailPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-6 text-neutral-500 text-sm">No documents uploaded yet.</div>
+            <div className="text-center py-6 text-muted-foreground text-sm">No documents uploaded yet.</div>
           )}
         </div>
       </div>

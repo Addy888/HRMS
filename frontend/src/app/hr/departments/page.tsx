@@ -100,11 +100,11 @@ export default function DepartmentsPage() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Header */}
         <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
             <Layers className="w-8 h-8 text-blue-500" />
             Department Management
           </h1>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             Define corporate divisions, configure descriptions, and track employee headcounts per department.
           </p>
         </div>
@@ -112,31 +112,31 @@ export default function DepartmentsPage() {
         {/* Dashboard Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Action Form Card */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 h-max space-y-4">
-            <h2 className="font-heading text-lg font-bold text-white">
+          <div className="bg-card border border-border rounded-2xl p-6 h-max space-y-4">
+            <h2 className="font-heading text-lg font-bold text-foreground">
               {editId ? 'Edit Department details' : 'Create new Department'}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs text-neutral-400 font-semibold uppercase">Department Name</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase">Department Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Finance, Support"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-neutral-400 font-semibold uppercase">Description</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase">Description</label>
                 <textarea
                   placeholder="Describe the department responsibilities..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none"
                 />
               </div>
 
@@ -144,7 +144,7 @@ export default function DepartmentsPage() {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
                 >
                   {(createMutation.isPending || updateMutation.isPending) ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -158,7 +158,7 @@ export default function DepartmentsPage() {
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors"
+                    className="px-4 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors"
                   >
                     Cancel
                   </button>
@@ -168,33 +168,33 @@ export default function DepartmentsPage() {
           </div>
 
           {/* List Table Card */}
-          <div className="lg:col-span-2 bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4">
-            <h2 className="font-heading text-lg font-bold text-white">Registered Departments</h2>
+          <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 space-y-4">
+            <h2 className="font-heading text-lg font-bold text-foreground">Registered Departments</h2>
             
-            <div className="border border-neutral-800/80 rounded-xl overflow-hidden">
+            <div className="border border-border rounded-xl overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-neutral-900 border-b border-neutral-850 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                  <tr className="bg-secondary border-b border-border text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                     <th className="px-5 py-4">Department Name</th>
                     <th className="px-5 py-4">Description</th>
                     <th className="px-5 py-4 text-center">Employees</th>
                     <th className="px-5 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-900">
+                <tbody className="divide-y divide-border">
                   {isLoading ? (
                     Array.from({ length: 3 }).map((_, idx) => (
                       <tr key={idx}>
-                        <td colSpan={4} className="px-5 py-4 animate-pulse"><div className="h-4 bg-neutral-900 rounded w-full"></div></td>
+                        <td colSpan={4} className="px-5 py-4 animate-pulse"><div className="h-4 bg-secondary rounded w-full"></div></td>
                       </tr>
                     ))
                   ) : departments.length > 0 ? (
                     departments.map((dept: any) => (
-                      <tr key={dept.id} className="hover:bg-neutral-900/30 transition-colors text-sm">
-                        <td className="px-5 py-4 font-semibold text-white">{dept.name}</td>
-                        <td className="px-5 py-4 text-neutral-400 line-clamp-1 max-w-[220px]">{dept.description || 'No description provided'}</td>
+                      <tr key={dept.id} className="hover:bg-secondary/30 transition-colors text-sm">
+                        <td className="px-5 py-4 font-semibold text-foreground">{dept.name}</td>
+                        <td className="px-5 py-4 text-muted-foreground line-clamp-1 max-w-[220px]">{dept.description || 'No description provided'}</td>
                         <td className="px-5 py-4 text-center">
-                          <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-xs font-mono font-bold">
+                          <span className="bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded text-xs font-mono font-bold">
                             {dept._count?.employees || 0}
                           </span>
                         </td>
@@ -202,7 +202,7 @@ export default function DepartmentsPage() {
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => handleEditClick(dept)}
-                              className="p-1.5 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-blue-400 transition-colors"
+                              className="p-1.5 hover:bg-secondary rounded-lg text-muted-foreground hover:text-blue-600 transition-colors"
                               title="Edit department details"
                             >
                               <Edit2 className="w-4 h-4" />
@@ -213,7 +213,7 @@ export default function DepartmentsPage() {
                                   deleteMutation.mutate(dept.id);
                                 }
                               }}
-                              className="p-1.5 hover:bg-red-500/10 rounded-lg text-neutral-400 hover:text-red-400 transition-colors"
+                              className="p-1.5 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
                               title="Delete department"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -224,7 +224,7 @@ export default function DepartmentsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="px-5 py-8 text-center text-neutral-500">No departments configured in HRMS.</td>
+                      <td colSpan={4} className="px-5 py-8 text-center text-muted-foreground">No departments configured in HRMS.</td>
                     </tr>
                   )}
                 </tbody>

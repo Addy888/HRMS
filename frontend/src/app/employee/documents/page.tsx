@@ -36,13 +36,13 @@ const DOCUMENT_CATEGORIES = {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode }> = {
-    APPROVED: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-    REJECTED: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', icon: <XCircle className="w-3.5 h-3.5" /> },
-    RE_UPLOAD_REQUIRED: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
-    PENDING: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20', icon: <Clock className="w-3.5 h-3.5" /> },
+    APPROVED: { bg: 'bg-emerald-500/10', text: 'text-emerald-600', border: 'border-emerald-500/20', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+    REJECTED: { bg: 'bg-red-500/10', text: 'text-red-600', border: 'border-red-500/20', icon: <XCircle className="w-3.5 h-3.5" /> },
+    RE_UPLOAD_REQUIRED: { bg: 'bg-amber-500/10', text: 'text-amber-600', border: 'border-amber-500/20', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+    PENDING: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-500/20', icon: <Clock className="w-3.5 h-3.5" /> },
   };
 
-  const current = styles[status] || { bg: 'bg-neutral-800', text: 'text-neutral-400', border: 'border-neutral-700', icon: <Clock className="w-3.5 h-3.5" /> };
+  const current = styles[status] || { bg: 'bg-secondary', text: 'text-muted-foreground', border: 'border-border', icon: <Clock className="w-3.5 h-3.5" /> };
 
   return (
     <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${current.bg} ${current.text} ${current.border}`}>
@@ -168,9 +168,9 @@ export default function EmployeeDocumentsPage() {
     return (
       <EmployeeLayout>
         <div className="space-y-6 animate-pulse">
-          <div className="h-8 w-64 bg-neutral-900 rounded-xl"></div>
+          <div className="h-8 w-64 bg-secondary rounded-xl"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 bg-neutral-900 rounded-2xl"></div>)}
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 bg-secondary rounded-2xl"></div>)}
           </div>
         </div>
       </EmployeeLayout>
@@ -181,11 +181,11 @@ export default function EmployeeDocumentsPage() {
     <EmployeeLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div>
-          <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
             <FileText className="w-8 h-8 text-blue-500" />
             My Onboarding Documents
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Please upload all required files. Supported formats: PDF, PNG, JPG, JPEG (Max 10 MB per file).
           </p>
         </div>
@@ -193,7 +193,7 @@ export default function EmployeeDocumentsPage() {
         {/* ========================================
             DOCUMENT UPLOAD PROGRESS SECTION
             ======================================== */}
-        <div className="bg-gradient-to-br from-neutral-900 via-neutral-900 to-blue-950/10 border border-neutral-800 rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden shadow-sm">
           {/* Ambient background effect */}
           <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-blue-500/5 rounded-full blur-[60px] pointer-events-none" />
           
@@ -201,18 +201,18 @@ export default function EmployeeDocumentsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-heading text-base font-bold text-white uppercase tracking-wider">
+                <h2 className="font-heading text-base font-bold text-foreground uppercase tracking-wider">
                   Document Upload Progress
                 </h2>
-                <p className="text-xs text-neutral-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {progress.uploaded} of {progress.total} documents uploaded
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-white font-mono">
+                <div className="text-2xl font-bold text-foreground font-mono">
                   {progress.percentage}%
                 </div>
-                <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                   {progress.isComplete ? 'Complete' : 'In Progress'}
                 </p>
               </div>
@@ -220,7 +220,7 @@ export default function EmployeeDocumentsPage() {
 
             {/* Progress Bar */}
             <div className="relative">
-              <div className="h-3 bg-neutral-950 border border-neutral-800 rounded-full overflow-hidden">
+              <div className="h-3 bg-card border border-border rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all duration-700 ease-out ${
                     progress.isComplete 
@@ -235,22 +235,22 @@ export default function EmployeeDocumentsPage() {
             {/* Status Message */}
             {progress.isComplete ? (
               <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-emerald-400">All Required Documents Uploaded</p>
-                  <p className="text-xs text-emerald-400/70 mt-0.5">
+                  <p className="text-sm font-bold text-emerald-600">All Required Documents Uploaded</p>
+                  <p className="text-xs text-emerald-600/70 mt-0.5">
                     {progress.total} of {progress.total} documents submitted • Pending HR verification
                   </p>
                 </div>
               </div>
             ) : (
               <div className="flex items-center gap-2 p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                <Clock className="w-5 h-5 text-blue-400 shrink-0" />
+                <Clock className="w-5 h-5 text-blue-600 shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-blue-400">
+                  <p className="text-sm font-bold text-blue-600">
                     {progress.remaining} {progress.remaining === 1 ? 'document' : 'documents'} remaining
                   </p>
-                  <p className="text-xs text-blue-400/70 mt-0.5">
+                  <p className="text-xs text-blue-600/70 mt-0.5">
                     Upload all required documents to complete this onboarding step
                   </p>
                 </div>
@@ -269,7 +269,7 @@ export default function EmployeeDocumentsPage() {
 
         {Object.entries(DOCUMENT_CATEGORIES).map(([catKey, items]) => (
           <div key={catKey} className="space-y-4">
-            <h2 className="font-heading text-lg font-bold text-white border-b border-neutral-850 pb-2 capitalize">
+            <h2 className="font-heading text-lg font-bold text-foreground border-b border-border pb-2 capitalize">
               {catKey.toLowerCase()} Documents
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -278,38 +278,38 @@ export default function EmployeeDocumentsPage() {
                 const isUploading = (selectedDocType === item.type && uploadMutation.isPending) || (doc && replaceDocId === doc.id && replaceMutation.isPending);
 
                 return (
-                  <div key={item.type} className="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden">
+                  <div key={item.type} className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden">
                     <div className="flex items-start gap-4">
-                      <div className="p-3 bg-neutral-900 rounded-xl border border-neutral-850">
-                        <FileText className="w-6 h-6 text-neutral-400" />
+                      <div className="p-3 bg-secondary rounded-xl border border-border">
+                        <FileText className="w-6 h-6 text-muted-foreground" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-white truncate">{item.label}</h3>
-                        <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">{item.description}</p>
+                        <h3 className="text-sm font-bold text-foreground truncate">{item.label}</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</p>
                       </div>
                     </div>
 
                     {/* HR Feedback Box */}
                     {doc?.verification?.comment && (
-                      <div className="p-3 bg-neutral-900 border border-neutral-850 rounded-xl text-xs text-neutral-400">
-                        <span className="font-semibold text-neutral-300">HR Feedback: </span>
+                      <div className="p-3 bg-secondary border border-border rounded-xl text-xs text-muted-foreground">
+                        <span className="font-semibold text-card-foreground">HR Feedback: </span>
                         {doc.verification.comment}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between border-t border-neutral-900 pt-4 mt-auto">
+                    <div className="flex items-center justify-between border-t border-border pt-4 mt-auto">
                       {doc ? (
                         <>
                           <div className="flex flex-col gap-1">
                             <StatusBadge status={doc.status} />
-                            <span className="text-[10px] text-neutral-500 font-mono">v{doc.versions?.[0]?.version || 1} · {doc.fileName}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">v{doc.versions?.[0]?.version || 1} · {doc.fileName}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             {doc.status !== 'APPROVED' && (
                               <button
                                 onClick={() => handleReplaceClick(doc.id)}
                                 disabled={isUploading}
-                                className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-855 text-neutral-300 border border-neutral-800 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                                className="px-3 py-1.5 bg-secondary hover:bg-secondary/50 text-card-foreground border border-border rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
                               >
                                 {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
                                 Replace
@@ -319,7 +319,7 @@ export default function EmployeeDocumentsPage() {
                               href={`${api.defaults.baseURL?.replace('/api/v1', '')}${doc.fileUrl}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1.5 hover:bg-neutral-900 text-neutral-400 hover:text-white rounded-lg border border-transparent hover:border-neutral-800 transition-all"
+                              className="p-1.5 hover:bg-secondary text-muted-foreground hover:text-foreground rounded-lg border border-transparent hover:border-border transition-all"
                               title="Preview file"
                             >
                               <Eye className="w-4 h-4" />
@@ -327,7 +327,7 @@ export default function EmployeeDocumentsPage() {
                             {doc.status !== 'APPROVED' && (
                               <button
                                 onClick={() => { if (confirm(`Remove ${item.label}?`)) deleteMutation.mutate(doc.id); }}
-                                className="p-1.5 hover:bg-red-500/10 text-neutral-400 hover:text-red-400 rounded-lg border border-transparent hover:border-neutral-800 transition-all"
+                                className="p-1.5 hover:bg-red-500/10 text-muted-foreground hover:text-red-600 rounded-lg border border-transparent hover:border-border transition-all"
                                 title="Delete document"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -337,11 +337,11 @@ export default function EmployeeDocumentsPage() {
                         </>
                       ) : (
                         <>
-                          <span className="text-xs text-neutral-500 italic font-medium">Not uploaded yet</span>
+                          <span className="text-xs text-muted-foreground italic font-medium">Not uploaded yet</span>
                           <button
                             onClick={() => handleUploadClick(item.type)}
                             disabled={isUploading}
-                            className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-foreground rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
                           >
                             {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
                             Upload File

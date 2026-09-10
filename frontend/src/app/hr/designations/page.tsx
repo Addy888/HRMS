@@ -76,51 +76,51 @@ export default function DesignationsPage() {
     <HRLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
             <Award className="w-8 h-8 text-teal-500" />
             Designation Management
           </h1>
-          <p className="text-sm text-neutral-400">Define and manage corporate job titles and designations across all departments.</p>
+          <p className="text-sm text-muted-foreground">Define and manage corporate job titles and designations across all departments.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Card */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 h-max space-y-4">
-            <h2 className="font-heading text-lg font-bold text-white">
+          <div className="bg-card border border-border rounded-2xl p-6 h-max space-y-4">
+            <h2 className="font-heading text-lg font-bold text-foreground">
               {editId ? 'Edit Designation' : 'Create new Designation'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs text-neutral-400 font-semibold uppercase">Designation Name</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase">Designation Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Senior Engineer, VP Sales"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-teal-500 transition-colors"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-teal-500 transition-colors"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-neutral-400 font-semibold uppercase">Description</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase">Description</label>
                 <textarea
                   placeholder="Describe the role profile..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-teal-500 transition-colors resize-none"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-teal-500 transition-colors resize-none"
                 />
               </div>
               <div className="flex gap-3">
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-foreground rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                 >
                   {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   {editId ? 'Save Changes' : 'Add Designation'}
                 </button>
                 {editId && (
-                  <button type="button" onClick={handleCancel} className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors">
+                  <button type="button" onClick={handleCancel} className="px-4 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors">
                     Cancel
                   </button>
                 )}
@@ -129,39 +129,39 @@ export default function DesignationsPage() {
           </div>
 
           {/* Table Card */}
-          <div className="lg:col-span-2 bg-neutral-950 border border-neutral-800 rounded-2xl p-6 space-y-4">
-            <h2 className="font-heading text-lg font-bold text-white">Registered Designations</h2>
-            <div className="border border-neutral-800/80 rounded-xl overflow-hidden">
+          <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 space-y-4">
+            <h2 className="font-heading text-lg font-bold text-foreground">Registered Designations</h2>
+            <div className="border border-border rounded-xl overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-neutral-900 border-b border-neutral-850 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                  <tr className="bg-secondary border-b border-border text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                     <th className="px-5 py-4">Designation Name</th>
                     <th className="px-5 py-4">Description</th>
                     <th className="px-5 py-4 text-center">Employees</th>
                     <th className="px-5 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-900">
+                <tbody className="divide-y divide-border">
                   {isLoading ? (
                     Array.from({ length: 4 }).map((_, i) => (
-                      <tr key={i}><td colSpan={4} className="px-5 py-4"><div className="h-4 bg-neutral-900 animate-pulse rounded w-full"></div></td></tr>
+                      <tr key={i}><td colSpan={4} className="px-5 py-4"><div className="h-4 bg-secondary animate-pulse rounded w-full"></div></td></tr>
                     ))
                   ) : designations.length > 0 ? (
                     designations.map((d: any) => (
-                      <tr key={d.id} className="hover:bg-neutral-900/30 transition-colors text-sm">
-                        <td className="px-5 py-4 font-semibold text-white">{d.name}</td>
-                        <td className="px-5 py-4 text-neutral-400 max-w-[220px] line-clamp-1">{d.description || '—'}</td>
+                      <tr key={d.id} className="hover:bg-secondary/30 transition-colors text-sm">
+                        <td className="px-5 py-4 font-semibold text-foreground">{d.name}</td>
+                        <td className="px-5 py-4 text-muted-foreground max-w-[220px] line-clamp-1">{d.description || '—'}</td>
                         <td className="px-5 py-4 text-center">
                           <span className="bg-teal-500/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded text-xs font-mono font-bold">{d._count?.employees || 0}</span>
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => handleEdit(d)} className="p-1.5 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-teal-400 transition-colors">
+                            <button onClick={() => handleEdit(d)} className="p-1.5 hover:bg-secondary rounded-lg text-muted-foreground hover:text-teal-400 transition-colors">
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => { if (confirm(`Delete designation: ${d.name}?`)) deleteMutation.mutate(d.id); }}
-                              className="p-1.5 hover:bg-red-500/10 rounded-lg text-neutral-400 hover:text-red-400 transition-colors"
+                              className="p-1.5 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -170,7 +170,7 @@ export default function DesignationsPage() {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={4} className="px-5 py-8 text-center text-neutral-500">No designations configured.</td></tr>
+                    <tr><td colSpan={4} className="px-5 py-8 text-center text-muted-foreground">No designations configured.</td></tr>
                   )}
                 </tbody>
               </table>

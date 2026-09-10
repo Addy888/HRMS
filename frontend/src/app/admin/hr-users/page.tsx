@@ -111,29 +111,29 @@ export default function AdminHRUsersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white font-heading flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-foreground font-heading flex items-center gap-3">
               <UserCog className="w-7 h-7 text-purple-500" />
               HR Account Management
             </h1>
-            <p className="text-sm text-neutral-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Create and manage HR user accounts
             </p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-sm font-bold text-white transition-all shadow-lg"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-sm font-bold text-foreground transition-all shadow-lg"
           >
             <Plus className="w-4 h-4" /> Create HR Account
           </button>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full pl-12 pr-4 py-3 bg-neutral-900 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full pl-12 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
@@ -142,34 +142,34 @@ export default function AdminHRUsersPage() {
             <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
           </div>
         ) : hrUsers.length === 0 ? (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-12 text-center">
-            <UserCog className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
-            <p className="text-neutral-400">No HR accounts found</p>
+          <div className="bg-secondary border border-border rounded-2xl p-12 text-center">
+            <UserCog className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No HR accounts found</p>
           </div>
         ) : (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+          <div className="bg-secondary border border-border rounded-2xl overflow-hidden">
             <table className="w-full">
-              <thead className="bg-neutral-950 border-b border-neutral-800">
+              <thead className="bg-card border-b border-border">
                 <tr>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     HR Name
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     Email
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     Mobile
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     Role
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     Status
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     Created
                   </th>
-                  <th className="text-right px-6 py-4 text-xs font-bold text-neutral-400 uppercase">
+                  <th className="text-right px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                     Actions
                   </th>
                 </tr>
@@ -178,32 +178,32 @@ export default function AdminHRUsersPage() {
                 {hrUsers.map((user: HRAccount) => (
                   <tr
                     key={user.id}
-                    className="border-b border-neutral-800 last:border-0 hover:bg-neutral-850 transition-colors"
+                    className="border-b border-border last:border-0 hover:bg-neutral-850 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-sm">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-sm">
                           {user.employee?.firstName?.charAt(0)}
                           {user.employee?.lastName?.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p className="text-sm font-semibold text-foreground">
                             {user.employee?.firstName} {user.employee?.lastName}
                           </p>
-                          <p className="text-xs text-neutral-500 font-mono">
+                          <p className="text-xs text-muted-foreground font-mono">
                             {user.employee?.employeeId}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-neutral-300">
+                    <td className="px-6 py-4 text-sm text-card-foreground">
                       {user.email}
                     </td>
-                    <td className="px-6 py-4 text-sm text-neutral-300">
+                    <td className="px-6 py-4 text-sm text-card-foreground">
                       {user.employee?.phone || '—'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
                         HR
                       </span>
                     </td>
@@ -211,14 +211,14 @@ export default function AdminHRUsersPage() {
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold ${
                           user.isActive
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                            : 'bg-red-500/10 text-red-600 border border-red-500/20'
                         }`}
                       >
                         {user.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-neutral-400">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
@@ -228,7 +228,7 @@ export default function AdminHRUsersPage() {
                             setSelectedUser(user);
                             setShowEditModal(true);
                           }}
-                          className="p-2 hover:bg-neutral-800 rounded-lg text-blue-400 transition-colors"
+                          className="p-2 hover:bg-secondary rounded-lg text-blue-600 transition-colors"
                           title="Edit"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -240,13 +240,13 @@ export default function AdminHRUsersPage() {
                               isActive: !user.isActive,
                             })
                           }
-                          className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors"
                           title={user.isActive ? 'Deactivate' : 'Activate'}
                         >
                           {user.isActive ? (
-                            <PowerOff className="w-4 h-4 text-red-400" />
+                            <PowerOff className="w-4 h-4 text-red-600" />
                           ) : (
-                            <Power className="w-4 h-4 text-emerald-400" />
+                            <Power className="w-4 h-4 text-emerald-600" />
                           )}
                         </button>
                         <button
@@ -254,7 +254,7 @@ export default function AdminHRUsersPage() {
                             setSelectedUser(user);
                             setShowResetModal(true);
                           }}
-                          className="p-2 hover:bg-neutral-800 rounded-lg text-amber-400 transition-colors"
+                          className="p-2 hover:bg-secondary rounded-lg text-amber-600 transition-colors"
                           title="Reset Password"
                         >
                           <Key className="w-4 h-4" />
@@ -368,24 +368,24 @@ function AddHRModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-neutral-900 border-b border-neutral-800 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+      <div className="bg-secondary border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-secondary border-b border-border px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Plus className="w-5 h-5 text-purple-500" />
             Create HR Account
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-neutral-400" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 First Name *
               </label>
               <input
@@ -393,17 +393,17 @@ function AddHRModal({
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
-                className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                className={`w-full px-4 py-2.5 bg-card border ${
                   errors.firstName ? 'border-red-500' : 'border-neutral-800'
-                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 placeholder="John"
               />
               {errors.firstName && (
-                <p className="text-xs text-red-400 mt-1">{errors.firstName}</p>
+                <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Last Name *
               </label>
               <input
@@ -411,19 +411,19 @@ function AddHRModal({
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
-                className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                className={`w-full px-4 py-2.5 bg-card border ${
                   errors.lastName ? 'border-red-500' : 'border-neutral-800'
-                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 placeholder="Doe"
               />
               {errors.lastName && (
-                <p className="text-xs text-red-400 mt-1">{errors.lastName}</p>
+                <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-300 mb-2">
+            <label className="block text-sm font-semibold text-card-foreground mb-2">
               Email *
             </label>
             <input
@@ -432,19 +432,19 @@ function AddHRModal({
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+              className={`w-full px-4 py-2.5 bg-card border ${
                 errors.email ? 'border-red-500' : 'border-neutral-800'
-              } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+              } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
               placeholder="john.doe@company.com"
             />
             {errors.email && (
-              <p className="text-xs text-red-400 mt-1">{errors.email}</p>
+              <p className="text-xs text-red-600 mt-1">{errors.email}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Password *
               </label>
               <div className="relative">
@@ -454,15 +454,15 @@ function AddHRModal({
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                  className={`w-full px-4 py-2.5 bg-card border ${
                     errors.password ? 'border-red-500' : 'border-neutral-800'
-                  } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                  } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -472,11 +472,11 @@ function AddHRModal({
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-red-400 mt-1">{errors.password}</p>
+                <p className="text-xs text-red-600 mt-1">{errors.password}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Confirm Password *
               </label>
               <input
@@ -485,13 +485,13 @@ function AddHRModal({
                 onChange={(e) =>
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
-                className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                className={`w-full px-4 py-2.5 bg-card border ${
                   errors.confirmPassword ? 'border-red-500' : 'border-neutral-800'
-                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 placeholder="••••••••"
               />
               {errors.confirmPassword && (
-                <p className="text-xs text-red-400 mt-1">
+                <p className="text-xs text-red-600 mt-1">
                   {errors.confirmPassword}
                 </p>
               )}
@@ -499,7 +499,7 @@ function AddHRModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-300 mb-2">
+            <label className="block text-sm font-semibold text-card-foreground mb-2">
               Mobile Number
             </label>
             <input
@@ -510,17 +510,17 @@ function AddHRModal({
                   phone: e.target.value.replace(/\D/g, '').slice(0, 10),
                 })
               }
-              className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+              className={`w-full px-4 py-2.5 bg-card border ${
                 errors.phone ? 'border-red-500' : 'border-neutral-800'
-              } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+              } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
               placeholder="9876543210"
             />
             {errors.phone && (
-              <p className="text-xs text-red-400 mt-1">{errors.phone}</p>
+              <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
             )}
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-neutral-950 rounded-xl border border-neutral-800">
+          <div className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border">
             <input
               type="checkbox"
               checked={formData.isActive}
@@ -529,16 +529,16 @@ function AddHRModal({
               }
               className="w-4 h-4 rounded accent-purple-500"
             />
-            <label className="text-sm text-neutral-300">
+            <label className="text-sm text-card-foreground">
               Active Status (HR can login immediately)
             </label>
           </div>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-neutral-800">
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-white font-semibold transition-colors"
+              className="flex-1 px-4 py-2.5 bg-secondary hover:bg-secondary/50 rounded-xl text-foreground font-semibold transition-colors"
               disabled={isLoading}
             >
               Cancel
@@ -546,7 +546,7 @@ function AddHRModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-foreground font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -607,33 +607,33 @@ function EditHRModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-2xl">
-        <div className="sticky top-0 bg-neutral-900 border-b border-neutral-800 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+      <div className="bg-secondary border border-border rounded-2xl shadow-2xl w-full max-w-2xl">
+        <div className="sticky top-0 bg-secondary border-b border-border px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Edit2 className="w-5 h-5 text-purple-500" />
             Edit HR Account
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-neutral-400" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="p-4 bg-neutral-950 rounded-xl border border-neutral-800">
-            <p className="text-sm text-neutral-400">
-              Email: <span className="text-white font-semibold">{user.email}</span>
+          <div className="p-4 bg-card rounded-xl border border-border">
+            <p className="text-sm text-muted-foreground">
+              Email: <span className="text-foreground font-semibold">{user.email}</span>
             </p>
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Employee ID: {user.employee?.employeeId}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 First Name *
               </label>
               <input
@@ -641,16 +641,16 @@ function EditHRModal({
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
-                className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                className={`w-full px-4 py-2.5 bg-card border ${
                   errors.firstName ? 'border-red-500' : 'border-neutral-800'
-                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
               />
               {errors.firstName && (
-                <p className="text-xs text-red-400 mt-1">{errors.firstName}</p>
+                <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-neutral-300 mb-2">
+              <label className="block text-sm font-semibold text-card-foreground mb-2">
                 Last Name *
               </label>
               <input
@@ -658,18 +658,18 @@ function EditHRModal({
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
-                className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                className={`w-full px-4 py-2.5 bg-card border ${
                   errors.lastName ? 'border-red-500' : 'border-neutral-800'
-                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
               />
               {errors.lastName && (
-                <p className="text-xs text-red-400 mt-1">{errors.lastName}</p>
+                <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-300 mb-2">
+            <label className="block text-sm font-semibold text-card-foreground mb-2">
               Mobile Number
             </label>
             <input
@@ -680,20 +680,20 @@ function EditHRModal({
                   phone: e.target.value.replace(/\D/g, '').slice(0, 10),
                 })
               }
-              className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+              className={`w-full px-4 py-2.5 bg-card border ${
                 errors.phone ? 'border-red-500' : 'border-neutral-800'
-              } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+              } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
             />
             {errors.phone && (
-              <p className="text-xs text-red-400 mt-1">{errors.phone}</p>
+              <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
             )}
           </div>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-neutral-800">
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-white font-semibold transition-colors"
+              className="flex-1 px-4 py-2.5 bg-secondary hover:bg-secondary/50 rounded-xl text-foreground font-semibold transition-colors"
               disabled={isLoading}
             >
               Cancel
@@ -701,7 +701,7 @@ function EditHRModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-foreground font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -757,9 +757,9 @@ function ResetPasswordModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="px-6 py-4 border-b border-neutral-800">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+      <div className="bg-secondary border border-border rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Key className="w-5 h-5 text-amber-500" />
             Reset Password
           </h2>
@@ -777,7 +777,7 @@ function ResetPasswordModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-300 mb-2">
+            <label className="block text-sm font-semibold text-card-foreground mb-2">
               New Password *
             </label>
             <div className="relative">
@@ -785,15 +785,15 @@ function ResetPasswordModal({
                 type={showPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+                className={`w-full px-4 py-2.5 bg-card border ${
                   errors.newPassword ? 'border-red-500' : 'border-neutral-800'
-                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />
@@ -803,33 +803,33 @@ function ResetPasswordModal({
               </button>
             </div>
             {errors.newPassword && (
-              <p className="text-xs text-red-400 mt-1">{errors.newPassword}</p>
+              <p className="text-xs text-red-600 mt-1">{errors.newPassword}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-300 mb-2">
+            <label className="block text-sm font-semibold text-card-foreground mb-2">
               Confirm Password *
             </label>
             <input
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full px-4 py-2.5 bg-neutral-950 border ${
+              className={`w-full px-4 py-2.5 bg-card border ${
                 errors.confirmPassword ? 'border-red-500' : 'border-neutral-800'
-              } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+              } rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500`}
               placeholder="••••••••"
             />
             {errors.confirmPassword && (
-              <p className="text-xs text-red-400 mt-1">{errors.confirmPassword}</p>
+              <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>
             )}
           </div>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-neutral-800">
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-white font-semibold transition-colors"
+              className="flex-1 px-4 py-2.5 bg-secondary hover:bg-secondary/50 rounded-xl text-foreground font-semibold transition-colors"
               disabled={isLoading}
             >
               Cancel
@@ -837,7 +837,7 @@ function ResetPasswordModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl text-foreground font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>

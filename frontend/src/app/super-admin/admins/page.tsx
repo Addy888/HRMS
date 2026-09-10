@@ -65,17 +65,17 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-neutral-950 border border-neutral-800 rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800">
-          <h2 className="font-heading text-xl font-bold text-white">Create HR Admin</h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+          <h2 className="font-heading text-xl font-bold text-foreground">Create HR Admin</h2>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
+            <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-1.5">
               First Name
             </label>
             <input
@@ -83,12 +83,12 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
               required
               value={form.firstName}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
+            <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-1.5">
               Last Name
             </label>
             <input
@@ -96,12 +96,12 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
               required
               value={form.lastName}
               onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
+            <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-1.5">
               Email
             </label>
             <input
@@ -109,51 +109,51 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
+            <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-1.5">
               Phone
             </label>
             <input
               type="tel"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
-              Role <span className="text-red-400">*</span>
+            <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-1.5">
+              Role <span className="text-red-600">*</span>
             </label>
             <select
               required
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
             >
               <option value="HR_ADMIN">HR Admin</option>
               <option value="SUPER_ADMIN">Super Admin</option>
             </select>
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               HR Admin: Access to HR Panel only | Super Admin: Full system access
             </p>
           </div>
 
           <div>
-            <label className="text-xs text-neutral-400 font-semibold uppercase tracking-wider block mb-1.5">
+            <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block mb-1.5">
               Default Password
             </label>
             <input
               type="text"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500 transition-colors"
             />
-            <p className="text-xs text-neutral-500 mt-1">Admin will be prompted to change on first login</p>
+            <p className="text-xs text-muted-foreground mt-1">Admin will be prompted to change on first login</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
               className="rounded"
             />
-            <label htmlFor="isActive" className="text-sm text-neutral-300">
+            <label htmlFor="isActive" className="text-sm text-card-foreground">
               Active (allow login)
             </label>
           </div>
@@ -173,14 +173,14 @@ const CreateAdminModal = ({ isOpen, onClose }: CreateAdminModalProps) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-semibold transition-colors"
+              className="flex-1 py-2.5 bg-secondary hover:bg-secondary/50 text-card-foreground rounded-xl text-sm font-semibold transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {createMutation.isPending ? 'Creating...' : 'Create Admin'}
@@ -239,17 +239,17 @@ export default function AdminsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-heading text-3xl font-extrabold text-white flex items-center gap-3">
+            <h1 className="font-heading text-3xl font-extrabold text-foreground flex items-center gap-3">
               <UserCog className="w-8 h-8 text-purple-500" />
               Admin Management
             </h1>
-            <p className="text-sm text-neutral-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Manage HR admins who handle employee operations
             </p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-foreground rounded-xl text-sm font-semibold transition-all shadow-md"
           >
             <Plus className="w-4 h-4" />
             Add Admin
@@ -257,25 +257,25 @@ export default function AdminsPage() {
         </div>
 
         {/* Search */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+        <div className="bg-card border border-border rounded-2xl p-4">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-secondary border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
         </div>
 
         {/* Admin Table */}
-        <div className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="bg-neutral-900 border-b border-neutral-800 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                <tr className="bg-secondary border-b border-border text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                   <th className="px-5 py-4">Admin</th>
                   <th className="px-5 py-4">Contact</th>
                   <th className="px-5 py-4">Role</th>
@@ -284,13 +284,13 @@ export default function AdminsPage() {
                   <th className="px-5 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-900">
+              <tbody className="divide-y divide-border">
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
                       {Array.from({ length: 6 }).map((__, j) => (
                         <td key={j} className="px-5 py-4">
-                          <div className="h-4 bg-neutral-900 animate-pulse rounded w-full"></div>
+                          <div className="h-4 bg-secondary animate-pulse rounded w-full"></div>
                         </td>
                       ))}
                     </tr>
@@ -299,23 +299,23 @@ export default function AdminsPage() {
                   filteredAdmins.map((admin: any) => (
                     <tr 
                       key={admin.id} 
-                      className="hover:bg-neutral-900/30 transition-colors text-sm cursor-pointer" 
+                      className="hover:bg-secondary/30 transition-colors text-sm cursor-pointer" 
                       onClick={() => router.push(`/super-admin/admins/${admin.id}`)}
                     >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center font-heading text-xs font-bold text-white uppercase">
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center font-heading text-xs font-bold text-foreground uppercase">
                             {admin.firstName?.charAt(0)}{admin.lastName?.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-semibold text-white hover:text-purple-400 transition-colors">{admin.firstName} {admin.lastName}</div>
-                            <div className="text-[10px] text-neutral-500 mt-0.5">ID: {admin.id.substring(0, 8)}</div>
+                            <div className="font-semibold text-foreground hover:text-purple-600 transition-colors">{admin.firstName} {admin.lastName}</div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5">ID: {admin.id.substring(0, 8)}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="text-neutral-300 text-xs">{admin.email}</div>
-                        <div className="text-neutral-500 text-[10px] mt-0.5">{admin.phone || 'N/A'}</div>
+                        <div className="text-card-foreground text-xs">{admin.email}</div>
+                        <div className="text-muted-foreground text-[10px] mt-0.5">{admin.phone || 'N/A'}</div>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-1">
@@ -324,22 +324,22 @@ export default function AdminsPage() {
                               Super Admin
                             </span>
                           ) : (
-                            <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
+                            <span className="text-[10px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
                               {admin.roleDisplay || admin.role}
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-neutral-300 text-sm">{admin.employeesManaged || 0}</span>
+                        <span className="text-card-foreground text-sm">{admin.employeesManaged || 0}</span>
                       </td>
                       <td className="px-5 py-4">
                         {admin.isActive ? (
-                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-bold uppercase">
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded font-bold uppercase">
                             Active
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded font-bold uppercase">
+                          <span className="text-[10px] bg-red-500/10 text-red-600 border border-red-500/20 px-2 py-0.5 rounded font-bold uppercase">
                             Inactive
                           </span>
                         )}
@@ -352,7 +352,7 @@ export default function AdminsPage() {
                                 resetPasswordMutation.mutate(admin.id);
                               }
                             }}
-                            className="p-1.5 hover:bg-purple-500/10 rounded-lg text-neutral-400 hover:text-purple-400 transition-colors"
+                            className="p-1.5 hover:bg-purple-500/10 rounded-lg text-muted-foreground hover:text-purple-600 transition-colors"
                             title="Reset password"
                           >
                             <KeyRound className="w-4 h-4" />
@@ -363,7 +363,7 @@ export default function AdminsPage() {
                                 deleteMutation.mutate(admin.id);
                               }
                             }}
-                            className="p-1.5 hover:bg-red-500/10 rounded-lg text-neutral-400 hover:text-red-400 transition-colors"
+                            className="p-1.5 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
                             title="Delete admin"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -376,8 +376,8 @@ export default function AdminsPage() {
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
-                        <UserCog className="w-12 h-12 text-neutral-700" />
-                        <span className="text-neutral-400 font-medium">No admins found</span>
+                        <UserCog className="w-12 h-12 text-card-foreground" />
+                        <span className="text-muted-foreground font-medium">No admins found</span>
                       </div>
                     </td>
                   </tr>
