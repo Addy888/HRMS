@@ -1112,6 +1112,56 @@ export class SuperAdminService {
       throw new NotFoundException('Employee not found');
     }
 
+    // ✅ FIX: Validate and resolve departmentId (same logic as employees.service.ts)
+    let resolvedDepartmentId = employee.departmentId;
+    if (dto.departmentId !== undefined) {
+      if (!dto.departmentId || dto.departmentId === '') {
+        // Empty string or null - clear department
+        resolvedDepartmentId = null;
+      } else {
+        // Verify department exists and belongs to same organization
+        const department = await this.prisma.department.findFirst({
+          where: {
+            id: dto.departmentId,
+            organizationId: user.organizationId,
+          },
+        });
+        
+        if (!department) {
+          throw new BadRequestException(
+            'Selected department does not exist in your organization'
+          );
+        }
+        
+        resolvedDepartmentId = dto.departmentId;
+      }
+    }
+
+    // ✅ FIX: Validate designationId (verify it belongs to same organization)
+    let resolvedDesignationId = employee.designationId;
+    if (dto.designationId !== undefined) {
+      if (!dto.designationId || dto.designationId === '') {
+        // Empty string or null - clear designation
+        resolvedDesignationId = null;
+      } else {
+        // Verify designation exists and belongs to same organization
+        const designation = await this.prisma.designation.findFirst({
+          where: {
+            id: dto.designationId,
+            organizationId: user.organizationId,
+          },
+        });
+        
+        if (!designation) {
+          throw new BadRequestException(
+            'Selected designation does not exist in your organization'
+          );
+        }
+        
+        resolvedDesignationId = dto.designationId;
+      }
+    }
+
     // Update employee
     const updated = await this.prisma.employee.update({
       where: { id: employeeId },
@@ -1123,8 +1173,8 @@ export class SuperAdminService {
         gender: dto.gender !== undefined ? dto.gender : employee.gender,
         bloodGroup: dto.bloodGroup !== undefined ? dto.bloodGroup : employee.bloodGroup,
         address: dto.address !== undefined ? dto.address : employee.address,
-        departmentId: dto.departmentId !== undefined ? dto.departmentId : employee.departmentId,
-        designationId: dto.designationId !== undefined ? dto.designationId : employee.designationId,
+        departmentId: resolvedDepartmentId,
+        designationId: resolvedDesignationId,
         joiningDate: dto.joiningDate !== undefined ? new Date(dto.joiningDate) : employee.joiningDate,
         monthlySalary: dto.monthlySalary !== undefined ? dto.monthlySalary : employee.monthlySalary,
         employmentType: dto.employmentType !== undefined ? dto.employmentType : employee.employmentType,

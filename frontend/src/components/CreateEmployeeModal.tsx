@@ -92,8 +92,11 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
       alert('Please fill in all required fields (First Name, Last Name, Email)');
       return;
     }
-    if (!form.monthlySalary || parseFloat(form.monthlySalary) <= 0) {
-      alert('Please enter a valid monthly salary greater than zero');
+    
+    // Monthly salary is optional - allow 0 or empty
+    // If provided and non-zero, must be positive
+    if (form.monthlySalary && parseFloat(form.monthlySalary) < 0) {
+      alert('Monthly salary cannot be negative');
       return;
     }
     
@@ -291,16 +294,15 @@ export function CreateEmployeeModal({ isOpen, onClose }: CreateEmployeeModalProp
 
               {/* Monthly Salary */}
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Monthly Salary (₹ INR) *</label>
+                <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Monthly Salary (₹ INR)</label>
                 <input
                   type="number"
                   name="monthlySalary"
                   value={form.monthlySalary}
                   onChange={handleChange}
-                  placeholder="25000"
-                  min="1"
+                  placeholder="25000 (optional)"
+                  min="0"
                   step="1"
-                  required
                   className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
