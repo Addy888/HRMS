@@ -103,7 +103,7 @@ async function verifyExistingAccounts() {
       total: users.length,
       active: users.filter(u => u.isActive).length,
       inactive: users.filter(u => !u.isActive).length,
-      byRole: Object.fromEntries(usersByRole.entries().map(([role, u]) => [role, u.length])),
+      byRole: Object.fromEntries(Array.from(usersByRole.entries()).map(([role, u]) => [role, u.length])),
     };
 
     console.log('Total Users:', summary.total);

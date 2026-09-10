@@ -117,8 +117,8 @@ export class DocumentsController {
 
   @Get('employee/:employeeId')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'HR: Get all documents of a specific employee' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'HR/Super Admin: Get all documents of a specific employee' })
   @ApiResponse({ status: 200, description: 'Returns all documents for the employee' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   getEmployeeDocumentsByEmployeeId(
@@ -130,9 +130,9 @@ export class DocumentsController {
 
   @Get('queue')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Get global HR document verification queue (HR Only)',
+    summary: 'Get global HR document verification queue (HR/Super Admin)',
   })
   getDocumentQueue(@GetUser('id') userId: string, @Query() query: QueryDocumentDto) {
     return this.documentsService.getDocumentQueue(query, userId);
@@ -140,9 +140,9 @@ export class DocumentsController {
 
   @Post(':id/verify')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'HR approves/rejects/requests re-upload of a document (HR Only)',
+    summary: 'HR/Super Admin approves/rejects/requests re-upload of a document',
   })
   verifyDocument(
     @GetUser('id') hrUserId: string,

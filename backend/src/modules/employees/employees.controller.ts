@@ -110,8 +110,8 @@ export class EmployeesController {
   }
 
   @Post()
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Register/Create a new employee profile (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Register/Create a new employee profile (HR/Super Admin)' })
   @ApiResponse({
     status: 201,
     description:
@@ -122,8 +122,8 @@ export class EmployeesController {
   }
 
   @Get('next-employee-id')
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get next available Employee ID for preview (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get next available Employee ID for preview (HR/Super Admin)' })
   @ApiResponse({
     status: 200,
     description: 'Returns the next available Employee ID',
@@ -133,27 +133,27 @@ export class EmployeesController {
   }
 
   @Get()
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Get all employees with pagination, search & filters (HR Only)',
+    summary: 'Get all employees with pagination, search & filters (HR/Super Admin)',
   })
   findAll(@Query() query: QueryEmployeeDto, @GetUser('id') userId: string) {
     return this.employeesService.findAll(query, userId);
   }
 
   @Get(':id')
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Get full detail of a specific employee profile (HR Only)',
+    summary: 'Get full detail of a specific employee profile (HR/Super Admin)',
   })
   findOne(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.employeesService.findOne(id, userId);
   }
 
   @Put(':id')
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Update employee basic/contact profile details (HR Only)',
+    summary: 'Update employee basic/contact profile details (HR/Super Admin)',
   })
   update(
     @Param('id') id: string,
@@ -169,33 +169,33 @@ export class EmployeesController {
   }
 
   @Post(':id/activate')
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Activate employee account (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Activate employee account (HR/Super Admin)' })
   activate(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.employeesService.setActivation(id, true, userId);
   }
 
   @Post(':id/deactivate')
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Deactivate employee account (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Deactivate employee account (HR/Super Admin)' })
   deactivate(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.employeesService.setActivation(id, false, userId);
   }
 
   @Post(':id/reset-password')
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary:
-      'Reset employee password back to default (1234) and force rewrite (HR Only)',
+      'Reset employee password back to default (1234) and force rewrite (HR/Super Admin)',
   })
   resetPassword(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.employeesService.resetPassword(id, userId);
   }
 
   @Delete(':id')
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Permanently remove employee user record from backend (HR Only)',
+    summary: 'Permanently remove employee user record from backend (HR/Super Admin)',
   })
   remove(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.employeesService.remove(id, userId);

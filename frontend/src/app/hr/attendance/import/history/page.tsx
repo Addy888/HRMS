@@ -41,6 +41,25 @@ export default function ImportHistoryPage() {
   const records = data?.data ?? [];
   const pagination = data?.pagination ?? { totalPages: 1, total: 0 };
 
+  const downloadFile = async (id: string, fileName: string) => {
+    try {
+      const response = await api.get(`/attendance/import/file/${id}`, {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download file:', error);
+    }
+  };
+
   const downloadErrorReport = async (id: string) => {
     try {
       const response = await api.get(`/attendance/import/history/${id}/errors`, {
@@ -54,6 +73,7 @@ export default function ImportHistoryPage() {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download error report:', error);
     }
@@ -133,7 +153,12 @@ export default function ImportHistoryPage() {
                   records.map((record: any) => (
                     <tr key={record.id} className="hover:bg-neutral-800/35 transition-colors">
                       <td className="px-6 py-4 text-sm font-semibold text-white">
-                        {record.fileName}
+                        <button
+                          onClick={() => downloadFile(record.id, record.fileName)}
+                          className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                        >
+                          {record.fileName}
+                        </button>
                       </td>
                       <td className="px-6 py-4 text-xs text-neutral-400">
                         {record.uploadedByUser?.employee
@@ -165,15 +190,24 @@ export default function ImportHistoryPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        {record.failedRows > 0 && record.errorReport && (
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => downloadErrorReport(record.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
+                            onClick={() => downloadFile(record.id, record.fileName)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-800 hover:bg-blue-700 border border-blue-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
                           >
                             <Download className="w-3 h-3" />
-                            Errors
+                            File
                           </button>
-                        )}
+                          {record.failedRows > 0 && record.errorReport && (
+                            <button
+                              onClick={() => downloadErrorReport(record.id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-[10px] font-semibold text-white transition-colors"
+                            >
+                              <Download className="w-3 h-3" />
+                              Errors
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

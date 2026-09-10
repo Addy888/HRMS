@@ -16,6 +16,8 @@ import {
 import { PrismaService } from '../../../database/prisma.service';
 import { SocketGateway } from '../../notifications/socket.gateway';
 import * as XLSX from 'xlsx';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 import {
   ExcelRowImportResult,
   AttendanceImportPreviewDto,
@@ -34,6 +36,7 @@ interface ImportSession {
   organizationId: string;
   uploadedBy: string;
   fileName: string;
+  fileBuffer?: Buffer;
   validRows: ExcelRowImportResult[];
   invalidRows: ExcelRowImportResult[];
   duplicateRows: ExcelRowImportResult[];
@@ -109,6 +112,7 @@ export class AttendanceImportService {
       organizationId,
       uploadedBy: userId,
       fileName: file.originalname,
+      fileBuffer: file.buffer,
       validRows: matchResults.matched,
       invalidRows: [], // No validation errors for flexible format
       duplicateRows: matchResults.unmatched, // Reuse for unmatched
@@ -177,6 +181,14 @@ export class AttendanceImportService {
       },
     });
 
+    const storagePath = await this.persistUploadedFile(session, importHistory.id);
+    await this.prisma.attendanceImportHistory.update({
+      where: { id: importHistory.id },
+      data: {
+        fileStoragePath: storagePath,
+      },
+    });
+
     let successCount = 0;
     let failCount = 0;
     const errors: any[] = [];
@@ -185,6 +197,19 @@ export class AttendanceImportService {
     for (const row of allRows) {
       try {
         await this.importRawAttendanceRow(row, organizationId, importHistory.id, session.fileName);
+        if (row.matchedEmployeeUUID) {
+          await this.importAttendanceRow(
+            {
+              ...row,
+              date: row.date || this.getRawDateValue(row.rawData),
+              checkIn: row.checkIn || this.getRawTimeValue(row.rawData, 'checkin'),
+              checkOut: row.checkOut || this.getRawTimeValue(row.rawData, 'checkout'),
+              status: row.status || this.getRawStatusValue(row.rawData),
+            },
+            organizationId,
+            userId,
+          );
+        }
         successCount++;
       } catch (error) {
         failCount++;
@@ -1102,5 +1127,78 @@ export class AttendanceImportService {
     }
 
     return warnings;
+  }
+
+  private getRawDateValue(rawData?: string): string {
+    if (!rawData) return '';
+    try {
+      const data = JSON.parse(rawData);
+      const candidates = [
+        'Date',
+        'Attendance Date',
+        'attendanceDate',
+        'date',
+        'AttendanceDate',
+      ];
+      for (const key of Object.keys(data)) {
+        if (candidates.includes(key) || /date/i.test(key)) {
+          const value = data[key];
+          if (value) return String(value).trim();
+        }
+      }
+    } catch {
+      // ignore parse errors; rawData is not guaranteed to be JSON
+    }
+    return '';
+  }
+
+  private getRawTimeValue(rawData?: string, type: 'checkin' | 'checkout' = 'checkin'): string {
+    if (!rawData) return '';
+    try {
+      const data = JSON.parse(rawData);
+      const patterns = type === 'checkin'
+        ? ['Check In', 'CheckIn', 'checkIn', 'Time In', 'timeIn', 'In Time', 'inTime']
+        : ['Check Out', 'CheckOut', 'checkOut', 'Time Out', 'timeOut', 'Out Time', 'outTime'];
+      for (const key of Object.keys(data)) {
+        const matches = patterns.includes(key) || new RegExp(type, 'i').test(key);
+        if (matches) {
+          const value = data[key];
+          if (value) return String(value).trim();
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return '';
+  }
+
+  private getRawStatusValue(rawData?: string): string {
+    if (!rawData) return AttendanceStatus.PRESENT;
+    try {
+      const data = JSON.parse(rawData);
+      for (const key of Object.keys(data)) {
+        if (/status/i.test(key)) {
+          const value = data[key];
+          if (value) return String(value).trim().toUpperCase();
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return AttendanceStatus.PRESENT;
+  }
+
+  private async persistUploadedFile(session: ImportSession, historyId: string): Promise<string> {
+    if (!session.fileBuffer) {
+      this.logger.warn(`No file buffer found for import session ${session.sessionId}`);
+      return '';
+    }
+
+    const targetDir = join(process.cwd(), 'uploads', 'attendance');
+    await fs.mkdir(targetDir, { recursive: true });
+    const targetPath = join(targetDir, `${historyId}.xlsx`);
+    await fs.writeFile(targetPath, session.fileBuffer);
+
+    return join('uploads', 'attendance', `${historyId}.xlsx`);
   }
 }

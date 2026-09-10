@@ -17,6 +17,7 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  NotFoundException,
   Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -43,7 +44,7 @@ import * as XLSX from 'xlsx';
 @ApiTags('Attendance Import')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+@Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
 @Controller('attendance/import')
 export class AttendanceImportController {
   constructor(
@@ -293,5 +294,114 @@ export class AttendanceImportController {
     );
 
     res.send(buffer);
+  }
+
+  /**
+   * GET UPLOADED ATTENDANCE FILE
+   * Download/view the originally uploaded Excel file
+   * Falls back to reconstructing Excel from raw records if original not found
+   */
+  @Get('file/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Download uploaded attendance file' })
+  @ApiResponse({ status: 200, description: 'File downloaded' })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  async downloadUploadedFile(
+    @Request() req,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const { join } = await import('path');
+    const fs = await import('fs/promises');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const history = await this.importService.getImportHistoryById(id, user.organizationId);
+
+    // Strategy 1: Try to read original stored file
+    if (history.fileStoragePath) {
+      const filePath = join(process.cwd(), history.fileStoragePath);
+      try {
+        const data = await fs.readFile(filePath);
+
+        res.setHeader(
+          'Content-Type',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename=${history.fileName}`,
+        );
+
+        return res.send(data);
+      } catch (error) {
+        console.error(`Failed to read stored file ${filePath}:`, error.message);
+        // Fall through to Strategy 2
+      }
+    }
+
+    // Strategy 2: Reconstruct Excel from raw records
+    try {
+      const rawRecords = await this.prisma.rawAttendanceRecord.findMany({
+        where: {
+          importHistoryId: id,
+          organizationId: user.organizationId,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (rawRecords.length === 0) {
+        throw new NotFoundException('No attendance records found for this import');
+      }
+
+      // Parse all raw data and reconstruct rows
+      const rows = rawRecords.map(record => {
+        try {
+          return JSON.parse(record.rawData || '{}');
+        } catch {
+          return {};
+        }
+      });
+
+      // Create Excel worksheet from reconstructed rows
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+
+      // Set column widths (auto-fit based on content)
+      const colWidths: any[] = [];
+      if (rows.length > 0) {
+        const firstRow = rows[0];
+        Object.keys(firstRow).forEach(() => {
+          colWidths.push({ wch: 15 });
+        });
+      }
+      if (colWidths.length > 0) {
+        worksheet['!cols'] = colWidths;
+      }
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
+
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=${history.fileName}`,
+      );
+
+      return res.send(buffer);
+    } catch (error) {
+      console.error(`Failed to download/reconstruct file ${id}:`, error.message);
+      throw new NotFoundException('Unable to retrieve attendance file');
+    }
   }
 }

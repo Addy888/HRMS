@@ -162,8 +162,8 @@ export class ComplaintsController {
 
   @Get('admin/complaints')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get global complaints queue list (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get global complaints queue list (HR/Super Admin)' })
   getHRComplaintsQueue(@GetUser('id') userId: string, @Query() query: QueryComplaintsDto) {
     console.log('=== HR COMPLAINTS QUEUE REQUEST ===');
     console.log('Query params received:', query);
@@ -173,17 +173,17 @@ export class ComplaintsController {
 
   @Get('admin/complaints/dashboard/stats')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get HR helpdesk analytics metrics (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get HR helpdesk analytics metrics (HR/Super Admin)' })
   getHRDashboardStats() {
     return this.complaintsService.getHRDashboardStats();
   }
 
   @Patch('admin/complaints/:id')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Update priority or status details of a complaint (HR Only)',
+    summary: 'Update priority or status details of a complaint (HR/Super Admin)',
   })
   updateHRComplaint(
     @Param('id') id: string,
@@ -195,9 +195,9 @@ export class ComplaintsController {
 
   @Post('admin/complaints/:id/assign')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Assign/Reassign support ticket to an HR Agent (HR Only)',
+    summary: 'Assign/Reassign support ticket to an HR Agent (HR/Super Admin)',
   })
   assignComplaint(
     @Param('id') id: string,
@@ -209,9 +209,9 @@ export class ComplaintsController {
 
   @Post('admin/complaints/:id/resolve')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Mark complaint support ticket as RESOLVED (HR Only)',
+    summary: 'Mark complaint support ticket as RESOLVED (HR/Super Admin)',
   })
   resolveComplaint(
     @Param('id') id: string,
@@ -223,24 +223,24 @@ export class ComplaintsController {
 
   @Post('admin/complaints/:id/reopen')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Reopen a previously resolved complaint (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reopen a previously resolved complaint (HR/Super Admin)' })
   reopenComplaint(@Param('id') id: string, @GetUser('id') hrUserId: string) {
     return this.complaintsService.reopenComplaint(id, hrUserId);
   }
 
   @Post('admin/complaints/:id/accept')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Accept an OPEN complaint and move to IN_PROGRESS (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Accept an OPEN complaint and move to IN_PROGRESS (HR/Super Admin)' })
   acceptComplaint(@Param('id') id: string, @GetUser('id') hrUserId: string) {
     return this.complaintsService.acceptComplaint(id, hrUserId);
   }
 
   @Post('admin/complaints/:id/reject')
   @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Reject an OPEN complaint with a reason (HR Only)' })
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reject an OPEN complaint with a reason (HR/Super Admin)' })
   rejectComplaint(
     @Param('id') id: string,
     @GetUser('id') hrUserId: string,

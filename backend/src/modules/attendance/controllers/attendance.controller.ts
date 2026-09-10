@@ -359,8 +359,8 @@ export class AttendanceController {
    */
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get all attendance records (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all attendance records (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Attendance records retrieved' })
   async getAllAttendance(@Request() req, @Query() query: GetAttendanceQueryDto) {
     return this.attendanceService.getAllAttendance(query, req.user.id);
@@ -372,8 +372,8 @@ export class AttendanceController {
    */
   @Get('summary')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get attendance summary (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get attendance summary (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Attendance summary retrieved' })
   async getAttendanceSummary(@Request() req, @Query('date') date?: string) {
     return this.attendanceService.getAttendanceSummary(date, req.user.id);
@@ -385,8 +385,8 @@ export class AttendanceController {
    */
   @Get('employee/:employeeId')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get employee attendance (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get employee attendance (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Employee attendance retrieved' })
   async getEmployeeAttendance(
     @Param('employeeId') employeeId: string,
@@ -401,8 +401,8 @@ export class AttendanceController {
    */
   @Get('employee/:employeeId/monthly')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get employee monthly attendance (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get employee monthly attendance (HR/Super Admin)' })
   @ApiResponse({
     status: 200,
     description: 'Employee monthly attendance retrieved',
@@ -420,9 +420,9 @@ export class AttendanceController {
    */
   @Post('manual')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Manually mark attendance (HR only)' })
+  @ApiOperation({ summary: 'Manually mark attendance (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Attendance marked successfully' })
   async manualAttendance(@Request() req, @Body() dto: ManualAttendanceDto) {
     const user = await this.prisma.user.findUnique({
@@ -446,9 +446,9 @@ export class AttendanceController {
    */
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update attendance record (HR only)' })
+  @ApiOperation({ summary: 'Update attendance record (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Attendance updated successfully' })
   async updateAttendance(
     @Request() req,
@@ -530,8 +530,8 @@ export class AttendanceController {
    */
   @Get(':id/audit')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get attendance audit log (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get attendance audit log (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Audit log retrieved' })
   async getAuditLog(@Request() req, @Param('id') id: string) {
     return this.attendanceService.getAuditLog(id, req.user.id);
@@ -543,8 +543,8 @@ export class AttendanceController {
    */
   @Get('employee/:employeeId/late-count')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get employee late count (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get employee late count (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Late count retrieved' })
   async getEmployeeLateCount(
     @Request() req,

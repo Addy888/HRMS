@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['192.168.10.8'],
+  allowedDevOrigins: ['192.168.1.14', '192.168.10.8', 'localhost', '127.0.0.1'],
   
   // Empty Turbopack config to silence the warning
   // PDF.js works fine with Turbopack without special configuration

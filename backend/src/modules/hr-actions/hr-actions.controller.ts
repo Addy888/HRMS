@@ -42,9 +42,9 @@ export class HRActionsController {
    */
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create HR Action (HR only)' })
+  @ApiOperation({ summary: 'Create HR Action (HR/Super Admin)' })
   @ApiResponse({ status: 201, description: 'HR Action created successfully' })
   async create(
     @Request() req,
@@ -60,8 +60,8 @@ export class HRActionsController {
    */
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get all HR Actions (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all HR Actions (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'HR Actions retrieved' })
   async findAll(@Request() req, @Query() query: QueryHRActionsDto) {
     return this.hrActionsService.findAll(query, req.user.id);
@@ -84,8 +84,8 @@ export class HRActionsController {
    */
   @Get('stats/overview')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
-  @ApiOperation({ summary: 'Get HR Actions statistics (HR only)' })
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get HR Actions statistics (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved' })
   async getStatistics(@Request() req) {
     return this.hrActionsService.getStatistics(req.user.id);
@@ -117,9 +117,9 @@ export class HRActionsController {
    */
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update HR Action (HR only)' })
+  @ApiOperation({ summary: 'Update HR Action (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'HR Action updated successfully' })
   async update(
     @Request() req,
@@ -134,9 +134,9 @@ export class HRActionsController {
    */
   @Post(':id/issue')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Issue HR Action (HR only)' })
+  @ApiOperation({ summary: 'Issue HR Action (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'HR Action issued successfully' })
   async issue(@Request() req, @Param('id') id: string) {
     return this.hrActionsService.issue(id, req.user.id);
@@ -147,9 +147,9 @@ export class HRActionsController {
    */
   @Post(':id/send')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Send HR Action (HR only)' })
+  @ApiOperation({ summary: 'Send HR Action (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'HR Action sent successfully' })
   async send(@Request() req, @Param('id') id: string) {
     return this.hrActionsService.send(id, req.user.id);
@@ -186,9 +186,9 @@ export class HRActionsController {
    */
   @Post(':id/resolve')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resolve HR Action (HR only)' })
+  @ApiOperation({ summary: 'Resolve HR Action (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'HR Action resolved successfully' })
   async resolve(
     @Request() req,
@@ -203,9 +203,9 @@ export class HRActionsController {
    */
   @Post(':id/cancel')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Cancel HR Action (HR only)' })
+  @ApiOperation({ summary: 'Cancel HR Action (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'HR Action cancelled successfully' })
   async cancel(
     @Request() req,

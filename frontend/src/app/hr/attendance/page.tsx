@@ -344,7 +344,12 @@ export default function HRAttendancePage() {
                     return (
                       <tr key={upload.id} className="border-b border-neutral-800/40 hover:bg-neutral-800/20 transition-colors">
                         <td className="px-3 py-3 text-sm text-white font-medium">
-                          {upload.fileName}
+                          <button
+                            onClick={() => window.open(`/api/v1/attendance/import/file/${upload.id}`, '_blank')}
+                            className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                          >
+                            {upload.fileName}
+                          </button>
                         </td>
                         <td className="px-3 py-3 text-xs text-neutral-300">
                           {uploadedByName}
