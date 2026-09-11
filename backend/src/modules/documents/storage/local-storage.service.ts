@@ -1,16 +1,32 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { IStorageService, UploadedFileResponse } from './storage.interface.js';
-import { join, extname } from 'path';
+import { join, extname, resolve, isAbsolute } from 'path';
 import * as fs from 'fs';
 
 @Injectable()
 export class LocalStorageService implements IStorageService {
-  private readonly baseUploadPath = join(process.cwd(), 'uploads');
+  private readonly baseUploadPath: string;
 
   constructor() {
+    // Resolve upload path from UPLOAD_DIR env variable or use default
+    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    
+    // If relative path, resolve from cwd
+    this.baseUploadPath = isAbsolute(uploadDir)
+      ? uploadDir
+      : resolve(process.cwd(), uploadDir);
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('LocalStorageService Initialized');
+    console.log(`  UPLOAD_DIR env: ${process.env.UPLOAD_DIR || 'not set'}`);
+    console.log(`  process.cwd(): ${process.cwd()}`);
+    console.log(`  Base upload path: ${this.baseUploadPath}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     // Ensure core upload paths exist
     if (!fs.existsSync(this.baseUploadPath)) {
       fs.mkdirSync(this.baseUploadPath, { recursive: true });
+      console.log(`  ✅ Created base upload directory: ${this.baseUploadPath}`);
     }
   }
 

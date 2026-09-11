@@ -18,6 +18,7 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
     gender: '', dob: '', joiningDate: '',
     address: '', emergencyContact: '',
     departmentId: '', designationId: '',
+    reason: '', // ✅ NEW: Reason field for change history
   });
 
   React.useEffect(() => {
@@ -33,6 +34,7 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
         emergencyContact: employee.emergencyContact || '',
         departmentId: employee.departmentId || '',
         designationId: employee.designationId || '',
+        reason: '', // Reset reason on each edit
       });
     }
   }, [employee]);
@@ -69,7 +71,8 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees-list'] });
-      queryClient.invalidateQueries({ queryKey: [`employee-${employee.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`employee`, employee.id] });
+      queryClient.invalidateQueries({ queryKey: ['employee-change-history', employee.id] });
       onClose();
     },
     onError: (err: any) => alert(err.message || 'Failed to update employee'),
@@ -81,6 +84,13 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // ✅ Validate reason is provided
+    if (!form.reason || !form.reason.trim()) {
+      alert('Please provide a reason for updating the employee information');
+      return;
+    }
+    
     console.log('[EMPLOYEE-EDIT] Process value:', form.departmentId);
     console.log('[EMPLOYEE-EDIT] Full form state:', form);
     console.log('[EMPLOYEE-EDIT] Update payload:', form);
@@ -188,6 +198,23 @@ export function EditEmployeeModal({ employee, isOpen, onClose }: EditEmployeeMod
               <input type="text" name="emergencyContact" value={form.emergencyContact} onChange={handleChange}
                 className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="Name: Phone Number" />
+            </div>
+
+            {/* ✅ NEW: Mandatory Reason Field */}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                Reason for Update <span className="text-red-600">*</span>
+              </label>
+              <textarea
+                name="reason"
+                value={form.reason}
+                onChange={handleChange}
+                rows={3}
+                required
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                placeholder="Enter the reason for updating employee information (e.g., Employee information correction, Promotion, Department transfer)"
+              />
+              <p className="text-xs text-muted-foreground mt-1">This reason will be recorded in the employee change history for audit purposes.</p>
             </div>
           </div>
 

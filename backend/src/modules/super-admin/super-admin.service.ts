@@ -990,20 +990,36 @@ export class SuperAdminService {
       include: {
         employees: {
           where: {
+            organizationId: user.organizationId,
+          },
+          select: {
+            id: true,
+            monthlySalary: true,
             user: {
-              role: { name: UserRole.EMPLOYEE },
+              select: {
+                isActive: true,
+              },
             },
           },
-          select: { id: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return processes.map((process) => ({
-      ...process,
-      employeeCount: process.employees.length,
-    }));
+    return processes.map((process) => {
+      const employees = process.employees;
+      const totalEmployees = employees.length;
+      const activeEmployees = employees.filter(emp => emp.user.isActive).length;
+      const totalMonthlyPayroll = employees.reduce((sum, emp) => sum + (emp.monthlySalary || 0), 0);
+
+      return {
+        ...process,
+        totalEmployees,
+        activeEmployees,
+        totalMonthlyPayroll,
+        employeeCount: totalEmployees, // Keep for backward compatibility
+      };
+    });
   }
 
   // ✅ NEW: Create Employee (Super Admin)
@@ -1088,23 +1104,39 @@ export class SuperAdminService {
   async updateEmployee(requestUserId: string, employeeId: string, dto: any) {
     await this.verifySuperAdmin(requestUserId);
 
-    const user = await this.prisma.user.findUnique({
+    // ✅ STEP 1: Validate reason is provided
+    if (!dto.reason || !dto.reason.trim()) {
+      throw new BadRequestException('Update reason is required');
+    }
+
+    // ✅ STEP 2: Get authenticated user details
+    const requestingUser = await this.prisma.user.findUnique({
       where: { id: requestUserId },
-      select: { organizationId: true },
+      select: { 
+        organizationId: true,
+        role: { select: { name: true } },
+        employee: { select: { firstName: true, lastName: true } },
+      },
     });
 
-    if (!user?.organizationId) {
+    if (!requestingUser?.organizationId) {
       throw new BadRequestException('User not associated with organization');
     }
 
-    // Find employee
+    const updaterName = requestingUser.employee
+      ? `${requestingUser.employee.firstName} ${requestingUser.employee.lastName}`
+      : 'Super Admin';
+
+    // ✅ STEP 3: Find employee and load BEFORE state
     const employee = await this.prisma.employee.findFirst({
       where: {
         id: employeeId,
-        organizationId: user.organizationId,
+        organizationId: requestingUser.organizationId,
       },
       include: {
         user: true,
+        department: { select: { name: true } },
+        designation: { select: { name: true } },
       },
     });
 
@@ -1112,18 +1144,23 @@ export class SuperAdminService {
       throw new NotFoundException('Employee not found');
     }
 
-    // ✅ FIX: Validate and resolve departmentId (same logic as employees.service.ts)
+    console.log('[SUPER-ADMIN-UPDATE] Current employee state:', {
+      employeeId: employee.employeeId,
+      name: `${employee.firstName} ${employee.lastName}`,
+      departmentId: employee.departmentId,
+      departmentName: employee.department?.name,
+    });
+
+    // ✅ STEP 4: Validate and resolve departmentId
     let resolvedDepartmentId = employee.departmentId;
     if (dto.departmentId !== undefined) {
       if (!dto.departmentId || dto.departmentId === '') {
-        // Empty string or null - clear department
         resolvedDepartmentId = null;
       } else {
-        // Verify department exists and belongs to same organization
         const department = await this.prisma.department.findFirst({
           where: {
             id: dto.departmentId,
-            organizationId: user.organizationId,
+            organizationId: requestingUser.organizationId,
           },
         });
         
@@ -1137,18 +1174,16 @@ export class SuperAdminService {
       }
     }
 
-    // ✅ FIX: Validate designationId (verify it belongs to same organization)
+    // ✅ STEP 5: Validate designationId
     let resolvedDesignationId = employee.designationId;
     if (dto.designationId !== undefined) {
       if (!dto.designationId || dto.designationId === '') {
-        // Empty string or null - clear designation
         resolvedDesignationId = null;
       } else {
-        // Verify designation exists and belongs to same organization
         const designation = await this.prisma.designation.findFirst({
           where: {
             id: dto.designationId,
-            organizationId: user.organizationId,
+            organizationId: requestingUser.organizationId,
           },
         });
         
@@ -1162,34 +1197,162 @@ export class SuperAdminService {
       }
     }
 
-    // Update employee
-    const updated = await this.prisma.employee.update({
-      where: { id: employeeId },
-      data: {
-        firstName: dto.firstName !== undefined ? dto.firstName : employee.firstName,
-        lastName: dto.lastName !== undefined ? dto.lastName : employee.lastName,
-        phone: dto.phone !== undefined ? dto.phone : employee.phone,
-        dob: dto.dob !== undefined ? (dto.dob ? new Date(dto.dob) : null) : employee.dob,
-        gender: dto.gender !== undefined ? dto.gender : employee.gender,
-        bloodGroup: dto.bloodGroup !== undefined ? dto.bloodGroup : employee.bloodGroup,
-        address: dto.address !== undefined ? dto.address : employee.address,
-        departmentId: resolvedDepartmentId,
-        designationId: resolvedDesignationId,
-        joiningDate: dto.joiningDate !== undefined ? new Date(dto.joiningDate) : employee.joiningDate,
-        monthlySalary: dto.monthlySalary !== undefined ? dto.monthlySalary : employee.monthlySalary,
-        employmentType: dto.employmentType !== undefined ? dto.employmentType : employee.employmentType,
-        bankAccountNumber: dto.bankAccountNumber !== undefined ? dto.bankAccountNumber : employee.bankAccountNumber,
-        bankIfsc: dto.bankIfsc !== undefined ? dto.bankIfsc : employee.bankIfsc,
-        bankName: dto.bankName !== undefined ? dto.bankName : employee.bankName,
-        panNumber: dto.panNumber !== undefined ? dto.panNumber : employee.panNumber,
-        aadhaarNumber: dto.aadhaarNumber !== undefined ? dto.aadhaarNumber : employee.aadhaarNumber,
-      },
-    });
+    // ✅ STEP 6: Build update data object
+    const updateData: any = {};
+    
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.gender !== undefined) updateData.gender = dto.gender;
+    if (dto.bloodGroup !== undefined) updateData.bloodGroup = dto.bloodGroup;
+    if (dto.address !== undefined) updateData.address = dto.address;
+    if (dto.employmentType !== undefined) updateData.employmentType = dto.employmentType;
+    if (dto.bankAccountNumber !== undefined) updateData.bankAccountNumber = dto.bankAccountNumber;
+    if (dto.bankIfsc !== undefined) updateData.bankIfsc = dto.bankIfsc;
+    if (dto.bankName !== undefined) updateData.bankName = dto.bankName;
+    if (dto.panNumber !== undefined) updateData.panNumber = dto.panNumber;
+    if (dto.aadhaarNumber !== undefined) updateData.aadhaarNumber = dto.aadhaarNumber;
+    
+    if (dto.dob !== undefined) {
+      updateData.dob = dto.dob ? new Date(dto.dob) : null;
+    }
+    
+    if (dto.joiningDate !== undefined) {
+      updateData.joiningDate = dto.joiningDate ? new Date(dto.joiningDate) : null;
+    }
+    
+    if (dto.monthlySalary !== undefined) {
+      if (dto.monthlySalary === null || dto.monthlySalary === '') {
+        updateData.monthlySalary = null;
+      } else {
+        const salary = Number(dto.monthlySalary);
+        if (!isFinite(salary)) {
+          throw new BadRequestException('Invalid monthly salary value');
+        }
+        updateData.monthlySalary = salary;
+      }
+    }
+    
+    updateData.departmentId = resolvedDepartmentId;
+    updateData.designationId = resolvedDesignationId;
 
-    return {
-      message: 'Employee updated successfully',
-      employee: updated,
+    // ✅ STEP 7: Detect changes
+    const changes: Record<string, { old: any; new: any }> = {};
+    
+    const formatDate = (date: any) => {
+      if (!date) return null;
+      if (date instanceof Date) return date.toISOString().split('T')[0];
+      if (typeof date === 'string') return date.split('T')[0];
+      return date;
     };
+
+    const getDepartmentName = async (id: string | null) => {
+      if (!id) return null;
+      const dept = await this.prisma.department.findUnique({ where: { id }, select: { name: true } });
+      return dept?.name || id;
+    };
+
+    const getDesignationName = async (id: string | null) => {
+      if (!id) return null;
+      const desig = await this.prisma.designation.findUnique({ where: { id }, select: { name: true } });
+      return desig?.name || id;
+    };
+
+    for (const [field, newValue] of Object.entries(updateData)) {
+      let oldValue = (employee as any)[field];
+      let compareNewValue = newValue;
+
+      if (field === 'dob' || field === 'joiningDate') {
+        oldValue = formatDate(oldValue);
+        compareNewValue = formatDate(newValue);
+      }
+
+      if (field === 'departmentId') {
+        const oldDeptName = await getDepartmentName(oldValue as string | null);
+        const newDeptName = await getDepartmentName(compareNewValue as string | null);
+        
+        if (oldDeptName !== newDeptName) {
+          changes['department'] = { old: oldDeptName, new: newDeptName };
+        }
+        continue;
+      }
+
+      if (field === 'designationId') {
+        const oldDesigName = await getDesignationName(oldValue as string | null);
+        const newDesigName = await getDesignationName(compareNewValue as string | null);
+        
+        if (oldDesigName !== newDesigName) {
+          changes['designation'] = { old: oldDesigName, new: newDesigName };
+        }
+        continue;
+      }
+
+      if (oldValue !== compareNewValue) {
+        changes[field] = { old: oldValue, new: compareNewValue };
+      }
+    }
+
+    console.log('[SUPER-ADMIN-UPDATE] Detected changes:', changes);
+
+    if (Object.keys(changes).length === 0) {
+      throw new BadRequestException('No changes detected. Please modify at least one field to update.');
+    }
+
+    // ✅ STEP 8: Perform update and create change history in transaction
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.employee.update({
+        where: { id: employeeId },
+        data: updateData,
+        include: {
+          department: { select: { id: true, name: true } },
+          designation: { select: { id: true, name: true } },
+          user: { select: { id: true, email: true, isActive: true } },
+        },
+      });
+
+      console.log('[SUPER-ADMIN-UPDATE] Employee updated successfully');
+
+      // ✅ CRITICAL: Create structured change history audit log (SAME as HR flow)
+      await tx.auditLog.create({
+        data: {
+          userId: requestUserId,
+          action: 'EMPLOYEE_UPDATED',
+          details: JSON.stringify({
+            type: 'EMPLOYEE_CHANGE_HISTORY',
+            organizationId: employee.organizationId,
+            employeeId: employeeId,
+            employeeCode: employee.employeeId,
+            employeeName: `${employee.firstName} ${employee.lastName}`,
+            updatedByUserId: requestUserId,
+            updatedByName: updaterName,
+            updatedByRole: requestingUser.role.name,
+            reason: dto.reason.trim(),
+            changes,
+          }),
+        },
+      });
+
+      console.log('[SUPER-ADMIN-UPDATE] Change history audit log created:', {
+        employeeCode: employee.employeeId,
+        updatedBy: updaterName,
+        role: requestingUser.role.name,
+        reason: dto.reason.trim(),
+        changesCount: Object.keys(changes).length,
+      });
+
+      // Create generic audit log
+      await tx.auditLog.create({
+        data: {
+          action: 'EMPLOYEE_UPDATED',
+          details: `Employee profile updated for ${employee.employeeId} by ${updaterName}. Reason: ${dto.reason}`,
+        },
+      });
+
+      return {
+        message: 'Employee updated successfully',
+        employee: updated,
+      };
+    });
   }
 
   // ✅ NEW: Delete Employee (Super Admin)

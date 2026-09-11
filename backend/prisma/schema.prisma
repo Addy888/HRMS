@@ -28,24 +28,24 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users            User[]
-  employees        Employee[]
-  departments      Department[]
-  designations     Designation[]
-  policies         Policy[]
-  complaints       Complaint[]
-  documents        Document[]
-  salaryStructures SalaryStructure[]
-  payslips         Payslip[]
-  attendances      Attendance[]
-  shifts           Shift[]
-  PayrollRun       PayrollRun[]
-  Loan             Loan[]
-  AdvanceSalary    AdvanceSalary[]
-  hrActions        HRAction[]
-  attendanceImports AttendanceImportHistory[]
+  users                User[]
+  employees            Employee[]
+  departments          Department[]
+  designations         Designation[]
+  policies             Policy[]
+  complaints           Complaint[]
+  documents            Document[]
+  salaryStructures     SalaryStructure[]
+  payslips             Payslip[]
+  attendances          Attendance[]
+  shifts               Shift[]
+  PayrollRun           PayrollRun[]
+  Loan                 Loan[]
+  AdvanceSalary        AdvanceSalary[]
+  hrActions            HRAction[]
+  attendanceImports    AttendanceImportHistory[]
   rawAttendanceRecords RawAttendanceRecord[] // ✅ NEW: Flexible attendance imports
-  companyPolicies  CompanyPolicy[]
+  companyPolicies      CompanyPolicy[]
 }
 
 model Role {
@@ -63,55 +63,55 @@ model Role {
 }
 
 model User {
-  id                      String                  @id @default(uuid())
-  email                   String                  @unique
-  password                String
-  roleId                  String
-  role                    Role                    @relation(fields: [roleId], references: [id])
-  organizationId          String // ✅ Multi-tenant: Each user belongs to an organization
-  organization            Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  isFirstLogin            Boolean                 @default(true)
-  isActive                Boolean                 @default(true)
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-  employee                Employee?
-  employeesCreated        Employee[]              @relation("EmployeeCreatedBy") // ✅ HR Ownership: Employees created by this HR user
-  departmentsCreated      Department[]            @relation("DepartmentCreatedBy") // ✅ Departments/Processes created by this HR user
-  passwordResets          PasswordReset[]
-  otpVerifications        OtpVerification[]
-  auditLogs               AuditLog[]
-  notifications           Notification[]          @relation("UserNotifications")
-  notificationRecipients  NotificationRecipient[] @relation("UserNotificationRecipients")
-  announcementsCreated    Announcement[]          @relation("UserAnnouncementsCreated")
-  announcementRecipients  AnnouncementRecipient[] @relation("UserAnnouncementRecipients")
-  notificationPreference  NotificationPreference?
-  complaintReplies        ComplaintReply[]
-  complaintTimelineEvents ComplaintTimeline[]
-  complaintAuditLogs      ComplaintAuditLog[]
-  hrActionsIssued         HRAction[]              @relation("HRActionsIssued")
-  hrActionsAcknowledged   HRAction[]              @relation("HRActionsAcknowledged")
-  hrActionsResolved       HRAction[]              @relation("HRActionsResolved")
-  hrActionsCancelled      HRAction[]              @relation("HRActionsCancelled")
-  hrActionAudits          HRActionAuditLog[]      @relation("HRActionAudits")
-  attendanceHistories     AttendanceHistory[]
+  id                        String                    @id @default(uuid())
+  email                     String                    @unique
+  password                  String
+  roleId                    String
+  role                      Role                      @relation(fields: [roleId], references: [id])
+  organizationId            String // ✅ Multi-tenant: Each user belongs to an organization
+  organization              Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  isFirstLogin              Boolean                   @default(true)
+  isActive                  Boolean                   @default(true)
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
+  employee                  Employee?
+  employeesCreated          Employee[]                @relation("EmployeeCreatedBy") // ✅ HR Ownership: Employees created by this HR user
+  departmentsCreated        Department[]              @relation("DepartmentCreatedBy") // ✅ Departments/Processes created by this HR user
+  passwordResets            PasswordReset[]
+  otpVerifications          OtpVerification[]
+  auditLogs                 AuditLog[]
+  notifications             Notification[]            @relation("UserNotifications")
+  notificationRecipients    NotificationRecipient[]   @relation("UserNotificationRecipients")
+  announcementsCreated      Announcement[]            @relation("UserAnnouncementsCreated")
+  announcementRecipients    AnnouncementRecipient[]   @relation("UserAnnouncementRecipients")
+  notificationPreference    NotificationPreference?
+  complaintReplies          ComplaintReply[]
+  complaintTimelineEvents   ComplaintTimeline[]
+  complaintAuditLogs        ComplaintAuditLog[]
+  hrActionsIssued           HRAction[]                @relation("HRActionsIssued")
+  hrActionsAcknowledged     HRAction[]                @relation("HRActionsAcknowledged")
+  hrActionsResolved         HRAction[]                @relation("HRActionsResolved")
+  hrActionsCancelled        HRAction[]                @relation("HRActionsCancelled")
+  hrActionAudits            HRActionAuditLog[]        @relation("HRActionAudits")
+  attendanceHistories       AttendanceHistory[]
   attendanceImportsUploaded AttendanceImportHistory[] @relation("AttendanceImportHistoryUploader")
 
   @@index([organizationId])
 }
 
 model Department {
-  id             String       @id @default(uuid())
-  organizationId String // ✅ Multi-tenant: Departments belong to organizations
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
-  code           String? // Process/Department code (e.g., VTP, SALES, OPS)
-  description    String?
-  isActive       Boolean      @default(true) // Active/Inactive status
+  id              String       @id @default(uuid())
+  organizationId  String // ✅ Multi-tenant: Departments belong to organizations
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  code            String? // Process/Department code (e.g., VTP, SALES, OPS)
+  description     String?
+  isActive        Boolean      @default(true) // Active/Inactive status
   createdByUserId String? // HR user who created this department/process
   createdByUser   User?        @relation("DepartmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  employees      Employee[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  employees       Employee[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@unique([organizationId, name]) // Same department name allowed across organizations
   @@index([organizationId])
@@ -231,6 +231,9 @@ model Employee {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Employee Change History Relations
+  changeHistory EmployeeChangeHistory[] @relation("EmployeeChangeHistory")
+
   @@index([organizationId])
   @@index([userId])
   @@index([createdByUserId]) // ✅ HR Ownership: Index for filtering by creator
@@ -268,6 +271,26 @@ model Experience {
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// ==========================================
+// EMPLOYEE CHANGE HISTORY / AUDIT TRAIL
+// ==========================================
+
+model EmployeeChangeHistory {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        Employee @relation("EmployeeChangeHistory", fields: [employeeId], references: [id], onDelete: Cascade)
+  updatedByUserId String // User ID who made the update
+  updatedByName   String // Full name of the user who made the update
+  updatedByRole   String // Role of the user (HR, SUPER_ADMIN, etc.)
+  reason          String   @db.Text // Mandatory reason for the update
+  changes         String   @db.Text // JSON string containing field changes: { fieldName: { old: "value", new: "value" } }
+  createdAt       DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([updatedByUserId])
+  @@index([createdAt])
 }
 
 model DocumentCategory {
@@ -824,41 +847,41 @@ model AttendanceHistory {
 }
 
 model AttendanceImportHistory {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  fileName          String
-  uploadedBy        String? // User ID (HR/Admin)
-  uploadedByUser    User?  @relation("AttendanceImportHistoryUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
-  uploadedAt        DateTime @default(now())
+  fileName       String
+  uploadedBy     String? // User ID (HR/Admin)
+  uploadedByUser User?    @relation("AttendanceImportHistoryUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
+  uploadedAt     DateTime @default(now())
 
   // Import Statistics
-  totalRows         Int      @default(0)
-  successfulRows    Int      @default(0)
-  failedRows        Int      @default(0)
-  duplicateRows     Int      @default(0)
-  
+  totalRows      Int @default(0)
+  successfulRows Int @default(0)
+  failedRows     Int @default(0)
+  duplicateRows  Int @default(0)
+
   // Import Status
-  status            String   @default("PROCESSING") // PROCESSING, COMPLETED, FAILED, PARTIAL
-  
+  status String @default("PROCESSING") // PROCESSING, COMPLETED, FAILED, PARTIAL
+
   // Error Report
-  errorReport       String?  @db.Text // JSON array of errors
-  
+  errorReport String? @db.Text // JSON array of errors
+
   // ✅ NEW: Store original Excel structure
-  originalColumns   String?  @db.Text // JSON array of column names
-  columnMapping     String?  @db.Text // JSON mapping of columns to standard fields
-  fileStoragePath   String?  // Path to stored Excel file
-  
+  originalColumns String? @db.Text // JSON array of column names
+  columnMapping   String? @db.Text // JSON mapping of columns to standard fields
+  fileStoragePath String? // Path to stored Excel file
+
   // Processing Time
-  startedAt         DateTime @default(now())
-  completedAt       DateTime?
-  
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
   // ✅ NEW: Relation to raw attendance records
-  rawRecords        RawAttendanceRecord[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  rawRecords RawAttendanceRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([uploadedBy])
@@ -867,35 +890,35 @@ model AttendanceImportHistory {
 
 // ✅ NEW MODEL: Store any Excel format attendance data
 model RawAttendanceRecord {
-  id                String   @id @default(uuid())
-  organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  importHistoryId   String
-  importHistory     AttendanceImportHistory @relation(fields: [importHistoryId], references: [id], onDelete: Cascade)
-  
-  employeeId        String?  // Matched employee UUID (nullable for unmatched)
-  employee          Employee? @relation("RawAttendanceRecords", fields: [employeeId], references: [id], onDelete: Cascade)
-  
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  importHistoryId String
+  importHistory   AttendanceImportHistory @relation(fields: [importHistoryId], references: [id], onDelete: Cascade)
+
+  employeeId String? // Matched employee UUID (nullable for unmatched)
+  employee   Employee? @relation("RawAttendanceRecords", fields: [employeeId], references: [id], onDelete: Cascade)
+
   // ✅ Store original identifier from Excel
   originalIdentifier String? // Agent ID, Employee ID, Biometric ID, etc.
   originalName       String? // Agent Name, Employee Name
-  
+
   // ✅ Store ALL columns as JSON
-  rawData           String   @db.Text // JSON object with all column:value pairs
-  
+  rawData String @db.Text // JSON object with all column:value pairs
+
   // Optional parsed date if identifiable
-  attendanceDate    DateTime? @db.Date
-  attendanceMonth   Int?     // Month number (1-12)
-  attendanceYear    Int?     // Year
-  
+  attendanceDate  DateTime? @db.Date
+  attendanceMonth Int? // Month number (1-12)
+  attendanceYear  Int? // Year
+
   // Matching status
-  isMatched         Boolean  @default(false)
-  matchedAt         DateTime?
-  matchingNote      String?  // Why match failed/succeeded
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isMatched    Boolean   @default(false)
+  matchedAt    DateTime?
+  matchingNote String? // Why match failed/succeeded
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([importHistoryId])
@@ -2461,8 +2484,8 @@ model CompanyPolicy {
   fileName       String // Original filename
   fileUrl        String // Stored file path/URL
   fileSize       Int // File size in bytes
-  version        String  @default("1.0")
-  status         String  @default("ACTIVE") // ACTIVE, ARCHIVED
+  version        String       @default("1.0")
+  status         String       @default("ACTIVE") // ACTIVE, ARCHIVED
   uploadedBy     String // HR User ID
   uploadedByName String? // HR User Name
 

@@ -248,14 +248,39 @@ export default function HRDocumentsPage() {
                   <iframe
                     src={`${api.defaults.baseURL?.replace('/api/v1', '')}${selectedDoc.fileUrl}`}
                     className="w-full h-full border-0 absolute inset-0"
+                    onError={(e) => {
+                      console.error('Failed to load PDF:', selectedDoc.fileUrl);
+                      e.currentTarget.style.display = 'none';
+                      const errorDiv = e.currentTarget.parentElement?.querySelector('.file-error');
+                      if (errorDiv) errorDiv.classList.remove('hidden');
+                    }}
                   />
                 ) : (
                   <img
                     src={`${api.defaults.baseURL?.replace('/api/v1', '')}${selectedDoc.fileUrl}`}
                     alt="Document preview"
                     className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      console.error('Failed to load image:', selectedDoc.fileUrl);
+                      e.currentTarget.style.display = 'none';
+                      const errorDiv = e.currentTarget.parentElement?.querySelector('.file-error');
+                      if (errorDiv) errorDiv.classList.remove('hidden');
+                    }}
                   />
                 )}
+                {/* Error fallback for missing files */}
+                <div className="file-error hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                  <AlertTriangle className="w-12 h-12 text-amber-500 mb-3" />
+                  <h5 className="font-semibold text-sm text-foreground mb-1">Document File Unavailable</h5>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    This document record exists, but the physical file is not available in server storage.
+                    <br />
+                    <span className="text-[10px] font-mono text-amber-600 mt-1 block">{selectedDoc.fileUrl}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-3 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                    The employee may need to re-upload this document.
+                  </p>
+                </div>
               </div>
             </div>
 

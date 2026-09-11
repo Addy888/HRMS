@@ -19,6 +19,7 @@ import {
   BarChart3,
   Settings,
   FileText,
+  History,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -92,6 +93,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const links = [
     { href: '/super-admin', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/super-admin/employees', label: 'Employees', icon: <Users className="w-5 h-5" /> },
+    { href: '/super-admin/employee-update-history', label: 'Employee Update History', icon: <History className="w-5 h-5" /> },
     { href: '/super-admin/admins', label: 'Admins', icon: <UserCog className="w-5 h-5" /> },
     { href: '/super-admin/processes', label: 'Processes', icon: <Layers className="w-5 h-5" /> },
     { href: '/super-admin/attendance', label: 'Attendance', icon: <Clock className="w-5 h-5" /> },

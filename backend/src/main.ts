@@ -79,26 +79,37 @@ async function bootstrap() {
   // Parsing cookies
   app.use(cookieParser());
 
-  // Global prefixes
-  app.setGlobalPrefix('api/v1');
-
-  // Serve uploads statically
-  const express = await import('express');
+  // Ensure uploads directories exist
   const { join } = await import('path');
   const fs = await import('fs');
 
-  // Ensure directories exist
-  const uploadPath = join(process.cwd(), 'uploads/avatars');
-  if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, { recursive: true });
-  }
+  const uploadsDir = join(process.cwd(), 'uploads');
+  const uploadPaths = [
+    join(uploadsDir, 'avatars'),
+    join(uploadsDir, 'documents'),
+    join(uploadsDir, 'complaints'),
+    join(uploadsDir, 'company-policies'),
+    join(uploadsDir, 'attendance'),
+  ];
 
-  const documentsPath = join(process.cwd(), 'uploads/documents');
-  if (!fs.existsSync(documentsPath)) {
-    fs.mkdirSync(documentsPath, { recursive: true });
-  }
+  uploadPaths.forEach((path) => {
+    if (!fs.existsSync(path)) {
+      fs.mkdirSync(path, { recursive: true });
+    }
+  });
 
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  console.log(`📁 Uploads directory: ${uploadsDir}`);
+
+  // Global prefixes - exclude UploadsController from prefix
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      'uploads/documents/(.*)',
+      'uploads/avatars/(.*)',
+      'uploads/complaints/(.*)',
+      'uploads/company-policies/(.*)',
+      'uploads/attendance/(.*)',
+    ],
+  });
 
   // Global validation pipes
   app.useGlobalPipes(

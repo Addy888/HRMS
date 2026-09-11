@@ -163,6 +163,7 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
     { href: '/hr/policies', label: 'Policies', icon: <BookOpen className="w-5 h-5" /> },
     { href: '/hr/hr-actions', label: 'HR Actions', icon: <AlertTriangle className="w-5 h-5" /> },
     { href: '/hr/action-history', label: 'HR Action History', icon: <History className="w-5 h-5" /> },
+    { href: '/hr/employee-update-history', label: 'Employee Update History', icon: <History className="w-5 h-5" /> },
     { href: '/hr/complaints', label: 'Helpdesk', icon: <LifeBuoy className="w-5 h-5" /> },
   ];
 

@@ -79,6 +79,7 @@ export default function SuperAdminEmployeeDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super-admin-employee-detail', employeeId] });
       queryClient.invalidateQueries({ queryKey: ['super-admin-employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-change-history', employeeId] });
       setIsEditing(false);
       alert('Employee updated successfully');
     },
@@ -152,6 +153,7 @@ export default function SuperAdminEmployeeDetailPage() {
       bankName: employee?.bankName || '',
       panNumber: employee?.panNumber || '',
       aadhaarNumber: employee?.aadhaarNumber || '',
+      reason: '', // ✅ NEW: Mandatory reason field
     });
     setIsEditing(true);
   };
@@ -162,6 +164,12 @@ export default function SuperAdminEmployeeDetailPage() {
   };
 
   const handleSaveEdit = () => {
+    // ✅ Validate reason is provided
+    if (!editFormData.reason || !editFormData.reason.trim()) {
+      alert('Please provide a reason for this update');
+      return;
+    }
+    
     if (confirm('Are you sure you want to save these changes?')) {
       updateMutation.mutate(editFormData);
     }
@@ -671,6 +679,27 @@ export default function SuperAdminEmployeeDetailPage() {
                         className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-purple-500"
                         maxLength={12}
                       />
+                    </div>
+                  </div>
+
+                  {/* ✅ NEW: Mandatory Reason Field */}
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h3 className="text-lg font-bold text-foreground mb-4">Update Reason <span className="text-red-600">*</span></h3>
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase mb-1 block">
+                        Reason for Update <span className="text-red-600">*</span>
+                      </label>
+                      <textarea
+                        value={editFormData.reason || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, reason: e.target.value })}
+                        className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-purple-500 resize-none"
+                        rows={4}
+                        placeholder="Enter the reason for updating employee information (e.g., Employee information correction, Promotion, Department transfer, Salary revision)"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        This reason will be recorded in the employee change history for audit purposes.
+                      </p>
                     </div>
                   </div>
                 </div>

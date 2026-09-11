@@ -216,4 +216,45 @@ export class EmployeesController {
   ) {
     return this.employeesService.bulkAssignDepartment(dto.employeeIds, dto.departmentId, userId);
   }
+
+  @Get('update-history/all')
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get global employee update history for all employees (HR/Super Admin)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Global update history retrieved successfully',
+  })
+  getGlobalUpdateHistory(
+    @GetUser('id') userId: string,
+    @Query('search') search?: string,
+    @Query('employeeId') employeeId?: string,
+    @Query('updatedBy') updatedBy?: string,
+    @Query('role') role?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.employeesService.getGlobalUpdateHistory(userId, {
+      search,
+      employeeId,
+      updatedBy,
+      role,
+      startDate,
+      endDate,
+    });
+  }
+
+  @Get(':id/change-history')
+  @Roles(UserRole.HR, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({
+    summary: 'Get employee change history / audit trail (HR/Super Admin/Employee)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Change history retrieved successfully',
+  })
+  getChangeHistory(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.employeesService.getChangeHistory(id, userId);
+  }
 }

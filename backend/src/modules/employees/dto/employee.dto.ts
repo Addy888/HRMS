@@ -237,6 +237,15 @@ export class UpdateEmployeeDto {
   })
   @IsOptional()
   monthlySalary?: number;
+
+  @ApiProperty({
+    description: 'Mandatory reason for updating employee information',
+    example: 'Employee information correction',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Update reason is required' })
+  reason: string;
 }
 
 export class QueryEmployeeDto {

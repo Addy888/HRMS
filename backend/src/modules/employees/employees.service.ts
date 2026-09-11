@@ -690,9 +690,32 @@ export class EmployeesService {
       employeeId: id,
       departmentId: updateEmployeeDto.departmentId,
       designationId: updateEmployeeDto.designationId,
+      reason: updateEmployeeDto.reason,
     });
 
-    // ✅ findOne already verifies organization isolation (SUPER_ADMIN can edit ANY employee in their org)
+    // ✅ STEP 1: Validate reason is provided
+    if (!updateEmployeeDto.reason || !updateEmployeeDto.reason.trim()) {
+      throw new BadRequestException('Update reason is required');
+    }
+
+    // ✅ STEP 2: Get authenticated user details
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      include: {
+        role: { select: { name: true } },
+        employee: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    if (!requestingUser) {
+      throw new UnauthorizedException('Authenticated user not found');
+    }
+
+    const updaterName = requestingUser.employee
+      ? `${requestingUser.employee.firstName} ${requestingUser.employee.lastName}`
+      : requestingUser.email;
+
+    // ✅ STEP 3: Load current employee record BEFORE updating
     const employee = await this.findOne(id, requestUserId);
 
     console.log('[EMPLOYEE-UPDATE] Current employee data:', {
@@ -701,44 +724,42 @@ export class EmployeesService {
       currentDesignationId: employee.designationId,
     });
 
-    const updateData: any = {
-      firstName: updateEmployeeDto.firstName,
-      lastName: updateEmployeeDto.lastName,
-      phone: updateEmployeeDto.phone,
-      gender: updateEmployeeDto.gender,
-      bloodGroup: updateEmployeeDto.bloodGroup,
-      address: updateEmployeeDto.address,
-      emergencyContact: updateEmployeeDto.emergencyContact,
-    };
+    // ✅ STEP 4: Build update data
+    const updateData: any = {};
+    
+    // Only include fields that are actually being sent in the DTO
+    if (updateEmployeeDto.firstName !== undefined) updateData.firstName = updateEmployeeDto.firstName;
+    if (updateEmployeeDto.lastName !== undefined) updateData.lastName = updateEmployeeDto.lastName;
+    if (updateEmployeeDto.phone !== undefined) updateData.phone = updateEmployeeDto.phone;
+    if (updateEmployeeDto.gender !== undefined) updateData.gender = updateEmployeeDto.gender;
+    if (updateEmployeeDto.bloodGroup !== undefined) updateData.bloodGroup = updateEmployeeDto.bloodGroup;
+    if (updateEmployeeDto.address !== undefined) updateData.address = updateEmployeeDto.address;
+    if (updateEmployeeDto.emergencyContact !== undefined) updateData.emergencyContact = updateEmployeeDto.emergencyContact;
 
-    if (updateEmployeeDto.dob) {
-      updateData.dob = new Date(updateEmployeeDto.dob);
+    if (updateEmployeeDto.dob !== undefined) {
+      updateData.dob = updateEmployeeDto.dob ? new Date(updateEmployeeDto.dob) : null;
     }
 
-    if (updateEmployeeDto.joiningDate) {
-      updateData.joiningDate = new Date(updateEmployeeDto.joiningDate);
+    if (updateEmployeeDto.joiningDate !== undefined) {
+      updateData.joiningDate = updateEmployeeDto.joiningDate ? new Date(updateEmployeeDto.joiningDate) : null;
     }
 
     // Handle departmentId: Accept UUID or free text
-    // If free text, try to find or create a department with that name
     if (updateEmployeeDto.departmentId !== undefined) {
       const deptValue = updateEmployeeDto.departmentId;
       console.log('[EMPLOYEE-UPDATE] Processing departmentId:', deptValue);
       
       if (!deptValue) {
-        // Empty value - set to null
         updateData.departmentId = null;
         console.log('[EMPLOYEE-UPDATE] Empty value, setting to null');
       } else {
-        // Check if it's a valid UUID format
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         
         if (uuidRegex.test(deptValue)) {
-          // It's a UUID - verify it exists AND belongs to same organization
           const existingDept = await this.prisma.department.findFirst({
             where: {
               id: deptValue,
-              organizationId: employee.organizationId, // ✅ SECURITY: Prevent cross-org assignment
+              organizationId: employee.organizationId,
             },
           });
           
@@ -746,29 +767,26 @@ export class EmployeesService {
             updateData.departmentId = deptValue;
             console.log('[EMPLOYEE-UPDATE] Valid department UUID:', deptValue);
           } else {
-            // Department not found in same organization - reject assignment
             throw new BadRequestException(
               'Selected department does not exist in your organization'
             );
           }
         } else {
-          // Free text like "VTP", "Sales", "Agent" - find or create department
           console.log('[EMPLOYEE-UPDATE] Free text process name:', deptValue);
           
           let department = await this.prisma.department.findFirst({
             where: {
               name: deptValue.trim(),
-              organizationId: employee.organizationId, // ✅ SECURITY: Same organization
+              organizationId: employee.organizationId,
             },
           });
           
           if (!department) {
-            // Create new department with this name IN SAME ORGANIZATION
             console.log('[EMPLOYEE-UPDATE] Creating new department:', deptValue);
             department = await this.prisma.department.create({
               data: {
                 name: deptValue.trim(),
-                organizationId: employee.organizationId, // ✅ SECURITY: Same organization
+                organizationId: employee.organizationId,
               },
             });
             console.log('[EMPLOYEE-UPDATE] Department created:', department.id);
@@ -785,7 +803,6 @@ export class EmployeesService {
       if (!updateEmployeeDto.designationId) {
         updateData.designationId = null;
       } else {
-        // ✅ SECURITY: Verify designation belongs to same organization
         const designation = await this.prisma.designation.findFirst({
           where: {
             id: updateEmployeeDto.designationId,
@@ -803,17 +820,97 @@ export class EmployeesService {
       }
     }
 
+    // ✅ STEP 5: Detect changes by comparing old and new values
+    const changes: Record<string, { old: any; new: any }> = {};
+    
+    // Helper function to format date for comparison
+    const formatDate = (date: any) => {
+      if (!date) return null;
+      if (date instanceof Date) return date.toISOString().split('T')[0];
+      if (typeof date === 'string') return date.split('T')[0];
+      return date;
+    };
+
+    // Helper function to format department/designation names
+    const getDepartmentName = async (id: string | null) => {
+      if (!id) return null;
+      const dept = await this.prisma.department.findUnique({ where: { id }, select: { name: true } });
+      return dept?.name || id;
+    };
+
+    const getDesignationName = async (id: string | null) => {
+      if (!id) return null;
+      const desig = await this.prisma.designation.findUnique({ where: { id }, select: { name: true } });
+      return desig?.name || id;
+    };
+
+    // Compare each field
+    for (const [field, newValue] of Object.entries(updateData)) {
+      let oldValue = (employee as any)[field];
+      let compareNewValue = newValue;
+
+      // Special handling for dates
+      if (field === 'dob' || field === 'joiningDate') {
+        oldValue = formatDate(oldValue);
+        compareNewValue = formatDate(newValue);
+      }
+
+      // Special handling for department - store name instead of ID
+      if (field === 'departmentId') {
+        const oldDeptName = await getDepartmentName(oldValue as string | null);
+        const newDeptName = await getDepartmentName(compareNewValue as string | null);
+        
+        if (oldDeptName !== newDeptName) {
+          changes['department'] = {
+            old: oldDeptName,
+            new: newDeptName,
+          };
+        }
+        continue; // Skip the regular comparison
+      }
+
+      // Special handling for designation - store name instead of ID
+      if (field === 'designationId') {
+        const oldDesigName = await getDesignationName(oldValue as string | null);
+        const newDesigName = await getDesignationName(compareNewValue as string | null);
+        
+        if (oldDesigName !== newDesigName) {
+          changes['designation'] = {
+            old: oldDesigName,
+            new: newDesigName,
+          };
+        }
+        continue; // Skip the regular comparison
+      }
+
+      // Compare other fields
+      if (oldValue !== compareNewValue) {
+        changes[field] = {
+          old: oldValue,
+          new: compareNewValue,
+        };
+      }
+    }
+
+    console.log('[EMPLOYEE-UPDATE] Detected changes:', changes);
+
+    // ✅ STEP 6: If no actual changes detected, don't update
+    if (Object.keys(changes).length === 0) {
+      console.log('[EMPLOYEE-UPDATE] No changes detected, skipping update');
+      throw new BadRequestException('No changes detected. Please modify at least one field to update.');
+    }
+
     console.log('[EMPLOYEE-UPDATE] Final update data:', {
       departmentId: updateData.departmentId,
       designationId: updateData.designationId,
       ...updateData,
     });
 
+    // ✅ STEP 7: Perform update and create change history in transaction
     return this.prisma.$transaction(async (tx) => {
       const updatedEmp = await tx.employee.update({
         where: { id },
         data: updateData,
-        // ✅ Include relations so frontend gets department/designation names
         include: {
           department: {
             select: {
@@ -845,13 +942,33 @@ export class EmployeesService {
         designationName: updatedEmp.designation?.name,
       });
 
+await tx.auditLog.create({
+  data: {
+    userId: requestUserId,
+    action: 'EMPLOYEE_UPDATED',
+    details: JSON.stringify({
+      type: 'EMPLOYEE_CHANGE_HISTORY',
+      organizationId: employee.organizationId,
+      employeeId: id,
+      employeeCode: employee.employeeId,
+      employeeName: `${employee.firstName} ${employee.lastName}`,
+      updatedByUserId: requestUserId,
+      updatedByName: updaterName,
+      updatedByRole: requestingUser.role.name,
+      reason: updateEmployeeDto.reason.trim(),
+      changes,
+    }),
+  },
+});
+console.log('[EMPLOYEE-UPDATE-HISTORY] Change history record created with organizationId:', employee.organizationId);
+
       // Recalculate Completion after update
       await this.internalRecalculateCompletion(id, tx);
 
       await tx.auditLog.create({
         data: {
           action: 'EMPLOYEE_UPDATED',
-          details: `Employee profile updated for ${employee.employeeId}`,
+          details: `Employee profile updated for ${employee.employeeId} by ${updaterName}. Reason: ${updateEmployeeDto.reason}`,
         },
       });
 
@@ -1331,6 +1448,290 @@ export class EmployeesService {
         employeeId: e.employeeId,
         name: `${e.firstName} ${e.lastName}`,
       })),
+    };
+  }
+
+async getChangeHistory(employeeId: string, requestUserId: string) {
+  console.log(
+    '[CHANGE-HISTORY] Fetching change history for employee:',
+    employeeId,
+  );
+
+  // ✅ STEP 1: Get requesting user with role information
+  const requestingUser = await this.prisma.user.findUnique({
+    where: { id: requestUserId },
+    select: {
+      id: true,
+      organizationId: true,
+      role: { select: { name: true } },
+      employee: { select: { id: true } },
+    },
+  });
+
+  if (!requestingUser || !requestingUser.organizationId) {
+    throw new UnauthorizedException('User organization not found');
+  }
+
+  // ✅ STEP 2: Get target employee
+  const targetEmployee = await this.prisma.employee.findUnique({
+    where: { id: employeeId },
+    select: {
+      id: true,
+      employeeId: true,
+      firstName: true,
+      lastName: true,
+      organizationId: true,
+      createdByUserId: true,
+    },
+  });
+
+  if (!targetEmployee) {
+    throw new NotFoundException('Employee not found');
+  }
+
+  // ✅ STEP 3: Verify organization isolation
+  if (targetEmployee.organizationId !== requestingUser.organizationId) {
+    throw new ForbiddenException('Access denied to this employee (different organization)');
+  }
+
+  // ✅ STEP 4: Role-based access control
+  const userRole = requestingUser.role.name;
+
+  if (userRole === UserRole.EMPLOYEE) {
+    // ✅ EMPLOYEE: Can ONLY view their OWN change history
+    if (!requestingUser.employee || requestingUser.employee.id !== employeeId) {
+      throw new ForbiddenException(
+        'Employees can only view their own change history'
+      );
+    }
+    console.log('[CHANGE-HISTORY] Employee accessing their own history');
+  } else if (userRole === UserRole.HR || userRole === UserRole.HR_ADMIN || userRole === UserRole.HR_USER) {
+    // ✅ HR: Can view employee history according to HR permissions (already checked by findOne)
+    console.log('[CHANGE-HISTORY] HR accessing employee history');
+  } else if (userRole === UserRole.SUPER_ADMIN) {
+    // ✅ SUPER_ADMIN: Can view employee history according to Super Admin permissions
+    console.log('[CHANGE-HISTORY] SUPER_ADMIN accessing employee history');
+  } else {
+    throw new ForbiddenException('Insufficient permissions to view change history');
+  }
+
+  // ✅ STEP 5: Fetch employee update records from existing audit log
+  const auditLogs = await this.prisma.auditLog.findMany({
+    where: {
+      action: 'EMPLOYEE_UPDATED',
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  const history = auditLogs
+    .map((record) => {
+      try {
+        const parsed =
+          typeof record.details === 'string'
+            ? JSON.parse(record.details)
+            : record.details;
+
+        if (
+          !parsed ||
+          parsed.type !== 'EMPLOYEE_CHANGE_HISTORY' ||
+          parsed.employeeId !== employeeId
+        ) {
+          return null;
+        }
+
+        return {
+          id: record.id,
+          employeeId: parsed.employeeId,
+          employeeCode: parsed.employeeCode,
+          employeeName: parsed.employeeName,
+          updatedByUserId: parsed.updatedByUserId,
+          updatedByName: parsed.updatedByName,
+          updatedByRole: parsed.updatedByRole,
+          reason: parsed.reason,
+          changes: parsed.changes || {},
+          createdAt: record.createdAt,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((item) => item !== null);
+
+  console.log(
+    '[CHANGE-HISTORY] Found',
+    history.length,
+    'history records for employee:',
+    targetEmployee.employeeId,
+  );
+
+  return history;
+}
+
+  /**
+   * ✅ Get global employee update history for all employees (HR/Super Admin)
+   */
+  async getGlobalUpdateHistory(
+    requestUserId: string,
+    filters?: {
+      search?: string;
+      employeeId?: string;
+      updatedBy?: string;
+      role?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+  ) {
+    console.log('[GLOBAL-HISTORY] Fetching global employee update history');
+    console.log('[GLOBAL-HISTORY] Filters received:', JSON.stringify(filters));
+    console.log('[GLOBAL-HISTORY] Requesting user ID:', requestUserId);
+
+    // ✅ STEP 1: Validate authenticated user
+    if (!requestUserId) {
+      throw new UnauthorizedException('Authenticated user could not be identified');
+    }
+
+    // ✅ STEP 2: Get requesting user's organizationId and role
+    const requestingUser = await this.prisma.user.findUnique({
+      where: { id: requestUserId },
+      include: {
+        role: { select: { name: true } },
+      },
+    });
+
+    if (!requestingUser) {
+      throw new UnauthorizedException('Requesting user not found');
+    }
+
+    if (!requestingUser.organizationId) {
+      throw new BadRequestException('User is not associated with an organization');
+    }
+
+    const userRole = requestingUser.role.name as UserRole;
+
+    // ✅ STEP 3: Verify user has access (HR or SUPER_ADMIN only)
+    if (userRole !== UserRole.HR && userRole !== UserRole.HR_ADMIN && 
+        userRole !== UserRole.HR_USER && userRole !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        'Only HR and Super Admin can access global employee update history'
+      );
+    }
+
+    console.log('[GLOBAL-HISTORY] User authorized:', userRole);
+    console.log('[GLOBAL-HISTORY] User organizationId:', requestingUser.organizationId);
+
+    // ✅ STEP 4: Build where clause for audit log query
+    const whereClause: any = {
+      action: 'EMPLOYEE_UPDATED',
+    };
+
+    // Apply date range filters
+    if (filters?.startDate || filters?.endDate) {
+      whereClause.createdAt = {};
+      if (filters.startDate) {
+        whereClause.createdAt.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        // Include the entire end date by setting time to end of day
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = endDate;
+      }
+    }
+
+    // ✅ STEP 5: Fetch all employee update audit logs
+    const auditLogs = await this.prisma.auditLog.findMany({
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    console.log('[GLOBAL-HISTORY] Found', auditLogs.length, 'audit log records');
+
+    // ✅ STEP 6: Parse and filter history records
+    const allHistory = auditLogs
+      .map((record) => {
+        try {
+          const parsed =
+            typeof record.details === 'string'
+              ? JSON.parse(record.details)
+              : record.details;
+
+          if (!parsed || parsed.type !== 'EMPLOYEE_CHANGE_HISTORY') {
+            return null;
+          }
+
+          return {
+            id: record.id,
+            employeeId: parsed.employeeId,
+            employeeCode: parsed.employeeCode,
+            employeeName: parsed.employeeName,
+            updatedByUserId: parsed.updatedByUserId,
+            updatedByName: parsed.updatedByName,
+            updatedByRole: parsed.updatedByRole,
+            reason: parsed.reason,
+            changes: parsed.changes || {},
+            createdAt: record.createdAt,
+            organizationId: parsed.organizationId,
+          };
+        } catch (error) {
+          console.error('[GLOBAL-HISTORY] Error parsing record:', error);
+          return null;
+        }
+      })
+      .filter((item) => item !== null);
+
+    console.log('[GLOBAL-HISTORY] Parsed', allHistory.length, 'valid history records');
+
+    // ✅ STEP 7: Filter by organization (multi-tenant isolation)
+    let filteredHistory = allHistory.filter(
+      (item) => item.organizationId === requestingUser.organizationId
+    );
+
+    console.log('[GLOBAL-HISTORY] After organization filter:', filteredHistory.length, 'records');
+
+    // ✅ STEP 8: Apply additional filters
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase().trim();
+      filteredHistory = filteredHistory.filter(
+        (item) =>
+          item.employeeName?.toLowerCase().includes(searchLower) ||
+          item.employeeCode?.toLowerCase().includes(searchLower) ||
+          item.updatedByName?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters?.employeeId) {
+      const employeeIdLower = filters.employeeId.toLowerCase().trim();
+      filteredHistory = filteredHistory.filter(
+        (item) => item.employeeCode?.toLowerCase().includes(employeeIdLower)
+      );
+    }
+
+    if (filters?.updatedBy) {
+      const updatedByLower = filters.updatedBy.toLowerCase().trim();
+      filteredHistory = filteredHistory.filter(
+        (item) => item.updatedByName?.toLowerCase().includes(updatedByLower)
+      );
+    }
+
+    if (filters?.role) {
+      const roleLower = filters.role.toLowerCase();
+      if (roleLower !== 'all') {
+        filteredHistory = filteredHistory.filter(
+          (item) => item.updatedByRole?.toLowerCase() === roleLower
+        );
+      }
+    }
+
+    console.log('[GLOBAL-HISTORY] After all filters:', filteredHistory.length, 'records');
+    console.log('[GLOBAL-HISTORY] Returning response:', { total: filteredHistory.length, recordCount: filteredHistory.length });
+
+    return {
+      data: filteredHistory,
+      total: filteredHistory.length,
     };
   }
 }

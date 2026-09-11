@@ -19,6 +19,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
 import { HRActionsModule } from './modules/hr-actions/hr-actions.module.js';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module.js';
 import { PlatformModule } from './modules/platform/platform.module.js';
+import { UploadsModule } from './modules/uploads/uploads.module.js';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { PlatformModule } from './modules/platform/platform.module.js';
     HRActionsModule,
     SuperAdminModule,
     PlatformModule, // ✅ Platform Super Admin module
+    UploadsModule, // ✅ File serving module
   ],
   controllers: [HealthController],
 })
