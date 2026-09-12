@@ -646,9 +646,11 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
       console.log('[UPLOADED-ATTENDANCE-UI] Month:', uploadMonth);
       console.log('[UPLOADED-ATTENDANCE-UI] Year:', uploadYear);
       
-      const params: any = {};
-      if (uploadMonth) params.month = uploadMonth;
-      if (uploadYear) params.year = uploadYear;
+      // ✅ ALWAYS send month and year parameters
+      const params: any = {
+        month: uploadMonth || parentMonth,
+        year: uploadYear || parentYear,
+      };
       
       const res = await api.get('/attendance/my/imported', { params });
       
@@ -737,7 +739,6 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
       
       return payload;
     },
-    enabled: uploadMonth !== null && uploadYear !== null,
   });
 
   // Fetch available years on mount
