@@ -811,6 +811,68 @@ export class AttendanceImportService {
   }
 
   /**
+   * Delete import history and all associated attendance records
+   * TRANSACTIONAL: Ensures all-or-nothing deletion
+   */
+  async deleteImportHistory(id: string, organizationId: string) {
+    this.logger.log(`Deleting import history: ${id} for organization: ${organizationId}`);
+
+    // First verify the import exists and belongs to the organization
+    const importHistory = await this.prisma.attendanceImportHistory.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+    });
+
+    if (!importHistory) {
+      throw new NotFoundException('Import history not found or access denied');
+    }
+
+    // Use transaction to ensure atomicity
+    await this.prisma.$transaction(async (tx) => {
+      // Step 1: Delete all RawAttendanceRecords associated with this import
+      const deletedRawRecords = await tx.rawAttendanceRecord.deleteMany({
+        where: {
+          importHistoryId: id,
+          organizationId, // Double-check organization for security
+        },
+      });
+
+      this.logger.log(`Deleted ${deletedRawRecords.count} raw attendance records for import ${id}`);
+
+      // Step 2: Delete the import history record itself
+      await tx.attendanceImportHistory.delete({
+        where: {
+          id,
+        },
+      });
+
+      this.logger.log(`Deleted import history: ${id}`);
+
+      // Step 3: Clean up stored file if it exists
+      if (importHistory.fileStoragePath) {
+        try {
+          const { join } = await import('path');
+          const fs = await import('fs/promises');
+          const filePath = join(process.cwd(), importHistory.fileStoragePath);
+          await fs.unlink(filePath);
+          this.logger.log(`Deleted stored file: ${filePath}`);
+        } catch (error) {
+          // Don't fail the transaction if file cleanup fails
+          this.logger.warn(`Failed to delete stored file: ${error.message}`);
+        }
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Import history and all associated records deleted successfully',
+      deletedImportId: id,
+    };
+  }
+
+  /**
    * Generate session ID
    */
   private generateSessionId(): string {

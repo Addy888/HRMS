@@ -7,6 +7,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Query,
   Param,
@@ -294,6 +295,27 @@ export class AttendanceImportController {
     );
 
     res.send(buffer);
+  }
+
+  /**
+   * DELETE IMPORT HISTORY
+   * Delete an attendance import and all its associated records
+   */
+  @Delete('history/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete attendance import history and all associated records' })
+  @ApiResponse({ status: 200, description: 'Import history deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Import history not found' })
+  async deleteImportHistory(@Request() req, @Param('id') id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return this.importService.deleteImportHistory(id, user.organizationId);
   }
 
   /**

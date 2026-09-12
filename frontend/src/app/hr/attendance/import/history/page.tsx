@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import HRLayout from '@/layouts/HRLayout';
 import {
@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Loader2,
   FileText,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -26,7 +27,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ImportHistoryPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean; id: string; fileName: string} | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['import-history', page],
@@ -35,6 +38,23 @@ export default function ImportHistoryPage() {
         params: { page, limit: 20 },
       });
       return res.data;
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/attendance/import/history/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['import-history'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['upload-history-recent'] });
+      setDeleteConfirm(null);
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Failed to delete import history');
+      setDeleteConfirm(null);
     },
   });
 
@@ -207,6 +227,14 @@ export default function ImportHistoryPage() {
                               Errors
                             </button>
                           )}
+                          <button
+                            onClick={() => setDeleteConfirm({ show: true, id: record.id, fileName: record.fileName })}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-[10px] font-semibold text-red-600 transition-colors"
+                            title="Delete import and all associated attendance records"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Delete
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -242,6 +270,72 @@ export default function ImportHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm?.show && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="px-6 py-5 border-b border-border">
+              <h2 className="text-xl font-bold text-card-foreground flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                Delete Attendance Import?
+              </h2>
+            </div>
+            
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                You are about to delete the following import:
+              </p>
+              
+              <div className="bg-secondary/50 border border-border rounded-lg p-4">
+                <p className="text-sm font-semibold text-card-foreground">{deleteConfirm.fileName}</p>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <p className="text-sm font-bold text-red-600 mb-2">⚠️ Warning:</p>
+                <p className="text-xs text-red-600">
+                  This action will permanently delete:
+                </p>
+                <ul className="text-xs text-red-600 mt-2 space-y-1 list-disc list-inside">
+                  <li>The import history record</li>
+                  <li>All attendance records imported from this upload</li>
+                  <li>These records will disappear from employee calendars</li>
+                </ul>
+                <p className="text-xs text-red-600 mt-3 font-semibold">
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 border-t border-border flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-2.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteConfirm.id)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Import
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </HRLayout>
   );
 }
