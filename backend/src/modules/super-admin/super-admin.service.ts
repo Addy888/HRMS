@@ -22,11 +22,29 @@ export class SuperAdminService {
     const [
       totalOrganizations,
       totalEmployees,
-      totalAdmins,
+      activeEmployees,
+      inactiveEmployees,
+      totalHRAdmins,
       totalProcesses,
+      activeSalaryStructures,
+      employeesWithMonthlySalary,
     ] = await Promise.all([
       this.prisma.organization.count({ where: { isActive: true } }),
       this.prisma.employee.count(),
+      this.prisma.employee.count({
+        where: {
+          user: {
+            isActive: true,
+          },
+        },
+      }),
+      this.prisma.employee.count({
+        where: {
+          user: {
+            isActive: false,
+          },
+        },
+      }),
       this.prisma.user.count({
         where: {
           role: {
@@ -36,13 +54,57 @@ export class SuperAdminService {
         },
       }),
       this.prisma.department.count({ where: { isActive: true } }),
+      this.prisma.salaryStructure.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          basicSalary: true,
+          grossSalary: true,
+          hra: true,
+          conveyance: true,
+          medicalAllowance: true,
+          specialAllowance: true,
+          otherAllowances: true,
+        },
+      }),
+      this.prisma.employee.findMany({
+        where: {
+          monthlySalary: { not: null },
+        },
+        select: {
+          monthlySalary: true,
+        },
+      }),
     ]);
+
+    // Calculate total payroll from salary structures
+    let totalMonthlyPayroll = 0;
+    let totalPayrollCost = 0;
+
+    activeSalaryStructures.forEach((salary) => {
+      totalMonthlyPayroll += salary.grossSalary || 0;
+      totalPayrollCost += salary.basicSalary || 0;
+    });
+
+    // Add employees with simple monthlySalary
+    employeesWithMonthlySalary.forEach((emp) => {
+      totalMonthlyPayroll += emp.monthlySalary || 0;
+      totalPayrollCost += emp.monthlySalary || 0;
+    });
 
     return {
       totalOrganizations,
       totalEmployees,
-      totalAdmins,
+      activeEmployees,
+      inactiveEmployees,
+      totalHRAdmins,
       totalProcesses,
+      totalMonthlyPayroll,
+      totalPayrollCost,
+      presentToday: 0, // TODO: Implement attendance aggregation
+      lateToday: 0, // TODO: Implement attendance aggregation
+      absentToday: 0, // TODO: Implement attendance aggregation
     };
   }
 
@@ -71,20 +133,86 @@ export class SuperAdminService {
             code: true,
           },
         },
+        employees: {
+          select: {
+            monthlySalary: true, // ← Direct salary field
+            user: {
+              select: {
+                isActive: true,
+              },
+            },
+            salaryStructures: {
+              where: {
+                isActive: true,
+              },
+              orderBy: {
+                effectiveFrom: 'desc',
+              },
+              take: 1,
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return processes.map((process) => ({
-      id: process.id,
-      name: process.name,
-      code: process.code,
-      description: process.description,
-      employeeCount: process._count.employees,
-      organization: process.organization,
-      isActive: process.isActive,
-      createdAt: process.createdAt,
-    }));
+    return processes.map((process) => {
+      const totalEmployees = process.employees.length;
+      const activeEmployees = process.employees.filter(
+        (emp) => emp.user?.isActive === true,
+      ).length;
+      const inactiveEmployees = totalEmployees - activeEmployees;
+
+      // Calculate payroll aggregates
+      let totalBasicSalary = 0;
+      let totalGrossSalary = 0;
+      let totalOtherAllowances = 0; // This will be used as "incentive"
+      let employeesWithSalary = 0;
+
+      process.employees.forEach((employee) => {
+        const activeSalary = employee.salaryStructures[0];
+        
+        // Use salaryStructure if exists, otherwise use monthlySalary
+        if (activeSalary) {
+          totalBasicSalary += activeSalary.basicSalary || 0;
+          totalGrossSalary += activeSalary.grossSalary || 0;
+          // Calculate total allowances (excluding basic) as "incentive"
+          const allowances =
+            (activeSalary.hra || 0) +
+            (activeSalary.conveyance || 0) +
+            (activeSalary.medicalAllowance || 0) +
+            (activeSalary.specialAllowance || 0) +
+            (activeSalary.otherAllowances || 0);
+          totalOtherAllowances += allowances;
+          employeesWithSalary++;
+        } else if (employee.monthlySalary) {
+          // Fallback to simple monthly salary
+          totalBasicSalary += employee.monthlySalary;
+          totalGrossSalary += employee.monthlySalary;
+          employeesWithSalary++;
+        }
+      });
+
+      const avgSalary =
+        employeesWithSalary > 0 ? totalGrossSalary / employeesWithSalary : 0;
+
+      return {
+        id: process.id,
+        name: process.name,
+        code: process.code,
+        description: process.description,
+        totalEmployees,
+        activeEmployees,
+        inactiveEmployees,
+        monthlyBasicSalary: totalBasicSalary,
+        monthlyIncentive: totalOtherAllowances,
+        totalMonthlyPayroll: totalGrossSalary,
+        avgSalary: avgSalary,
+        organization: process.organization,
+        isActive: process.isActive,
+        createdAt: process.createdAt,
+      };
+    });
   }
 
   // ==========================================
@@ -204,9 +332,14 @@ export class SuperAdminService {
 
     if (filters.search) {
       where.OR = [
-        { firstName: { contains: filters.search } },
-        { lastName: { contains: filters.search } },
-        { employeeId: { contains: filters.search } },
+        { firstName: { contains: filters.search, mode: 'insensitive' } },
+        { lastName: { contains: filters.search, mode: 'insensitive' } },
+        { employeeId: { contains: filters.search, mode: 'insensitive' } },
+        {
+          user: {
+            email: { contains: filters.search, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
@@ -218,22 +351,110 @@ export class SuperAdminService {
       where.organizationId = filters.organizationId;
     }
 
+    if (filters.isActive !== undefined && filters.isActive !== '') {
+      where.user = {
+        ...where.user,
+        isActive: filters.isActive === 'true',
+      };
+    }
+
     const employees = await this.prisma.employee.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        employeeId: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        monthlySalary: true, // ← Direct salary field on employee
+        createdAt: true,
+        updatedAt: true,
         user: {
-          include: {
-            role: true,
+          select: {
+            email: true,
+            isActive: true,
+            role: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
-        department: true,
-        designation: true,
-        organization: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        designation: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        salaryStructures: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            effectiveFrom: 'desc',
+          },
+          take: 1,
+          select: {
+            basicSalary: true,
+            grossSalary: true,
+            netSalary: true,
+            ctc: true,
+            hra: true,
+            conveyance: true,
+            medicalAllowance: true,
+            specialAllowance: true,
+            otherAllowances: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return employees;
+    // Transform to match frontend expectations
+    return employees.map((emp) => {
+      const activeSalary = emp.salaryStructures?.[0];
+      
+      // Use salaryStructure if exists, otherwise fall back to monthlySalary field
+      const totalSalary = activeSalary?.grossSalary || emp.monthlySalary || 0;
+      const basicSalary = activeSalary?.basicSalary || emp.monthlySalary || 0;
+      
+      return {
+        id: emp.id,
+        employeeId: emp.employeeId,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        fullName: `${emp.firstName} ${emp.lastName}`,
+        email: emp.user?.email || '',
+        phone: emp.phone || '',
+        departmentId: emp.department?.id || null,
+        departmentName: emp.department?.name || null,
+        designationId: emp.designation?.id || null,
+        designationTitle: emp.designation?.name || null,
+        organizationId: emp.organization?.id || null,
+        organizationName: emp.organization?.name || null,
+        isActive: emp.user?.isActive || false,
+        totalSalary,
+        basicSalary,
+        netSalary: activeSalary?.netSalary || totalSalary,
+        ctc: activeSalary?.ctc || totalSalary,
+        createdAt: emp.createdAt,
+        updatedAt: emp.updatedAt,
+      };
+    });
   }
 
   async getEmployeeDetails(userId: string, employeeId: string) {
