@@ -74,16 +74,16 @@ const ProcessRow = ({ process }: any) => {
         <span className="text-red-600">{process.inactiveEmployees}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="text-card-foreground">₹{process.monthlyBasicSalary.toLocaleString('en-IN')}</span>
+        <span className="text-card-foreground">₹{Number(process.monthlyBasicSalary ?? 0).toLocaleString('en-IN')}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="text-card-foreground">₹{process.monthlyIncentive.toLocaleString('en-IN')}</span>
+        <span className="text-card-foreground">₹{Number(process.monthlyIncentive ?? 0).toLocaleString('en-IN')}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="font-semibold text-card-foreground">₹{(process.totalMonthlyPayroll || 0).toLocaleString('en-IN')}</span>
+        <span className="font-semibold text-card-foreground">₹{Number(process.totalMonthlyPayroll ?? 0).toLocaleString('en-IN')}</span>
       </td>
       <td className="px-4 py-4 text-right">
-        <span className="text-muted-foreground">₹{process.avgSalary.toLocaleString('en-IN')}</span>
+        <span className="text-muted-foreground">₹{Number(process.avgSalary ?? 0).toLocaleString('en-IN')}</span>
       </td>
     </tr>
   );
