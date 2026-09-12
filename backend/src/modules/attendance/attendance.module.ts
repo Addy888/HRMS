@@ -36,6 +36,8 @@ import { ShiftService } from './services/shift.service';
 import { AttendanceSettingsService } from './services/attendance-settings.service';
 import { AttendanceSchedulerService } from './services/attendance-scheduler.service';
 import { AttendanceImportService } from './services/attendance-import.service';
+import { BiometricParserService } from './services/biometric-parser.service';
+import { BiometricImporterService } from './services/biometric-importer.service';
 
 // Controllers
 import { AttendanceController } from './controllers/attendance.controller';
@@ -75,6 +77,8 @@ import { ManualAttendanceProvider } from './providers/manual/manual-attendance.p
     AttendanceSettingsService,
     AttendanceSchedulerService,
     AttendanceImportService,
+    BiometricParserService,
+    BiometricImporterService,
 
     // Provider Registry (Factory)
     AttendanceProviderRegistry,

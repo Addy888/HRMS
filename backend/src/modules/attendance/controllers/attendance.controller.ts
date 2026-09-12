@@ -139,24 +139,22 @@ export class AttendanceController {
   }
 
   /**
-   * ✅ FIXED: GET MY RAW IMPORTED ATTENDANCE (EMPLOYEE-SPECIFIC)
-   * Employee views ONLY their own HR-uploaded flexible format attendance
-   * Security: Backend filters by employeeId from authenticated user's employee record
+   * ✅ FIXED: GET MY IMPORTED ATTENDANCE FROM ACTUAL ATTENDANCE TABLE
+   * Employee views their processed attendance records (NOT raw Excel)
+   * Security: Backend filters by employeeId from authenticated user
    */
   @Get('my/imported')
-  @ApiOperation({ summary: 'Get my imported attendance (flexible format)' })
-  @ApiResponse({ status: 200, description: 'Imported attendance retrieved' })
+  @ApiOperation({ summary: 'Get my attendance records' })
+  @ApiResponse({ status: 200, description: 'Attendance records retrieved' })
   async getMyImportedAttendance(
     @Request() req,
     @Query('month') month?: number,
     @Query('year') year?: number,
   ) {
-    console.log('[IMPORTED-ATTENDANCE] ========== START ==========');
-    console.log('[IMPORTED-ATTENDANCE] Request user ID:', req.user.id);
-    console.log('[IMPORTED-ATTENDANCE] Request month:', month);
-    console.log('[IMPORTED-ATTENDANCE] Request year:', year);
+    console.log('[EMPLOYEE-ATTENDANCE] ========== START ==========');
+    console.log('[EMPLOYEE-ATTENDANCE] User ID:', req.user.id);
 
-    // Get employee's organization and employee UUID (for security/isolation)
+    // Get employee UUID from authenticated user
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -174,115 +172,111 @@ export class AttendanceController {
     });
 
     if (!user || !user.employee) {
-      console.log('[IMPORTED-ATTENDANCE] ERROR: Employee record not found for user:', req.user.id);
-      throw new Error('Employee record not found');
+      console.log('[EMPLOYEE-ATTENDANCE] ERROR: Employee not found');
+      throw new Error('Employee not found');
     }
 
-    console.log('[IMPORTED-ATTENDANCE] Found user/employee:', {
-      userId: user.id,
-      organizationId: user.organizationId,
-      employeeUUID: user.employee.id,
-      employeeId: user.employee.employeeId,
-      name: `${user.employee.firstName} ${user.employee.lastName}`,
-    });
+    const employeeUUID = user.employee.id;
+    const organizationId = user.organizationId;
+    const employeeCode = user.employee.employeeId;
+
+    console.log('[EMPLOYEE-ATTENDANCE] employeeUUID:', employeeUUID);
+    console.log('[EMPLOYEE-ATTENDANCE] employeeCode:', employeeCode);
+    console.log('[EMPLOYEE-ATTENDANCE] organizationId:', organizationId);
 
     const now = new Date();
     const queryMonth = month || now.getMonth() + 1;
     const queryYear = year || now.getFullYear();
 
-    console.log('[IMPORTED-ATTENDANCE] Query parameters:', { queryMonth, queryYear });
+    // Build date range for the month
+    const startDate = new Date(Date.UTC(queryYear, queryMonth - 1, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(queryYear, queryMonth, 1, 0, 0, 0, 0));
 
-    // ✅ CRITICAL: FILTER BY EMPLOYEE UUID (DATABASE RELATION)
-    // This ensures employees ONLY see their OWN attendance records
-    // Where clause:
-    // 1. organizationId = user.organizationId (tenant isolation)
-    // 2. employeeId = user.employee.id (employee-specific filtering)
-    // 3. (attendanceMonth = queryMonth AND attendanceYear = queryYear) OR attendanceMonth IS NULL
-    const records = await this.prisma.rawAttendanceRecord.findMany({
-      where: {
-        organizationId: user.organizationId,
-        employeeId: user.employee.id, // ✅ EMPLOYEE-SPECIFIC FILTER
-        OR: [
-          { 
-            attendanceMonth: queryMonth, 
-            attendanceYear: queryYear 
-          },
-          { 
-            attendanceMonth: null 
-          },
-        ],
+    console.log('[EMPLOYEE-ATTENDANCE] startDate:', startDate.toISOString());
+    console.log('[EMPLOYEE-ATTENDANCE] endDate:', endDate.toISOString());
+
+    // Query ACTUAL Attendance table (NOT RawAttendanceRecord)
+    const whereClause = {
+      organizationId: organizationId,
+      employeeId: employeeUUID, // Use employee UUID (Employee.id)
+      date: {
+        gte: startDate,
+        lt: endDate,
       },
+    };
+
+    console.log('[EMPLOYEE-ATTENDANCE] WHERE clause:', JSON.stringify(whereClause, null, 2));
+
+    const records = await this.prisma.attendance.findMany({
+      where: whereClause,
       include: {
-        importHistory: {
+        shift: {
           select: {
-            fileName: true,
-            uploadedAt: true,
-            originalColumns: true,
+            name: true,
+            code: true,
           },
         },
       },
-      orderBy: [
-        { createdAt: 'desc' },
-        { originalIdentifier: 'asc' },
-      ],
+      orderBy: { date: 'asc' },
     });
 
-    console.log('[IMPORTED-ATTENDANCE] Found records for THIS employee only:', records.length);
-    
+    console.log('[EMPLOYEE-ATTENDANCE] recordsFound:', records.length);
+
     if (records.length > 0) {
-      console.log('[IMPORTED-ATTENDANCE] Sample record:', {
-        id: records[0].id,
-        employeeUUID: records[0].employeeId,
-        identifier: records[0].originalIdentifier,
-        name: records[0].originalName,
-        attendanceMonth: records[0].attendanceMonth,
-        attendanceYear: records[0].attendanceYear,
-        fileName: records[0].importHistory?.fileName,
+      records.forEach(r => {
+        console.log('[EMPLOYEE-ATTENDANCE] record:', {
+          attendanceId: r.id,
+          date: r.date.toISOString().split('T')[0],
+          status: r.status,
+          checkInTime: r.checkInTime?.toISOString(),
+          checkOutTime: r.checkOutTime?.toISOString(),
+          source: r.source,
+        });
       });
     }
 
-    // Extract unique columns from employee's records
-    const allColumns = new Set<string>();
-    records.forEach(record => {
-      try {
-        const data = JSON.parse(record.rawData);
-        Object.keys(data).forEach(key => allColumns.add(key));
-      } catch (e) {
-        console.log('[IMPORTED-ATTENDANCE] ERROR parsing rawData for record:', record.id, e);
-      }
+    // Get available months with attendance
+    const allRecords = await this.prisma.attendance.findMany({
+      where: {
+        organizationId: organizationId,
+        employeeId: employeeUUID,
+      },
+      select: {
+        date: true,
+      },
+      orderBy: { date: 'desc' },
     });
 
-    const columnsArray = Array.from(allColumns);
-    console.log('[IMPORTED-ATTENDANCE] Extracted columns:', columnsArray.length, 'columns');
-    console.log('[IMPORTED-ATTENDANCE] Column names:', columnsArray.slice(0, 10)); // First 10 columns
-
-    // ✅ Extract unique attendance months/years from employee's records only
     const availableMonths = new Set<string>();
-    records.forEach(record => {
-      if (record.attendanceMonth && record.attendanceYear) {
-        availableMonths.add(`${record.attendanceYear}-${String(record.attendanceMonth).padStart(2, '0')}`);
-      }
+    allRecords.forEach(r => {
+      const d = new Date(r.date);
+      availableMonths.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     });
 
     const result = {
       month: queryMonth,
       year: queryYear,
-      records: records.map(r => ({
+      attendances: records.map(r => ({
         id: r.id,
-        data: JSON.parse(r.rawData),
-        uploadedAt: r.createdAt,
-        fileName: r.importHistory?.fileName,
-        attendanceMonth: r.attendanceMonth, // ✅ Include attendance period
-        attendanceYear: r.attendanceYear,   // ✅ Include attendance period
+        date: r.date,
+        checkInTime: r.checkInTime,
+        checkOutTime: r.checkOutTime,
+        status: r.status,
+        workingHours: r.workingHours,
+        lateBy: r.lateBy,
+        earlyExitBy: r.earlyExitBy,
+        overtime: r.overtime,
+        source: r.source,
+        isManualEntry: r.isManualEntry,
+        remarks: r.remarks,
+        shift: r.shift,
       })),
-      columns: columnsArray,
       total: records.length,
-      availableMonths: Array.from(availableMonths).sort().reverse(), // ✅ Available periods
+      availableMonths: Array.from(availableMonths).sort().reverse(),
     };
 
-    console.log('[IMPORTED-ATTENDANCE] Returning EMPLOYEE-SPECIFIC records:', result.records.length, 'rows');
-    console.log('[IMPORTED-ATTENDANCE] Available months:', result.availableMonths);
-    console.log('[IMPORTED-ATTENDANCE] ========== END ==========');
+    console.log('[EMPLOYEE-ATTENDANCE] Returning:', result.attendances.length, 'records');
+    console.log('[EMPLOYEE-ATTENDANCE] ========== END ==========');
 
     return result;
   }

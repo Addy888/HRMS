@@ -32,6 +32,7 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AttendanceImportService } from '../services/attendance-import.service.js';
+import { BiometricImporterService } from '../services/biometric-importer.service.js';
 import {
   ConfirmImportDto,
   GetImportHistoryDto,
@@ -50,6 +51,7 @@ import * as XLSX from 'xlsx';
 export class AttendanceImportController {
   constructor(
     private readonly importService: AttendanceImportService,
+    private readonly biometricImporter: BiometricImporterService,
     private readonly prisma: PrismaService,
   ) {}
 

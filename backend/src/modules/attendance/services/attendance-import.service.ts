@@ -1102,8 +1102,9 @@ export class AttendanceImportService {
 
     // ✅ EXTRACT ATTENDANCE MONTH/YEAR FROM EXCEL DATA
     // Priority 1: Period row (e.g., "Period : 2026/09/01 ~ 09/12 (fcs)")
-    // Priority 2: Filename (e.g., "September_2026.xlsx")
-    // Priority 3: Excel column data
+    // Priority 2: Week columns (e.g., "Wk 03-09 Aug", "Wk 10-16 Sep")
+    // Priority 3: Filename (e.g., "September_2026.xlsx")
+    // Priority 4: Excel column data
     let attendanceMonth: number | null = null;
     let attendanceYear: number | null = null;
 
@@ -1124,7 +1125,40 @@ export class AttendanceImportService {
       }
     }
 
-    // Strategy 2: Extract from filename (if Period not found)
+    // Strategy 2: Extract from week columns (e.g., "Wk 03-09 Aug", "Wk 10-16 Sep")
+    if (attendanceMonth === null || attendanceYear === null) {
+      const monthNamesShort = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                               'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+      
+      for (const col of columns) {
+        // Match pattern like "Wk 03-09 Aug" or "Week 1-7 Sep"
+        const weekMatch = col.match(/wk?\s*\d+-\d+\s*(\w{3})/i);
+        if (weekMatch) {
+          const monthAbbr = weekMatch[1].toLowerCase();
+          const monthIndex = monthNamesShort.findIndex(m => monthAbbr.startsWith(m));
+          if (monthIndex !== -1) {
+            attendanceMonth = monthIndex + 1;
+            this.logger.log(`✅ Detected attendance month from week column "${col}": ${monthAbbr} (${attendanceMonth})`);
+            break;
+          }
+        }
+      }
+      
+      // Year from week columns or filename
+      if (attendanceYear === null) {
+        const yearMatch = fileName.match(/20\d{2}/);
+        if (yearMatch) {
+          attendanceYear = parseInt(yearMatch[0]);
+          this.logger.log(`✅ Detected attendance year from filename: ${attendanceYear}`);
+        } else {
+          // Default to current year if not found
+          attendanceYear = new Date().getFullYear();
+          this.logger.log(`⚠️ No year found, defaulting to current year: ${attendanceYear}`);
+        }
+      }
+    }
+
+    // Strategy 3: Extract from filename (if Period/Week not found)
     if (attendanceMonth === null || attendanceYear === null) {
       const monthNames = [
         'january', 'february', 'march', 'april', 'may', 'june',
@@ -1134,19 +1168,23 @@ export class AttendanceImportService {
       const lowerFileName = fileName.toLowerCase();
       
       // Find month name in filename
-      for (let i = 0; i < monthNames.length; i++) {
-        if (lowerFileName.includes(monthNames[i])) {
-          attendanceMonth = i + 1; // 1-12
-          this.logger.log(`✅ Detected attendance month from filename: ${monthNames[i]} (${attendanceMonth})`);
-          break;
+      if (attendanceMonth === null) {
+        for (let i = 0; i < monthNames.length; i++) {
+          if (lowerFileName.includes(monthNames[i])) {
+            attendanceMonth = i + 1; // 1-12
+            this.logger.log(`✅ Detected attendance month from filename: ${monthNames[i]} (${attendanceMonth})`);
+            break;
+          }
         }
       }
       
       // Find year in filename (pattern: 2024, 2025, 2026, etc.)
-      const yearMatch = fileName.match(/20\d{2}/);
-      if (yearMatch) {
-        attendanceYear = parseInt(yearMatch[0]);
-        this.logger.log(`✅ Detected attendance year from filename: ${attendanceYear}`);
+      if (attendanceYear === null) {
+        const yearMatch = fileName.match(/20\d{2}/);
+        if (yearMatch) {
+          attendanceYear = parseInt(yearMatch[0]);
+          this.logger.log(`✅ Detected attendance year from filename: ${attendanceYear}`);
+        }
       }
     }
 
@@ -1496,24 +1534,28 @@ export class AttendanceImportService {
 
         console.log(`[ATTENDANCE-IMPORT] Day ${dayNum}: Punches: ${firstPunch} - ${lastPunch || 'N/A'}, Status: ${attendanceStatus}`);
       } else {
-        // STATUS CODE FORMAT: "P", "WO", "A", "H", etc.
+        // STATUS CODE FORMAT: "P", "WO", "A", "H", "1", "0", "0.5" etc.
         console.log(`[ATTENDANCE-IMPORT] Day ${dayNum}: Detected STATUS CODE format`);
         
         const statusCode = valueStr.toUpperCase();
         
         // Map status codes to AttendanceStatus enum
+        // ✅ SUPPORT NUMERIC CODES: "1" = Present, "0" = Absent, "0.5" = Half Day
         switch (statusCode) {
           case 'P':
+          case '1':
             attendanceStatus = AttendanceStatus.PRESENT;
             checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, defaultShiftHour, defaultShiftMinute, 0));
             checkOutTime = new Date(checkInTime.getTime() + 9 * 60 * 60 * 1000); // 9 hours later
             workingHours = 9;
             break;
           case 'A':
+          case '0':
             attendanceStatus = AttendanceStatus.ABSENT;
             break;
           case 'H':
           case 'HD':
+          case '0.5':
             attendanceStatus = AttendanceStatus.HALF_DAY;
             checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, defaultShiftHour, defaultShiftMinute, 0));
             checkOutTime = new Date(checkInTime.getTime() + 5 * 60 * 60 * 1000); // 5 hours
@@ -1639,6 +1681,7 @@ export class AttendanceImportService {
 
   /**
    * ✅ NEW: Calculate attendance status based on biometric punch times
+   * Late threshold: 10:05 AM (as per user requirement)
    */
   private calculateBiometricAttendanceStatus(
     checkInTime: Date | null,
@@ -1654,8 +1697,8 @@ export class AttendanceImportService {
     const checkInMinute = checkInTime.getUTCMinutes();
     const checkInMinutes = checkInHour * 60 + checkInMinute;
 
-    // Office hours: 10:00 AM with 10-minute grace period
-    const graceEndMinutes = 10 * 60 + 10; // 10:10 AM
+    // ✅ Late threshold: 10:05 AM (exactly)
+    const lateThresholdMinutes = 10 * 60 + 5; // 10:05 AM
 
     // Check if Monday (Week Off) - getUTCDay() returns 0 for Sunday, 1 for Monday
     if (checkInTime.getUTCDay() === 1) {
@@ -1663,7 +1706,7 @@ export class AttendanceImportService {
     }
 
     // Late check
-    if (checkInMinutes > graceEndMinutes) {
+    if (checkInMinutes > lateThresholdMinutes) {
       return AttendanceStatus.LATE;
     }
 
@@ -1678,6 +1721,7 @@ export class AttendanceImportService {
 
   /**
    * ✅ NEW: Calculate late minutes based on check-in time
+   * Late threshold: 10:05 AM (as per user requirement)
    */
   private calculateLateMinutes(checkInTime: Date | null): number {
     if (!checkInTime) {
@@ -1688,11 +1732,11 @@ export class AttendanceImportService {
     const checkInMinute = checkInTime.getUTCMinutes();
     const checkInMinutes = checkInHour * 60 + checkInMinute;
 
-    // Grace period ends at 10:10 AM
-    const graceEndMinutes = 10 * 60 + 10;
+    // ✅ Late threshold: 10:05 AM (exactly, no grace period beyond this)
+    const lateThresholdMinutes = 10 * 60 + 5; // 10:05 AM
 
-    if (checkInMinutes > graceEndMinutes) {
-      return checkInMinutes - graceEndMinutes;
+    if (checkInMinutes > lateThresholdMinutes) {
+      return checkInMinutes - lateThresholdMinutes;
     }
 
     return 0;
