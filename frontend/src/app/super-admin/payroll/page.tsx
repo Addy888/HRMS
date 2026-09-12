@@ -232,22 +232,22 @@ export default function SuperAdminPayrollPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-card-foreground">
-                            ₹{process.monthlyBasicSalary.toLocaleString('en-IN')}
+                            ₹{Number(process.monthlyBasicSalary ?? 0).toLocaleString('en-IN')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-card-foreground">
-                            ₹{process.monthlyIncentive.toLocaleString('en-IN')}
+                            ₹{Number(process.monthlyIncentive ?? 0).toLocaleString('en-IN')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="font-semibold text-foreground">
-                            ₹{(process.totalMonthlyPayroll || 0).toLocaleString('en-IN')}
+                            ₹{Number(process.totalMonthlyPayroll ?? 0).toLocaleString('en-IN')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-muted-foreground">
-                            ₹{process.avgSalary.toLocaleString('en-IN')}
+                            ₹{Number(process.avgSalary ?? 0).toLocaleString('en-IN')}
                           </span>
                         </td>
                       </tr>

@@ -8,7 +8,6 @@ import {
   Layers,
   Plus,
   Search,
-  Edit2,
   Trash2,
   Loader2,
   Users,
@@ -112,7 +111,7 @@ export default function SuperAdminProcessesPage() {
   const { data: processes, isLoading } = useQuery({
     queryKey: ['super-admin-processes'],
     queryFn: async () => {
-      const res = await api.get('/super-admin/processes');
+      const res = await api.get('/super-admin/dashboard/process-overview');
       return res.data.data || res.data;
     },
   });
@@ -240,7 +239,7 @@ export default function SuperAdminProcessesPage() {
                       </span>
                       <span>•</span>
                       <span>
-                        Avg: ₹{Math.round((process.totalMonthlyPayroll || 0) / (process.totalEmployees || 1)).toLocaleString('en-IN')}
+                        Avg: ₹{Math.round(process.avgSalary || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
