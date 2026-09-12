@@ -920,7 +920,8 @@ export class AttendanceImportService {
   }
 
   /**
-   * ✅ NEW: Match employees from flexible Excel format
+   * ✅ NAME-ONLY MATCHING: Match employees using NAME ONLY (no ID, no biometric number)
+   * Handles ambiguous duplicate names safely
    */
   private async matchEmployees(
     rows: any[],
@@ -929,6 +930,7 @@ export class AttendanceImportService {
   ) {
     const matched: ExcelRowImportResult[] = [];
     const unmatched: ExcelRowImportResult[] = [];
+    const ambiguous: ExcelRowImportResult[] = [];
     const matchedEmployeeIds = new Set<string>();
 
     // Get all employees for this organization
@@ -942,80 +944,129 @@ export class AttendanceImportService {
       },
     });
 
-    this.logger.log(`Found ${employees.length} employees in organization`);
+    this.logger.log(`[BIOMETRIC-NAME-MATCH] Found ${employees.length} employees in organization`);
 
-    // Create lookup maps
-    const employeeByIdMap = new Map(
-      employees.map(e => [e.employeeId.toLowerCase().trim(), e])
-    );
+    // Group employees by normalized name to detect duplicates
+    const employeesByNormalizedName = new Map<string, typeof employees>();
     
-    const employeeByNameMap = new Map(
-      employees.map(e => [`${e.firstName} ${e.lastName}`.toLowerCase().trim(), e])
-    );
+    for (const emp of employees) {
+      const fullName = `${emp.firstName} ${emp.lastName}`;
+      const normalized = this.normalizeName(fullName);
+      
+      if (!employeesByNormalizedName.has(normalized)) {
+        employeesByNormalizedName.set(normalized, []);
+      }
+      employeesByNormalizedName.get(normalized)!.push(emp);
+    }
 
+    // Log employees with duplicate names
+    for (const [normalizedName, emps] of employeesByNormalizedName.entries()) {
+      if (emps.length > 1) {
+        const ids = emps.map(e => e.employeeId).join(', ');
+        this.logger.warn(
+          `[BIOMETRIC-NAME-MATCH] ⚠️ DUPLICATE NAME DETECTED: "${normalizedName}" has ${emps.length} employees: ${ids}`
+        );
+      }
+    }
+
+    // Process each row
     for (let i = 0; i < rows.length; i++) {
       const rowNumber = i + 2; // Excel row (header = row 1)
       const row = rows[i];
 
-      let matchedEmployee: typeof employees[0] | undefined = undefined;
-      let originalIdentifier: string | null = null;
-      let matchMethod = 'NONE';
-
-      // Strategy 1: Try to match using identifier column
-      if (identifierColumn && row[identifierColumn]) {
-        originalIdentifier = row[identifierColumn].toString().trim();
-        if (originalIdentifier) {
-          const lookupKey = originalIdentifier.toLowerCase().trim();
-          matchedEmployee = employeeByIdMap.get(lookupKey);
-          if (matchedEmployee) {
-            matchMethod = 'ID';
-            this.logger.log(`Row ${rowNumber}: Matched by ID "${originalIdentifier}" -> ${matchedEmployee.employeeId}`);
-          }
-        }
-      }
-
-      // Strategy 2: Try to match by name if ID match failed
-      if (!matchedEmployee) {
-        const nameColumn = this.detectNameColumn(Object.keys(row));
-        if (nameColumn && row[nameColumn]) {
-          const originalName = row[nameColumn].toString().trim();
-          const lookupKey = originalName.toLowerCase().trim();
-          matchedEmployee = employeeByNameMap.get(lookupKey);
-          if (matchedEmployee) {
-            matchMethod = 'NAME';
-            originalIdentifier = originalIdentifier || originalName;
-            this.logger.log(`Row ${rowNumber}: Matched by NAME "${originalName}" -> ${matchedEmployee.employeeId}`);
-          }
-        }
-      }
-
-      // Extract name for display
+      // Find name column
       const nameColumn = this.detectNameColumn(Object.keys(row));
-      const originalName = nameColumn ? row[nameColumn]?.toString().trim() : (originalIdentifier || 'UNKNOWN');
+      
+      if (!nameColumn || !row[nameColumn]) {
+        this.logger.warn(`[BIOMETRIC-NAME-MATCH] Row ${rowNumber}: No name column found`);
+        unmatched.push({
+          rowNumber,
+          employeeId: `ROW-${rowNumber}`,
+          employeeName: 'UNKNOWN',
+          rawData: JSON.stringify(row),
+          success: false,
+          employeeFound: false,
+          error: 'No name column found in Excel row',
+        });
+        continue;
+      }
 
-      const result: ExcelRowImportResult = {
-        rowNumber,
-        employeeId: originalIdentifier || originalName || `ROW-${rowNumber}`,
-        employeeName: originalName,
-        rawData: JSON.stringify(row), // ✅ Store complete row as JSON
-        success: !!matchedEmployee,
-        employeeFound: !!matchedEmployee,
-        matchedEmployeeUUID: matchedEmployee?.id,
-      };
+      const excelName = row[nameColumn].toString().trim();
+      const normalizedExcelName = this.normalizeName(excelName);
 
-      if (matchedEmployee) {
-        result.employeeName = `${matchedEmployee.firstName} ${matchedEmployee.lastName}`;
-        matchedEmployeeIds.add(matchedEmployee.id);
-        matched.push(result);
+      console.log(`[BIOMETRIC-NAME-MATCH] Row ${rowNumber}: Excel Name="${excelName}", Normalized="${normalizedExcelName}"`);
+
+      const matchingEmployees = employeesByNormalizedName.get(normalizedExcelName) || [];
+
+      if (matchingEmployees.length === 0) {
+        // No match found
+        console.log(`[BIOMETRIC-NAME-MATCH] ❌ Row ${rowNumber}: No HRMS employee found with name "${excelName}"`);
+        unmatched.push({
+          rowNumber,
+          employeeId: excelName,
+          employeeName: excelName,
+          rawData: JSON.stringify(row),
+          success: false,
+          employeeFound: false,
+          error: `Employee not found by name: "${excelName}"`,
+        });
+      } else if (matchingEmployees.length === 1) {
+        // Exact single match - SAFE
+        const employee = matchingEmployees[0];
+        console.log(`[BIOMETRIC-NAME-MATCH] ✅ Row ${rowNumber}: Matched "${excelName}" → ${employee.employeeId} (${employee.firstName} ${employee.lastName})`);
+        
+        matched.push({
+          rowNumber,
+          employeeId: employee.employeeId,
+          employeeName: `${employee.firstName} ${employee.lastName}`,
+          rawData: JSON.stringify(row),
+          success: true,
+          employeeFound: true,
+          matchedEmployeeUUID: employee.id,
+        });
+        
+        matchedEmployeeIds.add(employee.id);
       } else {
-        result.error = `No match found (tried ID: "${originalIdentifier || 'N/A'}", Name: "${originalName}")`;
-        unmatched.push(result);
+        // Multiple employees with same name - AMBIGUOUS
+        const employeeIds = matchingEmployees.map(e => e.employeeId).join(', ');
+        console.log(
+          `[BIOMETRIC-NAME-MATCH] ⚠️ Row ${rowNumber}: AMBIGUOUS - "${excelName}" matches ${matchingEmployees.length} employees: ${employeeIds}`
+        );
+        
+        ambiguous.push({
+          rowNumber,
+          employeeId: excelName,
+          employeeName: excelName,
+          rawData: JSON.stringify(row),
+          success: false,
+          employeeFound: false,
+          error: `Multiple employees found with name "${excelName}": ${employeeIds}. Cannot determine which employee.`,
+        });
       }
     }
 
-    this.logger.log(`✅ Matching complete: ${matched.length} matched, ${unmatched.length} unmatched`);
+    this.logger.log(
+      `[BIOMETRIC-NAME-MATCH] ✅ Matching complete: ${matched.length} matched, ${unmatched.length} unmatched, ${ambiguous.length} ambiguous`
+    );
     
-    return { matched, unmatched, matchedEmployeeIds };
+    // Merge unmatched and ambiguous for backward compatibility
+    // Both are treated as failed imports
+    const allUnmatched = [...unmatched, ...ambiguous];
+    
+    return { matched, unmatched: allUnmatched, matchedEmployeeIds };
+  }
+
+  /**
+   * ✅ NEW: Normalize name for safe matching
+   * - Converts to lowercase
+   * - Trims whitespace
+   * - Collapses multiple spaces to single space
+   */
+  private normalizeName(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ');
   }
 
   /**
@@ -1263,8 +1314,8 @@ export class AttendanceImportService {
   }
 
   /**
-   * ✅ NEW: Import flexible format attendance row to Attendance table
-   * Converts August 2026 Excel format (P/A/H/WO per date) to Attendance records
+   * ✅ BIOMETRIC IMPORT: Convert biometric punch data to Attendance records
+   * Parses multi-line punch times and creates attendance records with correct dates
    */
   private async importFlexibleAttendanceRow(
     row: ExcelRowImportResult,
@@ -1274,15 +1325,15 @@ export class AttendanceImportService {
   ) {
     // Skip if no matched employee
     if (!row.matchedEmployeeUUID || !row.rawData) {
-      this.logger.warn(`[FLEXIBLE-IMPORT] Skipping row - no matched employee or raw data`);
+      this.logger.warn(`[BIOMETRIC-IMPORT] Skipping row - no matched employee or raw data`);
       return;
     }
 
     // Parse raw data from Excel
     const rawData = JSON.parse(row.rawData);
     
-    this.logger.log(`[FLEXIBLE-IMPORT] Processing row for employee: ${row.employeeId}`);
-    this.logger.log(`[FLEXIBLE-IMPORT] Raw data columns: ${Object.keys(rawData).slice(0, 15).join(', ')}...`);
+    console.log(`[BIOMETRIC-IMPORT] Processing row for employee: ${row.employeeId}`);
+    console.log(`[BIOMETRIC-IMPORT] Raw data columns: ${Object.keys(rawData).slice(0, 15).join(', ')}...`);
 
     // Extract month and year from filename
     const monthNames = [
@@ -1309,108 +1360,94 @@ export class AttendanceImportService {
     }
 
     if (!attendanceMonth || !attendanceYear) {
-      this.logger.warn(`[FLEXIBLE-IMPORT] Could not extract month/year from filename: ${fileName}`);
+      this.logger.warn(`[BIOMETRIC-IMPORT] Could not extract month/year from filename: ${fileName}`);
       return;
     }
 
-    this.logger.log(`[FLEXIBLE-IMPORT] Detected period: ${monthNames[attendanceMonth - 1]} ${attendanceYear}`);
+    console.log(`[BIOMETRIC-DATE] Detected period: ${monthNames[attendanceMonth - 1]} ${attendanceYear} (Month: ${attendanceMonth}, Year: ${attendanceYear})`);
 
-    // Find all date columns (1, 2, 3, ..., 31)
-    // These columns contain daily attendance status: P, A, H, WO, etc.
-    const dateColumns = Object.keys(rawData).filter(key => /^\d+$/.test(key));
+    // Find all day columns (1, 2, 3, ..., 31)
+    // These columns contain punch times in format: "08:53\n18:06" or single punch "08:53"
+    const dayColumns = Object.keys(rawData).filter(key => /^\d+$/.test(key));
     
-    this.logger.log(`[FLEXIBLE-IMPORT] Found ${dateColumns.length} date columns: ${dateColumns.slice(0, 10).join(', ')}...`);
+    console.log(`[BIOMETRIC-IMPORT] Found ${dayColumns.length} day columns: ${dayColumns.slice(0, 10).join(', ')}...`);
 
-    // Extract shift start time if available
-    const shiftStartStr = rawData['Shift Start'] || rawData['Shift'] || '10:00:00';
-    
-    // Process each date column
-    for (const dayStr of dateColumns) {
+    let recordsCreated = 0;
+    let recordsSkipped = 0;
+
+    // Process each day column
+    for (const dayStr of dayColumns) {
       const dayNum = parseInt(dayStr);
       if (dayNum < 1 || dayNum > 31) continue;
 
-      // Get attendance status for this day
-      const statusValue = rawData[dayStr];
-      if (!statusValue || typeof statusValue !== 'string') continue;
-
-      const statusStr = statusValue.trim().toUpperCase();
-      
-      // Map Excel status codes to AttendanceStatus enum
-      let attendanceStatus: string;
-      switch (statusStr) {
-        case 'P':
-          attendanceStatus = AttendanceStatus.PRESENT;
-          break;
-        case 'A':
-          attendanceStatus = AttendanceStatus.ABSENT;
-          break;
-        case 'H':
-        case 'HD':
-          attendanceStatus = AttendanceStatus.HALF_DAY;
-          break;
-        case 'WO':
-        case 'W':
-          attendanceStatus = AttendanceStatus.WEEK_OFF;
-          break;
-        case 'L':
-          attendanceStatus = AttendanceStatus.LATE;
-          break;
-        case 'LV':
-        case 'LEAVE':
-          attendanceStatus = AttendanceStatus.LEAVE;
-          break;
-        case 'HOL':
-        case 'HOLIDAY':
-          attendanceStatus = AttendanceStatus.HOLIDAY;
-          break;
-        default:
-          // Skip unknown status codes
-          this.logger.debug(`[FLEXIBLE-IMPORT] Skipping unknown status "${statusStr}" for day ${dayNum}`);
-          continue;
+      // Get punch data for this day
+      const punchValue = rawData[dayStr];
+      if (!punchValue) {
+        recordsSkipped++;
+        continue;
       }
 
-      // Construct the attendance date
+      // Parse punch times - can be multi-line: "08:53\n18:06" or single: "08:53"
+      const punchesRaw = punchValue.toString().trim();
+      if (!punchesRaw) {
+        recordsSkipped++;
+        continue;
+      }
+
+      console.log(`[BIOMETRIC-IMPORT] Day ${dayNum}: Raw punch data = "${punchesRaw}"`);
+
+      // Split by newline/carriage return and filter valid time formats
+      const punches = punchesRaw
+        .split(/[\n\r]+/)
+        .map(p => p.trim())
+        .filter(p => /^\d{1,2}:\d{2}$/.test(p));
+
+      if (punches.length === 0) {
+        console.log(`[BIOMETRIC-IMPORT] Day ${dayNum}: No valid punch times found, skipping`);
+        recordsSkipped++;
+        continue;
+      }
+
+      console.log(`[BIOMETRIC-IMPORT] Day ${dayNum}: Found ${punches.length} valid punch(es): ${punches.join(', ')}`);
+
+      // First punch = Check In, Last punch = Check Out
+      const firstPunch = punches[0];
+      const lastPunch = punches.length > 1 ? punches[punches.length - 1] : null;
+
+      console.log(`[BIOMETRIC-IMPORT] Day ${dayNum}: Check In = ${firstPunch}, Check Out = ${lastPunch || 'NONE'}`);
+
+      // Construct the attendance date (UTC midnight for the day)
       const attendanceDate = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, 0, 0, 0, 0));
       
-      this.logger.debug(
-        `[FLEXIBLE-IMPORT] Day ${dayNum}: Status=${statusStr} -> ${attendanceStatus}, Date=${attendanceDate.toISOString()}`
-      );
+      console.log(`[BIOMETRIC-DATE] Day ${dayNum}: Attendance Date = ${attendanceDate.toISOString().split('T')[0]} (${attendanceDate.toISOString()})`);
 
-      // Generate check-in and check-out times based on status
-      let checkInTime: Date | null = null;
+      // Parse check-in time
+      const checkInTime = this.parsePunchDateTime(attendanceYear, attendanceMonth, dayNum, firstPunch);
+      console.log(`[BIOMETRIC-DATE] Day ${dayNum}: Check In Time = ${checkInTime.toISOString()}`);
+
+      // Parse check-out time (if exists)
       let checkOutTime: Date | null = null;
-      let workingHours = 0;
-      let lateBy = 0;
-
-      if ([AttendanceStatus.PRESENT, AttendanceStatus.LATE, AttendanceStatus.HALF_DAY].includes(attendanceStatus as AttendanceStatus)) {
-        // Parse shift start time
-        const [shiftHour, shiftMinute] = shiftStartStr.split(':').map(Number);
-        
-        // For PRESENT/LATE: Check in around shift start, check out after 9 hours
-        // For LATE: Add random minutes after shift start
-        // For HALF_DAY: Check in late and/or check out early
-        
-        if (attendanceStatus === AttendanceStatus.LATE) {
-          // Late check-in: 10-60 minutes after shift start
-          const lateMinutes = 15 + Math.floor(Math.random() * 45);
-          checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, shiftHour, shiftMinute + lateMinutes, 0, 0));
-          checkOutTime = new Date(checkInTime.getTime() + 9 * 60 * 60 * 1000); // 9 hours later
-          workingHours = 9;
-          lateBy = lateMinutes;
-        } else if (attendanceStatus === AttendanceStatus.HALF_DAY) {
-          // Half day: Either late check-in or early check-out (5-6 hours total)
-          checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, shiftHour, shiftMinute, 0, 0));
-          checkOutTime = new Date(checkInTime.getTime() + 5.5 * 60 * 60 * 1000); // 5.5 hours
-          workingHours = 5.5;
-        } else {
-          // Present: Normal working hours (9 hours)
-          checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, shiftHour, shiftMinute, 0, 0));
-          checkOutTime = new Date(checkInTime.getTime() + 9 * 60 * 60 * 1000);
-          workingHours = 9;
-        }
+      if (lastPunch) {
+        checkOutTime = this.parsePunchDateTime(attendanceYear, attendanceMonth, dayNum, lastPunch);
+        console.log(`[BIOMETRIC-DATE] Day ${dayNum}: Check Out Time = ${checkOutTime.toISOString()}`);
       }
 
-      // Check if attendance record already exists
+      // Calculate working hours
+      const workingHours = checkInTime && checkOutTime
+        ? (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60)
+        : 0;
+
+      console.log(`[BIOMETRIC-IMPORT] Day ${dayNum}: Working Hours = ${workingHours.toFixed(2)}`);
+
+      // Calculate attendance status based on HRMS business rules
+      const status = this.calculateBiometricAttendanceStatus(checkInTime, checkOutTime, workingHours);
+      
+      console.log(`[BIOMETRIC-IMPORT] Day ${dayNum}: Status = ${status}`);
+
+      // Calculate late by minutes
+      const lateBy = this.calculateLateMinutes(checkInTime);
+
+      // Save to Attendance table
       try {
         const existing = await this.prisma.attendance.findUnique({
           where: {
@@ -1429,13 +1466,13 @@ export class AttendanceImportService {
           checkInTime,
           checkOutTime,
           workingHours,
-          status: attendanceStatus,
+          status,
           lateBy,
-          source: AttendanceSource.MANUAL,
-          isManualEntry: true,
+          source: 'BIOMETRIC' as any,
+          isManualEntry: false,
           approvedBy: userId,
           approvedAt: new Date(),
-          remarks: `Imported from Excel: ${fileName}`,
+          remarks: `Imported from biometric Excel: ${fileName}`,
         };
 
         if (existing) {
@@ -1448,23 +1485,23 @@ export class AttendanceImportService {
           await this.prisma.attendanceHistory.create({
             data: {
               attendanceId: existing.id,
-              field: 'EXCEL_IMPORT_UPDATE',
+              field: 'BIOMETRIC_IMPORT_UPDATE',
               oldValue: JSON.stringify({
                 status: existing.status,
                 checkInTime: existing.checkInTime,
                 checkOutTime: existing.checkOutTime,
               }),
               newValue: JSON.stringify({
-                status: attendanceStatus,
+                status,
                 checkInTime,
                 checkOutTime,
               }),
-              reason: `Excel Import Update: ${fileName}`,
+              reason: `Biometric Import Update: ${fileName}`,
               changedBy: userId,
             },
           });
 
-          this.logger.debug(`[FLEXIBLE-IMPORT] Updated attendance for day ${dayNum}`);
+          console.log(`[BIOMETRIC-SAVE] Day ${dayNum}: UPDATED existing attendance record ${existing.id}`);
         } else {
           // Create new record
           const created = await this.prisma.attendance.create({
@@ -1474,24 +1511,104 @@ export class AttendanceImportService {
           await this.prisma.attendanceHistory.create({
             data: {
               attendanceId: created.id,
-              field: 'EXCEL_IMPORT_CREATE',
+              field: 'BIOMETRIC_IMPORT_CREATE',
               newValue: JSON.stringify({
-                status: attendanceStatus,
+                status,
                 checkInTime,
                 checkOutTime,
               }),
-              reason: `Excel Import: ${fileName}`,
+              reason: `Biometric Import: ${fileName}`,
               changedBy: userId,
             },
           });
 
-          this.logger.debug(`[FLEXIBLE-IMPORT] Created attendance for day ${dayNum}`);
+          console.log(`[BIOMETRIC-SAVE] Day ${dayNum}: CREATED new attendance record ${created.id}`);
         }
+
+        recordsCreated++;
       } catch (error) {
-        this.logger.error(`[FLEXIBLE-IMPORT] Failed to save attendance for day ${dayNum}: ${error.message}`);
+        this.logger.error(`[BIOMETRIC-SAVE] Day ${dayNum}: FAILED to save attendance: ${error.message}`);
+        recordsSkipped++;
       }
     }
 
-    this.logger.log(`[FLEXIBLE-IMPORT] Completed processing ${dateColumns.length} days for employee ${row.employeeId}`);
+    console.log(
+      `[BIOMETRIC-IMPORT] ✅ Completed for employee ${row.employeeId}: ` +
+      `${recordsCreated} records created/updated, ${recordsSkipped} skipped`
+    );
+  }
+
+  /**
+   * ✅ NEW: Parse biometric punch time to full DateTime
+   * Converts "08:53" to Date object for specific day
+   */
+  private parsePunchDateTime(year: number, month: number, day: number, timeStr: string): Date {
+    const [hourStr, minuteStr] = timeStr.split(':');
+    const hour = parseInt(hourStr);
+    const minute = parseInt(minuteStr);
+    
+    // Create UTC DateTime for the punch
+    return new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
+  }
+
+  /**
+   * ✅ NEW: Calculate attendance status based on biometric punch times
+   */
+  private calculateBiometricAttendanceStatus(
+    checkInTime: Date | null,
+    checkOutTime: Date | null,
+    workingHours: number,
+  ): string {
+    if (!checkInTime) {
+      return AttendanceStatus.ABSENT;
+    }
+
+    // Get check-in hour in UTC
+    const checkInHour = checkInTime.getUTCHours();
+    const checkInMinute = checkInTime.getUTCMinutes();
+    const checkInMinutes = checkInHour * 60 + checkInMinute;
+
+    // Office hours: 10:00 AM with 10-minute grace period
+    const graceEndMinutes = 10 * 60 + 10; // 10:10 AM
+
+    // Check if Monday (Week Off) - getUTCDay() returns 0 for Sunday, 1 for Monday
+    if (checkInTime.getUTCDay() === 1) {
+      return AttendanceStatus.WEEK_OFF;
+    }
+
+    // Late check
+    if (checkInMinutes > graceEndMinutes) {
+      return AttendanceStatus.LATE;
+    }
+
+    // Half day check (less than 6 hours)
+    if (checkOutTime && workingHours < 6) {
+      return AttendanceStatus.HALF_DAY;
+    }
+
+    // Default: Present
+    return AttendanceStatus.PRESENT;
+  }
+
+  /**
+   * ✅ NEW: Calculate late minutes based on check-in time
+   */
+  private calculateLateMinutes(checkInTime: Date | null): number {
+    if (!checkInTime) {
+      return 0;
+    }
+
+    const checkInHour = checkInTime.getUTCHours();
+    const checkInMinute = checkInTime.getUTCMinutes();
+    const checkInMinutes = checkInHour * 60 + checkInMinute;
+
+    // Grace period ends at 10:10 AM
+    const graceEndMinutes = 10 * 60 + 10;
+
+    if (checkInMinutes > graceEndMinutes) {
+      return checkInMinutes - graceEndMinutes;
+    }
+
+    return 0;
   }
 }
