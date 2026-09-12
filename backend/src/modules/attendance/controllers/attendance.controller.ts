@@ -139,8 +139,9 @@ export class AttendanceController {
   }
 
   /**
-   * ✅ NEW: GET MY RAW IMPORTED ATTENDANCE
-   * Employee views their HR-uploaded flexible format attendance
+   * ✅ FIXED: GET MY RAW IMPORTED ATTENDANCE (EMPLOYEE-SPECIFIC)
+   * Employee views ONLY their own HR-uploaded flexible format attendance
+   * Security: Backend filters by employeeId from authenticated user's employee record
    */
   @Get('my/imported')
   @ApiOperation({ summary: 'Get my imported attendance (flexible format)' })
@@ -155,7 +156,7 @@ export class AttendanceController {
     console.log('[IMPORTED-ATTENDANCE] Request month:', month);
     console.log('[IMPORTED-ATTENDANCE] Request year:', year);
 
-    // Get employee's organization (for security/isolation)
+    // Get employee's organization and employee UUID (for security/isolation)
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -180,6 +181,7 @@ export class AttendanceController {
     console.log('[IMPORTED-ATTENDANCE] Found user/employee:', {
       userId: user.id,
       organizationId: user.organizationId,
+      employeeUUID: user.employee.id,
       employeeId: user.employee.employeeId,
       name: `${user.employee.firstName} ${user.employee.lastName}`,
     });
@@ -190,11 +192,16 @@ export class AttendanceController {
 
     console.log('[IMPORTED-ATTENDANCE] Query parameters:', { queryMonth, queryYear });
 
-    // ✅ FETCH ALL RECORDS FOR THE ORGANIZATION (NOT FILTERED BY EMPLOYEE)
-    // This shows the COMPLETE uploaded Excel to all employees
+    // ✅ CRITICAL: FILTER BY EMPLOYEE UUID (DATABASE RELATION)
+    // This ensures employees ONLY see their OWN attendance records
+    // Where clause:
+    // 1. organizationId = user.organizationId (tenant isolation)
+    // 2. employeeId = user.employee.id (employee-specific filtering)
+    // 3. (attendanceMonth = queryMonth AND attendanceYear = queryYear) OR attendanceMonth IS NULL
     const records = await this.prisma.rawAttendanceRecord.findMany({
       where: {
-        organizationId: user.organizationId, // Organization isolation only
+        organizationId: user.organizationId,
+        employeeId: user.employee.id, // ✅ EMPLOYEE-SPECIFIC FILTER
         OR: [
           { 
             attendanceMonth: queryMonth, 
@@ -220,11 +227,12 @@ export class AttendanceController {
       ],
     });
 
-    console.log('[IMPORTED-ATTENDANCE] Found ALL records in organization:', records.length);
+    console.log('[IMPORTED-ATTENDANCE] Found records for THIS employee only:', records.length);
     
     if (records.length > 0) {
       console.log('[IMPORTED-ATTENDANCE] Sample record:', {
         id: records[0].id,
+        employeeUUID: records[0].employeeId,
         identifier: records[0].originalIdentifier,
         name: records[0].originalName,
         attendanceMonth: records[0].attendanceMonth,
@@ -233,7 +241,7 @@ export class AttendanceController {
       });
     }
 
-    // Extract unique columns from all records
+    // Extract unique columns from employee's records
     const allColumns = new Set<string>();
     records.forEach(record => {
       try {
@@ -248,7 +256,7 @@ export class AttendanceController {
     console.log('[IMPORTED-ATTENDANCE] Extracted columns:', columnsArray.length, 'columns');
     console.log('[IMPORTED-ATTENDANCE] Column names:', columnsArray.slice(0, 10)); // First 10 columns
 
-    // ✅ Extract unique attendance months/years from records for frontend filter
+    // ✅ Extract unique attendance months/years from employee's records only
     const availableMonths = new Set<string>();
     records.forEach(record => {
       if (record.attendanceMonth && record.attendanceYear) {
@@ -272,7 +280,7 @@ export class AttendanceController {
       availableMonths: Array.from(availableMonths).sort().reverse(), // ✅ Available periods
     };
 
-    console.log('[IMPORTED-ATTENDANCE] Returning COMPLETE Excel with', result.records.length, 'rows (ALL employees)');
+    console.log('[IMPORTED-ATTENDANCE] Returning EMPLOYEE-SPECIFIC records:', result.records.length, 'rows');
     console.log('[IMPORTED-ATTENDANCE] Available months:', result.availableMonths);
     console.log('[IMPORTED-ATTENDANCE] ========== END ==========');
 
@@ -562,5 +570,96 @@ export class AttendanceController {
       targetYear,
       req.user.id,
     );
+  }
+
+  /**
+   * ✅ HR: GET ALL IMPORTED ATTENDANCE RECORDS
+   * HR/Super Admin can view all imported attendance for verification
+   */
+  @Get('imported/all')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all imported attendance records (HR/Super Admin)' })
+  @ApiResponse({ status: 200, description: 'All imported attendance records retrieved' })
+  async getAllImportedAttendance(
+    @Request() req,
+    @Query('month') month?: number,
+    @Query('year') year?: number,
+    @Query('employeeId') filterEmployeeId?: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { organizationId: true },
+    });
+
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+
+    const now = new Date();
+    const queryMonth = month || now.getMonth() + 1;
+    const queryYear = year || now.getFullYear();
+
+    const where: any = {
+      organizationId: user.organizationId,
+      OR: [
+        { 
+          attendanceMonth: queryMonth, 
+          attendanceYear: queryYear 
+        },
+        { 
+          attendanceMonth: null 
+        },
+      ],
+    };
+
+    // Optional: Filter by specific employee
+    if (filterEmployeeId) {
+      where.employeeId = filterEmployeeId;
+    }
+
+    const records = await this.prisma.rawAttendanceRecord.findMany({
+      where,
+      include: {
+        employee: {
+          select: {
+            employeeId: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        importHistory: {
+          select: {
+            fileName: true,
+            uploadedAt: true,
+            originalColumns: true,
+          },
+        },
+      },
+      orderBy: [
+        { createdAt: 'desc' },
+        { originalIdentifier: 'asc' },
+      ],
+    });
+
+    return {
+      month: queryMonth,
+      year: queryYear,
+      records: records.map(r => ({
+        id: r.id,
+        employeeId: r.employee?.employeeId,
+        employeeName: r.employee ? `${r.employee.firstName} ${r.employee.lastName}` : null,
+        originalIdentifier: r.originalIdentifier,
+        originalName: r.originalName,
+        data: JSON.parse(r.rawData),
+        uploadedAt: r.createdAt,
+        fileName: r.importHistory?.fileName,
+        attendanceMonth: r.attendanceMonth,
+        attendanceYear: r.attendanceYear,
+        isMatched: r.isMatched,
+        matchingNote: r.matchingNote,
+      })),
+      total: records.length,
+    };
   }
 }

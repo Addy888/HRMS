@@ -21,12 +21,13 @@ export default function PolicyTrackingPage() {
       const params = new URLSearchParams({ page: String(page), limit: '12' });
       if (search) params.set('search', search);
       const res = await api.get(`/policies/tracking?${params}`);
-      return res.data?.data ?? res.data;
+      // Backend returns { data: [...], meta: {...} }
+      return res.data;
     },
   });
 
   const employees: any[] = data?.data ?? [];
-  const meta = data?.meta ?? {};
+  const meta = data?.meta ?? { total: 0, page: 1, limit: 12, totalPages: 0 };
 
   return (
     <div className="min-h-screen bg-card p-6 space-y-6">

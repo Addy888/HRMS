@@ -627,20 +627,32 @@ export class PoliciesService {
     };
   }
 
-  async getHRTracking(query: any) {
+  async getHRTracking(userId: string, query: any) {
+    // Get HR user's organization
+    const hrUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+
+    if (!hrUser || !hrUser.organizationId) {
+      throw new NotFoundException('User organization not found');
+    }
+
     const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
+    const limit = Number(query.limit) || 12;
     const skip = (page - 1) * limit;
 
+    // Build where clause for employees
     const where: any = {
+      organizationId: hrUser.organizationId, // Multi-tenant security
       user: { role: { name: 'EMPLOYEE' } },
     };
 
     if (query.search) {
       where.OR = [
-        { firstName: { contains: query.search } },
-        { lastName: { contains: query.search } },
-        { employeeId: { contains: query.search } },
+        { firstName: { contains: query.search, mode: 'insensitive' } },
+        { lastName: { contains: query.search, mode: 'insensitive' } },
+        { employeeId: { contains: query.search, mode: 'insensitive' } },
       ];
     }
 
@@ -648,29 +660,171 @@ export class PoliciesService {
       where.departmentId = query.departmentId;
     }
 
+    // Get employees with pagination
     const [employees, total] = await Promise.all([
       this.prisma.employee.findMany({
         where,
         include: {
-          department: true,
-          designation: true,
-          acceptances: {
-            include: { policy: true },
-          },
+          department: { select: { name: true } },
+          designation: { select: { name: true } },
         },
         skip,
         take: limit,
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       }),
       this.prisma.employee.count({ where }),
     ]);
 
-    const data: any[] = [];
-    for (const emp of employees) {
-      const assigned = await this.getEmployeePolicies(emp.userId);
-      const totalAssigned = assigned.length;
-      const acceptedCount = assigned.filter((p) => p.accepted).length;
+    if (employees.length === 0) {
+      return {
+        data: [],
+        meta: { total: 0, page, limit, totalPages: 0 },
+      };
+    }
 
-      data.push({
+    const employeeIds = employees.map((e) => e.id);
+
+    // ==============================================================
+    // PART 1: Count Regular Policies (policy + policyassignment + policyacceptance)
+    // ==============================================================
+    
+    // Get all published policies for this organization
+    const allPublishedPolicies = await this.prisma.policy.findMany({
+      where: {
+        organizationId: hrUser.organizationId,
+        status: 'PUBLISHED',
+      },
+      select: {
+        id: true,
+        assignments: {
+          select: {
+            id: true,
+            targetType: true,
+            targetId: true,
+          },
+        },
+      },
+    });
+
+    // Get all policy acceptances for these employees
+    const allPolicyAcceptances = await this.prisma.policyAcceptance.findMany({
+      where: {
+        employeeId: { in: employeeIds },
+      },
+      select: {
+        employeeId: true,
+        policyId: true,
+      },
+    });
+
+    // Create a map of employee policy acceptances for quick lookup
+    const policyAcceptanceMap = new Map<string, Set<string>>();
+    allPolicyAcceptances.forEach((acc) => {
+      if (!policyAcceptanceMap.has(acc.employeeId)) {
+        policyAcceptanceMap.set(acc.employeeId, new Set());
+      }
+      policyAcceptanceMap.get(acc.employeeId)!.add(acc.policyId);
+    });
+
+    // ==============================================================
+    // PART 2: Count Company Policies (companypolicy + companypolicyacceptance)
+    // ==============================================================
+    
+    // Get all active company policies for this organization
+    const allCompanyPolicies = await this.prisma.companyPolicy.findMany({
+      where: {
+        organizationId: hrUser.organizationId,
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Get all company policy acceptances for these employees
+    const allCompanyPolicyAcceptances = await this.prisma.companyPolicyAcceptance.findMany({
+      where: {
+        employeeId: { in: employeeIds },
+        status: 'ACCEPTED', // Only count as accepted if status is ACCEPTED
+      },
+      select: {
+        employeeId: true,
+        companyPolicyId: true,
+      },
+    });
+
+    // Create a map of employee company policy acceptances
+    const companyPolicyAcceptanceMap = new Map<string, Set<string>>();
+    allCompanyPolicyAcceptances.forEach((acc) => {
+      if (!companyPolicyAcceptanceMap.has(acc.employeeId)) {
+        companyPolicyAcceptanceMap.set(acc.employeeId, new Set());
+      }
+      companyPolicyAcceptanceMap.get(acc.employeeId)!.add(acc.companyPolicyId);
+    });
+
+    // ==============================================================
+    // PART 3: Build result for each employee (combining both policy types)
+    // ==============================================================
+    
+    const data = employees.map((emp) => {
+      // Count regular policies assigned to this employee
+      const assignedRegularPolicyIds = allPublishedPolicies.filter((policy) => {
+        // If no assignments, policy is not assigned
+        if (policy.assignments.length === 0) {
+          return false;
+        }
+
+        // Check if any assignment matches this employee
+        return policy.assignments.some((assign) => {
+          if (assign.targetType === 'ALL') return true;
+          if (
+            assign.targetType === 'DEPARTMENT' &&
+            assign.targetId === emp.departmentId
+          )
+            return true;
+          if (
+            assign.targetType === 'DESIGNATION' &&
+            assign.targetId === emp.designationId
+          )
+            return true;
+          if (assign.targetType === 'EMPLOYEE' && assign.targetId === emp.id)
+            return true;
+          return false;
+        });
+      });
+
+      const totalRegularAssigned = assignedRegularPolicyIds.length;
+
+      // Count how many of the assigned regular policies this employee has accepted
+      const acceptedRegularPolicyIds = policyAcceptanceMap.get(emp.id) || new Set();
+      const acceptedRegularCount = assignedRegularPolicyIds.filter((p) =>
+        acceptedRegularPolicyIds.has(p.id),
+      ).length;
+
+      // Count company policies (all active company policies are assigned to all employees)
+      const totalCompanyAssigned = allCompanyPolicies.length;
+
+      // Count how many company policies this employee has accepted
+      const acceptedCompanyPolicyIds = companyPolicyAcceptanceMap.get(emp.id) || new Set();
+      const acceptedCompanyCount = allCompanyPolicies.filter((p) =>
+        acceptedCompanyPolicyIds.has(p.id),
+      ).length;
+
+      // Combine totals
+      const totalAssigned = totalRegularAssigned + totalCompanyAssigned;
+      const acceptedCount = acceptedRegularCount + acceptedCompanyCount;
+
+      // Determine status
+      let status: 'COMPLETED' | 'PENDING' | 'NO_POLICIES';
+      if (totalAssigned === 0) {
+        status = 'NO_POLICIES';
+      } else if (acceptedCount === totalAssigned) {
+        status = 'COMPLETED';
+      } else {
+        status = 'PENDING';
+      }
+
+      return {
         id: emp.id,
         employeeId: emp.employeeId,
         firstName: emp.firstName,
@@ -679,14 +833,9 @@ export class PoliciesService {
         designation: emp.designation?.name || '—',
         totalAssigned,
         acceptedCount,
-        status:
-          totalAssigned === 0
-            ? 'NO_POLICIES'
-            : acceptedCount === totalAssigned
-              ? 'COMPLETED'
-              : 'PENDING',
-      });
-    }
+        status,
+      };
+    });
 
     return {
       data,

@@ -329,33 +329,7 @@ export class AttendanceService {
       status = AttendanceStatus.WEEK_OFF;
       lateBy = 0; // No late marking on week off
     } else {
-      // Calculate late status only for working days
-      if (shiftAssignment) {
-        const shift = shiftAssignment.shift;
-        const [startHour, startMinute] = shift.startTime.split(':').map(Number);
-        
-        // Create shift start time in IST for comparison
-        const zonedCheckInTime = toZonedTime(event.timestamp, 'Asia/Kolkata');
-        const shiftStartTime = new Date(zonedCheckInTime);
-        shiftStartTime.setHours(startHour, startMinute, 0, 0);
-
-        const minutesLate = differenceInMinutes(zonedCheckInTime, shiftStartTime);
-
-        // IMPORTANT: Late starts AFTER grace time, not AT grace time
-        // If graceTime is 10 minutes and startTime is 09:00:
-        // - 09:00 to 09:10 => ON TIME
-        // - 09:11 onwards => LATE
-        if (minutesLate > shift.graceTime) {
-          lateBy = minutesLate - shift.graceTime;
-          if (lateBy >= shift.halfDayIfLateBy) {
-            status = AttendanceStatus.HALF_DAY;
-          } else if (lateBy >= shift.lateMarkAfter) {
-            status = AttendanceStatus.LATE;
-          }
-        }
-      }
-
-      // Check holiday (only for non-Monday days)
+      // Check holiday first (only for non-Monday days)
       const holiday = await this.prisma.holiday.findFirst({
         where: {
           date: businessDate,
@@ -365,26 +339,103 @@ export class AttendanceService {
 
       if (holiday) {
         status = AttendanceStatus.HOLIDAY;
-      }
+      } else {
+        // Check database week off (only for non-Monday days as fallback)
+        const dayOfWeekName = format(new Date(businessDate), 'EEEE').toUpperCase();
+        const weekOff = await this.prisma.weekOff.findFirst({
+          where: {
+            dayOfWeek: dayOfWeekName,
+            isActive: true,
+            effectiveFrom: { lte: new Date(businessDate) },
+            OR: [
+              { effectiveTo: null },
+              { effectiveTo: { gte: new Date(businessDate) } },
+              { employeeId: null },
+              { employeeId: employee.id },
+            ],
+          },
+        });
 
-      // Check database week off (only for non-Monday days as fallback)
-      const dayOfWeekName = format(new Date(businessDate), 'EEEE').toUpperCase();
-      const weekOff = await this.prisma.weekOff.findFirst({
-        where: {
-          dayOfWeek: dayOfWeekName,
-          isActive: true,
-          effectiveFrom: { lte: new Date(businessDate) },
-          OR: [
-            { effectiveTo: null },
-            { effectiveTo: { gte: new Date(businessDate) } },
-            { employeeId: null },
-            { employeeId: employee.id },
-          ],
-        },
-      });
-
-      if (weekOff) {
-        status = AttendanceStatus.WEEK_OFF;
+        if (weekOff) {
+          status = AttendanceStatus.WEEK_OFF;
+        } else {
+          // ============================================
+          // NEW ATTENDANCE RULE: 10:05 AM CUTOFF
+          // ============================================
+          // Calculate late status only for working days (not WEEK_OFF or HOLIDAY)
+          // Fixed cutoff: 10:05 AM Asia/Kolkata time
+          // - 10:05 AM or before = PRESENT
+          // - After 10:05 AM = LATE (initially)
+          const zonedCheckInTime = toZonedTime(event.timestamp, 'Asia/Kolkata');
+          const checkInHour = zonedCheckInTime.getHours();
+          const checkInMinute = zonedCheckInTime.getMinutes();
+          
+          // Convert to minutes for comparison
+          const checkInMinutes = checkInHour * 60 + checkInMinute;
+          const cutoffMinutes = 10 * 60 + 5; // 10:05 AM = 605 minutes
+          
+          this.logger.log(
+            `[ATTENDANCE-CHECKIN] Check-in time: ${checkInHour}:${String(checkInMinute).padStart(2, '0')} IST ` +
+            `(${checkInMinutes} minutes) | Cutoff: 10:05 AM (${cutoffMinutes} minutes)`
+          );
+          
+          if (checkInMinutes > cutoffMinutes) {
+            // Late check-in detected
+            lateBy = checkInMinutes - cutoffMinutes;
+            status = AttendanceStatus.LATE;
+            
+            this.logger.log(
+              `[ATTENDANCE-CHECKIN] Late check-in detected - ${lateBy} minutes late`
+            );
+            
+            // ============================================
+            // NEW RULE: 3 LATE DAYS IN SAME WEEK = HALF DAY
+            // ============================================
+            // Calculate the start of the current week (Sunday)
+            const weekStart = new Date(businessDate);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Go back to Sunday
+            weekStart.setHours(0, 0, 0, 0);
+            
+            // Calculate the end of the current week (Saturday)
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6); // Saturday
+            weekEnd.setHours(23, 59, 59, 999);
+            
+            this.logger.log(
+              `[ATTENDANCE-CHECKIN] Week range: ${weekStart.toISOString()} to ${weekEnd.toISOString()}`
+            );
+            
+            // Count late attendance in the current week for THIS employee only
+            // Exclude today's record from the count
+            const lateCountInWeek = await this.prisma.attendance.count({
+              where: {
+                employeeId: employee.id,
+                date: {
+                  gte: weekStart,
+                  lt: businessDate, // Don't count today
+                },
+                status: AttendanceStatus.LATE,
+              },
+            });
+            
+            this.logger.log(
+              `[ATTENDANCE-CHECKIN] Late count in current week (excluding today): ${lateCountInWeek}`
+            );
+            
+            // If this is the 3rd late occurrence in the week (2 previous + this one = 3), mark as HALF_DAY
+            if (lateCountInWeek >= 2) {
+              status = AttendanceStatus.HALF_DAY;
+              this.logger.log(
+                `[ATTENDANCE-CHECKIN] 3rd late occurrence in current week - Changing to HALF_DAY`
+              );
+            }
+          } else {
+            // On time
+            this.logger.log(
+              `[ATTENDANCE-CHECKIN] On-time check-in - Status: PRESENT`
+            );
+          }
+        }
       }
     }
 
@@ -791,6 +842,7 @@ export class AttendanceService {
   /**
    * GET MONTHLY ATTENDANCE
    * Get monthly calendar view
+   * Applies weekly late penalties after fetching raw attendance
    */
   async getMonthlyAttendance(employeeId: string, dto: GetMonthlyAttendanceDto) {
     const now = new Date();
@@ -800,7 +852,7 @@ export class AttendanceService {
     const startDate = startOfMonth(new Date(year, month - 1, 1));
     const endDate = endOfMonth(new Date(year, month - 1, 1));
 
-    const attendances = await this.prisma.attendance.findMany({
+    let attendances = await this.prisma.attendance.findMany({
       where: {
         employeeId,
         date: {
@@ -814,6 +866,13 @@ export class AttendanceService {
       orderBy: { date: 'asc' },
     });
 
+    // ============================================
+    // APPLY WEEKLY LATE PENALTY RULE
+    // If employee was late on ALL working days in a week,
+    // mark ONE FULL DAY OFF for that week
+    // ============================================
+    attendances = await this.applyWeeklyLatePenalty(employeeId, attendances);
+
     // Get summary
     const summary = await this.getMonthlyAttendanceSummary(employeeId, month, year);
 
@@ -823,6 +882,118 @@ export class AttendanceService {
       attendances,
       summary,
     };
+  }
+
+  /**
+   * APPLY WEEKLY LATE PENALTY
+   * For each week in the attendance records:
+   * - Check if employee was late on ALL working days
+   * - If yes, mark ONE FULL DAY OFF for that week
+   * 
+   * IMPORTANT: 
+   * - Working days exclude WEEK_OFF, HOLIDAY, LEAVE, ABSENT
+   * - Only applies penalty if employee was late on EVERY scheduled working day
+   * - Only ONE penalty per week, not per late day
+   */
+  private async applyWeeklyLatePenalty(
+    employeeId: string,
+    attendances: any[],
+  ): Promise<any[]> {
+    if (attendances.length === 0) return attendances;
+
+    // Group attendance by week
+    const weekMap = new Map<string, any[]>();
+    
+    attendances.forEach(attendance => {
+      const date = new Date(attendance.date);
+      // Calculate week start (Sunday)
+      const weekStart = new Date(date);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const weekKey = weekStart.toISOString().split('T')[0];
+      
+      if (!weekMap.has(weekKey)) {
+        weekMap.set(weekKey, []);
+      }
+      weekMap.get(weekKey)!.push(attendance);
+    });
+
+    this.logger.log(`[WEEKLY-PENALTY] Processing ${weekMap.size} weeks for employee ${employeeId}`);
+
+    // Process each week
+    for (const [weekKey, weekAttendances] of weekMap.entries()) {
+      // Filter only working days (exclude WEEK_OFF, HOLIDAY, LEAVE, ABSENT)
+      const workingDays = weekAttendances.filter(a => 
+        ![
+          AttendanceStatus.WEEK_OFF,
+          AttendanceStatus.HOLIDAY,
+          AttendanceStatus.LEAVE,
+          AttendanceStatus.ABSENT,
+        ].includes(a.status as AttendanceStatus)
+      );
+
+      if (workingDays.length === 0) {
+        this.logger.log(`[WEEKLY-PENALTY] Week ${weekKey}: No working days, skipping`);
+        continue;
+      }
+
+      // Count how many working days were LATE (or HALF_DAY which originated from late)
+      const lateDays = workingDays.filter(a => 
+        a.status === AttendanceStatus.LATE || a.status === AttendanceStatus.HALF_DAY
+      );
+
+      this.logger.log(
+        `[WEEKLY-PENALTY] Week ${weekKey}: ` +
+        `${workingDays.length} working days, ` +
+        `${lateDays.length} late/half-day`
+      );
+
+      // If ALL working days were late, apply ONE FULL DAY OFF penalty
+      if (lateDays.length === workingDays.length && workingDays.length > 0) {
+        this.logger.log(
+          `[WEEKLY-PENALTY] Week ${weekKey}: Employee was late on ALL ${workingDays.length} working days - Applying FULL DAY OFF penalty`
+        );
+
+        // Check if we already applied this penalty for this week
+        const existingPenalty = await this.prisma.attendance.findFirst({
+          where: {
+            employeeId,
+            date: {
+              gte: new Date(weekKey),
+              lt: new Date(new Date(weekKey).getTime() + 7 * 24 * 60 * 60 * 1000),
+            },
+            remarks: { contains: 'FULL_WEEK_LATE_PENALTY' },
+          },
+        });
+
+        if (!existingPenalty) {
+          // Find the first LATE day in the week to mark as penalty
+          const firstLateDay = lateDays[0];
+          
+          // Update the first late day to include penalty marker in remarks
+          await this.prisma.attendance.update({
+            where: { id: firstLateDay.id },
+            data: {
+              remarks: firstLateDay.remarks 
+                ? `${firstLateDay.remarks} | FULL_WEEK_LATE_PENALTY_APPLIED`
+                : 'FULL_WEEK_LATE_PENALTY_APPLIED',
+            },
+          });
+
+          // Mark in the attendance object returned to frontend
+          firstLateDay.fullWeekLatePenalty = true;
+          
+          this.logger.log(
+            `[WEEKLY-PENALTY] Applied penalty marker to attendance ${firstLateDay.id} on ${firstLateDay.date}`
+          );
+        } else {
+          this.logger.log(
+            `[WEEKLY-PENALTY] Week ${weekKey}: Penalty already applied, skipping`
+          );
+        }
+      }
+    }
+
+    return attendances;
   }
 
   /**

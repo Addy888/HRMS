@@ -1,1142 +1,266 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import * as bcrypt from 'bcrypt';
-import { UserRole } from '../../common/constants/index.js';
 
 @Injectable()
 export class SuperAdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // ==========================================
-  // DASHBOARD - Company-Wide Statistics
+  // DASHBOARD
   // ==========================================
-  async getDashboardStats(requestUserId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
+  async getDashboardStats(userId: string) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
+      where: { id: userId },
+      include: { role: true },
     });
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    const orgId = user.organizationId;
-
-    // Get counts
     const [
+      totalOrganizations,
       totalEmployees,
-      totalHRAdmins,
-      activeEmployees,
-      inactiveEmployees,
+      totalAdmins,
       totalProcesses,
-      presentToday,
-      absentToday,
-      lateToday,
     ] = await Promise.all([
-      // Total employees (exclude HR roles)
-      this.prisma.employee.count({
-        where: {
-          organizationId: orgId,
-          user: {
-            role: { name: UserRole.EMPLOYEE },
-          },
-        },
-      }),
-      // Total HR Admins
+      this.prisma.organization.count({ where: { isActive: true } }),
+      this.prisma.employee.count(),
       this.prisma.user.count({
         where: {
-          organizationId: orgId,
           role: {
-            name: { in: [UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
+            name: { in: ['HR', 'HR_ADMIN', 'HR_USER'] },
           },
-        },
-      }),
-      // Active employees
-      this.prisma.employee.count({
-        where: {
-          organizationId: orgId,
-          user: {
-            role: { name: UserRole.EMPLOYEE },
-            isActive: true,
-          },
-        },
-      }),
-      // Inactive employees
-      this.prisma.employee.count({
-        where: {
-          organizationId: orgId,
-          user: {
-            role: { name: UserRole.EMPLOYEE },
-            isActive: false,
-          },
-        },
-      }),
-      // Total processes (departments)
-      this.prisma.department.count({
-        where: { organizationId: orgId },
-      }),
-      // Present today
-      this.prisma.attendance.count({
-        where: {
-          organizationId: orgId,
-          date: new Date(),
-          status: 'PRESENT',
-        },
-      }),
-      // Absent today
-      this.prisma.attendance.count({
-        where: {
-          organizationId: orgId,
-          date: new Date(),
-          status: 'ABSENT',
-        },
-      }),
-      // Late today
-      this.prisma.attendance.count({
-        where: {
-          organizationId: orgId,
-          date: new Date(),
-          status: 'LATE',
-        },
-      }),
-    ]);
-
-    // Calculate payroll totals
-    const employeesWithSalary = await this.prisma.employee.findMany({
-      where: {
-        organizationId: orgId,
-        user: {
-          role: { name: UserRole.EMPLOYEE },
           isActive: true,
         },
-        monthlySalary: { not: null },
-      },
-      select: {
-        monthlySalary: true,
-      },
-    });
-
-    let totalBasicSalary = 0;
-
-    employeesWithSalary.forEach((emp) => {
-      totalBasicSalary += emp.monthlySalary || 0;
-    });
-
-    const totalMonthlyPayroll = totalBasicSalary;
+      }),
+      this.prisma.department.count({ where: { isActive: true } }),
+    ]);
 
     return {
+      totalOrganizations,
       totalEmployees,
-      totalHRAdmins,
-      activeEmployees,
-      inactiveEmployees,
+      totalAdmins,
       totalProcesses,
-      totalPayrollCost: totalBasicSalary,
-      totalIncentives: 0, // No separate incentive tracking
-      totalMonthlyPayroll,
-      presentToday,
-      absentToday,
-      lateToday,
     };
   }
 
-  // ==========================================
-  // PROCESS OVERVIEW - Process-wise statistics
-  // ==========================================
-  async getProcessOverview(requestUserId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
+  async getProcessOverview(userId: string) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
+      where: { id: userId },
+      include: { role: true },
     });
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
     const processes = await this.prisma.department.findMany({
-      where: { organizationId: user.organizationId },
+      where: { isActive: true },
       include: {
-        employees: {
-          where: {
-            user: {
-              role: { name: UserRole.EMPLOYEE },
-            },
-          },
-          include: {
-            user: {
-              select: { isActive: true },
-            },
-          },
-        },
-      },
-    });
-
-    const processStats = processes.map((process) => {
-      const employees = process.employees;
-      const activeEmployees = employees.filter((e) => e.user.isActive);
-      const inactiveEmployees = employees.filter((e) => !e.user.isActive);
-
-      let totalBasicSalary = 0;
-
-      employees.forEach((emp) => {
-        totalBasicSalary += emp.monthlySalary || 0;
-      });
-
-      const totalPayroll = totalBasicSalary;
-      const avgSalary =
-        employees.length > 0 ? totalPayroll / employees.length : 0;
-
-      return {
-        id: process.id,
-        name: process.name,
-        totalEmployees: employees.length,
-        activeEmployees: activeEmployees.length,
-        inactiveEmployees: inactiveEmployees.length,
-        monthlyBasicSalary: totalBasicSalary,
-        monthlyIncentive: 0,
-        totalMonthlyPayroll: totalPayroll,
-        avgSalary: Math.round(avgSalary),
-      };
-    });
-
-    return processStats;
-  }
-
-  // ==========================================
-  // ADMIN MANAGEMENT - CRUD Operations
-  // ==========================================
-  async getAllAdmins(requestUserId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const admins = await this.prisma.user.findMany({
-      where: {
-        organizationId: user.organizationId,
-        role: {
-          name: { in: [UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
-        },
-      },
-      include: {
-        role: {
-          select: { name: true, displayName: true },
-        },
-        employee: {
+        _count: {
           select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
+            employees: true,
           },
         },
-        employeesCreated: {
-          select: { id: true },
+        organization: {
+          select: {
+            name: true,
+            code: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return admins.map((admin) => ({
-      id: admin.id,
-      email: admin.email,
-      role: admin.role.name,
-      roleDisplay: admin.role.displayName || admin.role.name,
-      isActive: admin.isActive,
-      isFirstLogin: admin.isFirstLogin,
-      firstName: admin.employee?.firstName || 'N/A',
-      lastName: admin.employee?.lastName || '',
-      phone: admin.employee?.phone || 'N/A',
-      employeesManaged: admin.employeesCreated.length,
-      createdAt: admin.createdAt,
+    return processes.map((process) => ({
+      id: process.id,
+      name: process.name,
+      code: process.code,
+      description: process.description,
+      employeeCount: process._count.employees,
+      organization: process.organization,
+      isActive: process.isActive,
+      createdAt: process.createdAt,
     }));
   }
 
-  async getAdminDetails(requestUserId: string, adminId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
+  // ==========================================
+  // ADMIN MANAGEMENT
+  // ==========================================
+  async getAllAdmins(userId: string) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
+      where: { id: userId },
+      include: { role: true },
     });
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('[SUPER ADMIN HR DETAIL] Fetching HR admin details');
-    console.log('  Super Admin User ID:', requestUserId);
-    console.log('  Organization ID:', user.organizationId);
-    console.log('  Target HR Admin ID:', adminId);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    // Get HR admin basic info
-    const admin = await this.prisma.user.findFirst({
+    const admins = await this.prisma.user.findMany({
       where: {
-        id: adminId,
-        organizationId: user.organizationId,
         role: {
-          name: { in: [UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
+          name: { in: ['HR', 'HR_ADMIN', 'HR_USER'] },
         },
       },
       include: {
-        role: {
-          select: { name: true, displayName: true },
-        },
+        role: true,
+        organization: true,
         employee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            joiningDate: true,
+          include: {
+            department: true,
+            designation: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return admins;
+  }
+
+  async getAdminDetails(userId: string, adminId: string) {
+    // Verify user is super admin
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
+    }
+
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminId },
+      include: {
+        role: true,
+        organization: true,
+        employee: {
+          include: {
+            department: true,
+            designation: true,
+          },
+        },
+        employeesCreated: {
+          include: {
+            department: true,
+            designation: true,
+          },
+        },
+        departmentsCreated: {
+          include: {
+            _count: {
+              select: {
+                employees: true,
+              },
+            },
           },
         },
       },
     });
 
     if (!admin) {
-      throw new NotFoundException('HR Admin not found');
-    }
-
-    console.log('[SUPER ADMIN HR DETAIL] HR Admin found:');
-    console.log('  Name:', admin.employee ? `${admin.employee.firstName} ${admin.employee.lastName}` : 'N/A');
-    console.log('  Email:', admin.email);
-    console.log('  Role:', admin.role.name);
-
-    // Get all employees created by this HR (SAME as getAllAdmins uses)
-    console.log('[SUPER ADMIN HR DETAIL] Querying employees created by this HR...');
-    console.log('  Query: Employee.createdByUserId =', adminId);
-    console.log('  Query: Employee.organizationId =', user.organizationId);
-    
-    const employeesCreated = await this.prisma.employee.findMany({
-      where: {
-        createdByUserId: adminId,
-        organizationId: user.organizationId,
-        user: {
-          role: { name: UserRole.EMPLOYEE },
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            isActive: true,
-          },
-        },
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        designation: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    console.log('[SUPER ADMIN HR DETAIL] Employees created by this HR:', employeesCreated.length);
-    if (employeesCreated.length > 0) {
-      employeesCreated.forEach((emp, idx) => {
-        console.log(`  [${idx + 1}] ${emp.firstName} ${emp.lastName} (${emp.employeeId})`);
-        console.log(`      Email: ${emp.user?.email}`);
-        console.log(`      Department: ${emp.department?.name || 'None'}`);
-        console.log(`      Active: ${emp.user?.isActive}`);
-        console.log(`      Salary: ₹${emp.monthlySalary || 0}`);
-      });
-    }
-
-    // Get all departments/processes created by this HR
-    console.log('[SUPER ADMIN HR DETAIL] Querying departments/processes created by this HR...');
-    console.log('  Query: Department.createdByUserId =', adminId);
-    
-    const processesCreated = await this.prisma.department.findMany({
-      where: {
-        createdByUserId: adminId,
-        organizationId: user.organizationId,
-      },
-      include: {
-        employees: {
-          where: {
-            user: {
-              role: { name: UserRole.EMPLOYEE },
-            },
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                isActive: true,
-              },
-            },
-            designation: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    console.log('[SUPER ADMIN HR DETAIL] Processes created by this HR:', processesCreated.length);
-    if (processesCreated.length > 0) {
-      processesCreated.forEach((proc, idx) => {
-        console.log(`  [${idx + 1}] ${proc.name} (${proc.code || 'N/A'})`);
-        console.log(`      Employees in process: ${proc.employees.length}`);
-        proc.employees.forEach((emp) => {
-          console.log(`        - ${emp.firstName} ${emp.lastName} (${emp.employeeId})`);
-        });
-      });
-    }
-
-    // Calculate totals from ALL employees created by this HR (not just those in processes)
-    let totalEmployees = employeesCreated.length;
-    let activeEmployees = employeesCreated.filter((e) => e.user.isActive).length;
-    let inactiveEmployees = employeesCreated.filter((e) => !e.user.isActive).length;
-    let totalBasicSalary = 0;
-    let totalIncentive = 0;
-
-    employeesCreated.forEach((emp) => {
-      totalBasicSalary += emp.monthlySalary || 0;
-      // Incentive calculation can be added here if available
-    });
-
-    console.log('[SUPER ADMIN HR DETAIL] Calculated Summary:');
-    console.log('  Total Employees:', totalEmployees);
-    console.log('  Active Employees:', activeEmployees);
-    console.log('  Inactive Employees:', inactiveEmployees);
-    console.log('  Total Basic Salary: ₹', totalBasicSalary);
-    console.log('  Total Processes:', processesCreated.length);
-
-    const processStats = processesCreated.map((process) => {
-      const employees = process.employees;
-      const activeInProcess = employees.filter((e) => e.user.isActive).length;
-      const inactiveInProcess = employees.filter((e) => !e.user.isActive).length;
-
-      let processBasicSalary = 0;
-      let processIncentive = 0;
-
-      employees.forEach((emp) => {
-        processBasicSalary += emp.monthlySalary || 0;
-        // Incentive calculation can be added here if available
-      });
-
-      const totalPayroll = processBasicSalary + processIncentive;
-      const avgSalary = employees.length > 0 ? totalPayroll / employees.length : 0;
-
-      return {
-        id: process.id,
-        name: process.name,
-        description: process.description,
-        code: process.code,
-        isActive: process.isActive,
-        totalEmployees: employees.length,
-        activeEmployees: activeInProcess,
-        inactiveEmployees: inactiveInProcess,
-        basicSalary: processBasicSalary,
-        incentive: processIncentive,
-        totalPayroll,
-        avgSalary: Math.round(avgSalary),
-        employees: employees.map((emp) => ({
-          id: emp.id,
-          employeeId: emp.employeeId,
-          firstName: emp.firstName,
-          lastName: emp.lastName,
-          fullName: `${emp.firstName} ${emp.lastName}`,
-          email: emp.user?.email,
-          phone: emp.phone,
-          designation: emp.designation?.name || 'N/A',
-          designationId: emp.designation?.id,
-          status: emp.user?.isActive ? 'Active' : 'Inactive',
-          isActive: emp.user?.isActive,
-          basicSalary: emp.monthlySalary || 0,
-          incentive: 0, // Add incentive logic if available
-          totalSalary: (emp.monthlySalary || 0) + 0,
-          joiningDate: emp.joiningDate,
-        })),
-        createdAt: process.createdAt,
-      };
-    });
-
-    const totalPayroll = totalBasicSalary + totalIncentive;
-
-    console.log('[SUPER ADMIN HR DETAIL] Response prepared successfully');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return {
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        role: admin.role.name,
-        roleDisplay: admin.role.displayName || admin.role.name,
-        isActive: admin.isActive,
-        isFirstLogin: admin.isFirstLogin,
-        firstName: admin.employee?.firstName || 'N/A',
-        lastName: admin.employee?.lastName || '',
-        fullName: admin.employee
-          ? `${admin.employee.firstName} ${admin.employee.lastName}`
-          : 'N/A',
-        phone: admin.employee?.phone || 'N/A',
-        joiningDate: admin.employee?.joiningDate,
-        createdAt: admin.createdAt,
-      },
-      summary: {
-        totalProcesses: processesCreated.length,
-        totalEmployees,
-        activeEmployees,
-        inactiveEmployees,
-        totalBasicSalary,
-        totalIncentive,
-        totalPayroll,
-      },
-      processes: processStats,
-    };
-  }
-
-  async createAdmin(requestUserId: string, dto: any) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    // Check if email exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
-    if (existingUser) {
-      throw new BadRequestException('Email already exists');
-    }
-
-    // Determine which role to assign based on dto.role
-    // Valid roles: 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'
-    // Default to HR_ADMIN if not specified
-    let roleName: string;
-    if (dto.role === 'SUPER_ADMIN') {
-      roleName = UserRole.SUPER_ADMIN;
-    } else if (dto.role === 'HR_USER') {
-      roleName = UserRole.HR_USER;
-    } else {
-      roleName = UserRole.HR_ADMIN;
-    }
-
-    // Get the specified role
-    const targetRole = await this.prisma.role.findUnique({
-      where: { name: roleName },
-    });
-
-    if (!targetRole) {
-      throw new BadRequestException(`${roleName} role not found`);
-    }
-
-    // ✅ CRITICAL: Determine organization assignment
-    // If creating Super Admin for NEW company → create new organization
-    // If creating HR Admin/User → use current organization
-    let targetOrganizationId: string;
-    let newOrganization: any = null;
-
-    if (roleName === UserRole.SUPER_ADMIN && dto.createNewOrganization === true) {
-      // ✅ NEW COMPANY FLOW: Create new organization for the new Super Admin
-      if (!dto.companyName || dto.companyName.trim() === '') {
-        throw new BadRequestException('Company name is required when creating a new organization');
-      }
-
-      // Generate unique organization code
-      const orgCode = `ORG-${Date.now()}`;
-
-      newOrganization = await this.prisma.organization.create({
-        data: {
-          name: dto.companyName,
-          code: orgCode,
-          email: dto.email,
-          phone: dto.phone || null,
-          isActive: true,
-        },
-      });
-
-      targetOrganizationId = newOrganization.id;
-      console.log(`✅ NEW ORGANIZATION CREATED: ${dto.companyName} (${orgCode})`);
-    } else {
-      // ✅ SAME COMPANY FLOW: Use current organization
-      targetOrganizationId = user.organizationId;
-      console.log(`✅ USING CURRENT ORGANIZATION: ${user.organizationId}`);
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(dto.password || '123456', 10);
-
-    // Create user and employee profile
-    const newAdmin = await this.prisma.$transaction(async (tx) => {
-      const adminUser = await tx.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          roleId: targetRole.id,
-          organizationId: targetOrganizationId, // ✅ Multi-tenant: Assign to correct organization
-          isFirstLogin: true,
-          isActive: dto.isActive !== undefined ? dto.isActive : true,
-        },
-      });
-
-      // Create employee profile for the admin
-      const employeeProfile = await tx.employee.create({
-        data: {
-          employeeId: roleName === UserRole.SUPER_ADMIN ? `SA-${Date.now()}` : `HR-${Date.now()}`,
-          userId: adminUser.id,
-          organizationId: targetOrganizationId, // ✅ Multi-tenant: Assign to correct organization
-          firstName: dto.firstName || (roleName === UserRole.SUPER_ADMIN ? 'Super' : 'HR'),
-          lastName: dto.lastName || 'Admin',
-          phone: dto.phone || null,
-          joiningDate: new Date(),
-        },
-      });
-
-      return { adminUser, employeeProfile };
-    });
-
-    return {
-      message: newOrganization 
-        ? `New company "${dto.companyName}" and Super Admin created successfully` 
-        : 'Admin created successfully',
-      admin: {
-        id: newAdmin.adminUser.id,
-        email: newAdmin.adminUser.email,
-        role: roleName,
-        firstName: newAdmin.employeeProfile.firstName,
-        lastName: newAdmin.employeeProfile.lastName,
-        organizationId: targetOrganizationId,
-      },
-      organization: newOrganization ? {
-        id: newOrganization.id,
-        name: newOrganization.name,
-        code: newOrganization.code,
-      } : null,
-    };
-  }
-
-  async updateAdmin(requestUserId: string, adminId: string, dto: any) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    // Get admin to update
-    const admin = await this.prisma.user.findUnique({
-      where: { id: adminId },
-      include: { employee: true },
-    });
-
-    if (!admin || admin.organizationId !== user.organizationId) {
       throw new NotFoundException('Admin not found');
     }
 
-    // Update user and employee
-    await this.prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: adminId },
-        data: {
-          isActive: dto.isActive,
-        },
-      });
-
-      if (admin.employee) {
-        await tx.employee.update({
-          where: { id: admin.employee.id },
-          data: {
-            firstName: dto.firstName,
-            lastName: dto.lastName,
-            phone: dto.phone,
-          },
-        });
-      }
-    });
-
-    return { message: 'Admin updated successfully' };
+    return admin;
   }
 
-  async deleteAdmin(requestUserId: string, adminId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const admin = await this.prisma.user.findUnique({
-      where: { id: adminId },
-    });
-
-    if (!admin || admin.organizationId !== user.organizationId) {
-      throw new NotFoundException('Admin not found');
-    }
-
-    // Don't allow deleting SUPER_ADMIN
-    const adminRole = await this.prisma.role.findUnique({
-      where: { id: admin.roleId },
-    });
-
-    if (adminRole?.name === UserRole.SUPER_ADMIN) {
-      throw new BadRequestException('Cannot delete Super Admin');
-    }
-
-    await this.prisma.user.delete({
-      where: { id: adminId },
-    });
-
-    return { message: 'Admin deleted successfully' };
+  async createAdmin(userId: string, dto: any) {
+    throw new BadRequestException('Not implemented yet');
   }
 
-  async resetAdminPassword(requestUserId: string, adminId: string) {
-    await this.verifySuperAdmin(requestUserId);
+  async updateAdmin(userId: string, adminId: string, dto: any) {
+    throw new BadRequestException('Not implemented yet');
+  }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
+  async deleteAdmin(userId: string, adminId: string) {
+    throw new BadRequestException('Not implemented yet');
+  }
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const admin = await this.prisma.user.findUnique({
-      where: { id: adminId },
-    });
-
-    if (!admin || admin.organizationId !== user.organizationId) {
-      throw new NotFoundException('Admin not found');
-    }
-
-    const defaultPassword = '123456';
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-    await this.prisma.user.update({
-      where: { id: adminId },
-      data: {
-        password: hashedPassword,
-        isFirstLogin: true,
-      },
-    });
-
-    return {
-      message: 'Password reset successfully',
-      defaultPassword,
-    };
+  async resetAdminPassword(userId: string, adminId: string) {
+    throw new BadRequestException('Not implemented yet');
   }
 
   // ==========================================
-  // EMPLOYEE MANAGEMENT - Company-wide
+  // EMPLOYEE MANAGEMENT
   // ==========================================
-  async getAllEmployees(requestUserId: string, filters: any = {}) {
-    await this.verifySuperAdmin(requestUserId);
-
+  async getAllEmployees(userId: string, filters: any) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
+      where: { id: userId },
+      include: { role: true },
     });
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    const whereClause: any = {
-      organizationId: user.organizationId,
-      user: {
-        role: { name: UserRole.EMPLOYEE },
-      },
-    };
+    const where: any = {};
 
     if (filters.search) {
-      whereClause.OR = [
-        { firstName: { contains: filters.search, mode: 'insensitive' } },
-        { lastName: { contains: filters.search, mode: 'insensitive' } },
-        { employeeId: { contains: filters.search, mode: 'insensitive' } },
-        { user: { email: { contains: filters.search, mode: 'insensitive' } } },
+      where.OR = [
+        { firstName: { contains: filters.search } },
+        { lastName: { contains: filters.search } },
+        { employeeId: { contains: filters.search } },
       ];
     }
 
     if (filters.departmentId) {
-      whereClause.departmentId = filters.departmentId;
+      where.departmentId = filters.departmentId;
     }
 
-    if (filters.createdByUserId) {
-      whereClause.createdByUserId = filters.createdByUserId;
-    }
-
-    if (filters.isActive !== undefined) {
-      whereClause.user = {
-        ...whereClause.user,
-        isActive: filters.isActive === 'true',
-      };
+    if (filters.organizationId) {
+      where.organizationId = filters.organizationId;
     }
 
     const employees = await this.prisma.employee.findMany({
-      where: whereClause,
+      where,
       include: {
         user: {
-          select: {
-            id: true,
-            email: true,
-            isActive: true,
+          include: {
+            role: true,
           },
         },
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        designation: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        createdByUser: {
-          select: {
-            id: true,
-            email: true,
-            employee: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { joiningDate: 'desc' },
-    });
-
-    return employees.map((emp) => ({
-      ...emp,
-      fullName: `${emp.firstName} ${emp.lastName}`,
-      email: emp.user?.email,
-      isActive: emp.user?.isActive,
-      departmentName: emp.department?.name || null,
-      designationTitle: emp.designation?.name || null,
-      incentive: 0,
-      totalSalary: emp.monthlySalary || 0,
-      createdByName: emp.createdByUser?.employee
-        ? `${emp.createdByUser.employee.firstName} ${emp.createdByUser.employee.lastName}`
-        : 'N/A',
-    }));
-  }
-
-  async getEmployeeDetails(requestUserId: string, employeeId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const employee = await this.prisma.employee.findFirst({
-      where: {
-        id: employeeId,
-        organizationId: user.organizationId,
-        user: { role: { name: UserRole.EMPLOYEE } },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            isActive: true,
-            isFirstLogin: true,
-            createdAt: true,
-          },
-        },
-        department: {
-          select: { id: true, name: true, description: true },
-        },
-        designation: {
-          select: { id: true, name: true },
-        },
-        createdByUser: {
-          select: {
-            id: true,
-            email: true,
-            employee: { select: { firstName: true, lastName: true } },
-          },
-        },
-        attendances: {
-          orderBy: { date: 'desc' },
-          take: 30,
-          select: {
-            id: true,
-            date: true,
-            status: true,
-            checkInTime: true,
-            checkOutTime: true,
-          },
-        },
-        payslips: {
-          orderBy: { createdAt: 'desc' },
-          take: 6,
-          select: {
-            id: true,
-            month: true,
-            year: true,
-            payslipNumber: true,
-            pdfUrl: true,
-            sentToEmployee: true,
-            createdAt: true,
-          },
-        },
-        hrActions: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            actionNumber: true,
-            actionType: true,
-            severity: true,
-            subject: true,
-            status: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    // Compute attendance summary for last 30 records
-    const attendanceSummary = {
-      present: employee.attendances.filter((a) => a.status === 'PRESENT').length,
-      absent: employee.attendances.filter((a) => a.status === 'ABSENT').length,
-      late: employee.attendances.filter((a) => a.status === 'LATE').length,
-      halfDay: employee.attendances.filter((a) => a.status === 'HALF_DAY').length,
-      total: employee.attendances.length,
-    };
-
-    return {
-      ...employee,
-      fullName: `${employee.firstName} ${employee.lastName}`,
-      email: employee.user?.email,
-      isActive: employee.user?.isActive,
-      departmentName: employee.department?.name || null,
-      designationTitle: employee.designation?.name || null,
-      totalSalary: employee.monthlySalary || 0,
-      createdByName: employee.createdByUser?.employee
-        ? `${employee.createdByUser.employee.firstName} ${employee.createdByUser.employee.lastName}`
-        : 'N/A',
-      attendanceSummary,
-    };
-  }
-
-  // ==========================================
-  // PROCESS MANAGEMENT
-  // ==========================================
-  async getAllProcesses(requestUserId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const processes = await this.prisma.department.findMany({
-      where: { organizationId: user.organizationId },
-      include: {
-        employees: {
-          where: {
-            organizationId: user.organizationId,
-          },
-          select: {
-            id: true,
-            monthlySalary: true,
-            user: {
-              select: {
-                isActive: true,
-              },
-            },
-          },
-        },
+        department: true,
+        designation: true,
+        organization: true,
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return processes.map((process) => {
-      const employees = process.employees;
-      const totalEmployees = employees.length;
-      const activeEmployees = employees.filter(emp => emp.user.isActive).length;
-      const totalMonthlyPayroll = employees.reduce((sum, emp) => sum + (emp.monthlySalary || 0), 0);
-
-      return {
-        ...process,
-        totalEmployees,
-        activeEmployees,
-        totalMonthlyPayroll,
-        employeeCount: totalEmployees, // Keep for backward compatibility
-      };
-    });
+    return employees;
   }
 
-  // ✅ NEW: Create Employee (Super Admin)
-  async createEmployee(requestUserId: string, dto: any) {
-    await this.verifySuperAdmin(requestUserId);
-
+  async getEmployeeDetails(userId: string, employeeId: string) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
+      where: { id: userId },
+      include: { role: true },
     });
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    // Check if email exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
-    if (existingUser) {
-      throw new BadRequestException('Email already exists');
-    }
-
-    // Get EMPLOYEE role
-    const employeeRole = await this.prisma.role.findUnique({
-      where: { name: UserRole.EMPLOYEE },
-    });
-
-    if (!employeeRole) {
-      throw new BadRequestException('EMPLOYEE role not found');
-    }
-
-    // Generate employee ID if not provided
-    const employeeId = dto.employeeId || `EMP-${Date.now()}`;
-
-    // Hash default password (1234)
-    const hashedPassword = await bcrypt.hash(dto.password || '1234', 10);
-
-    // Create user and employee
-    const result = await this.prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          roleId: employeeRole.id,
-          organizationId: user.organizationId,
-          isFirstLogin: true,
-          isActive: true,
-        },
-      });
-
-      const newEmployee = await tx.employee.create({
-        data: {
-          employeeId,
-          userId: newUser.id,
-          organizationId: user.organizationId,
-          createdByUserId: requestUserId, // Super Admin created this employee
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          phone: dto.phone || null,
-          dob: dto.dob ? new Date(dto.dob) : null,
-          gender: dto.gender || null,
-          departmentId: dto.departmentId || null,
-          designationId: dto.designationId || null,
-          joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : new Date(),
-          monthlySalary: dto.monthlySalary || null,
-          employmentType: dto.employmentType || null,
-        },
-      });
-
-      return { newUser, newEmployee };
-    });
-
-    return {
-      message: 'Employee created successfully',
-      employee: result.newEmployee,
-    };
-  }
-
-  // ✅ NEW: Update Employee (Super Admin)
-  async updateEmployee(requestUserId: string, employeeId: string, dto: any) {
-    await this.verifySuperAdmin(requestUserId);
-
-    // ✅ STEP 1: Validate reason is provided
-    if (!dto.reason || !dto.reason.trim()) {
-      throw new BadRequestException('Update reason is required');
-    }
-
-    // ✅ STEP 2: Get authenticated user details
-    const requestingUser = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { 
-        organizationId: true,
-        role: { select: { name: true } },
-        employee: { select: { firstName: true, lastName: true } },
-      },
-    });
-
-    if (!requestingUser?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const updaterName = requestingUser.employee
-      ? `${requestingUser.employee.firstName} ${requestingUser.employee.lastName}`
-      : 'Super Admin';
-
-    // ✅ STEP 3: Find employee and load BEFORE state
-    const employee = await this.prisma.employee.findFirst({
-      where: {
-        id: employeeId,
-        organizationId: requestingUser.organizationId,
-      },
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
       include: {
-        user: true,
-        department: { select: { name: true } },
-        designation: { select: { name: true } },
+        user: {
+          include: {
+            role: true,
+          },
+        },
+        department: true,
+        designation: true,
+        organization: true,
+        education: true,
+        experience: true,
+        documents: true,
       },
     });
 
@@ -1144,279 +268,35 @@ export class SuperAdminService {
       throw new NotFoundException('Employee not found');
     }
 
-    console.log('[SUPER-ADMIN-UPDATE] Current employee state:', {
-      employeeId: employee.employeeId,
-      name: `${employee.firstName} ${employee.lastName}`,
-      departmentId: employee.departmentId,
-      departmentName: employee.department?.name,
-    });
-
-    // ✅ STEP 4: Validate and resolve departmentId
-    let resolvedDepartmentId = employee.departmentId;
-    if (dto.departmentId !== undefined) {
-      if (!dto.departmentId || dto.departmentId === '') {
-        resolvedDepartmentId = null;
-      } else {
-        const department = await this.prisma.department.findFirst({
-          where: {
-            id: dto.departmentId,
-            organizationId: requestingUser.organizationId,
-          },
-        });
-        
-        if (!department) {
-          throw new BadRequestException(
-            'Selected department does not exist in your organization'
-          );
-        }
-        
-        resolvedDepartmentId = dto.departmentId;
-      }
-    }
-
-    // ✅ STEP 5: Validate designationId
-    let resolvedDesignationId = employee.designationId;
-    if (dto.designationId !== undefined) {
-      if (!dto.designationId || dto.designationId === '') {
-        resolvedDesignationId = null;
-      } else {
-        const designation = await this.prisma.designation.findFirst({
-          where: {
-            id: dto.designationId,
-            organizationId: requestingUser.organizationId,
-          },
-        });
-        
-        if (!designation) {
-          throw new BadRequestException(
-            'Selected designation does not exist in your organization'
-          );
-        }
-        
-        resolvedDesignationId = dto.designationId;
-      }
-    }
-
-    // ✅ STEP 6: Build update data object
-    const updateData: any = {};
-    
-    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
-    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
-    if (dto.phone !== undefined) updateData.phone = dto.phone;
-    if (dto.gender !== undefined) updateData.gender = dto.gender;
-    if (dto.bloodGroup !== undefined) updateData.bloodGroup = dto.bloodGroup;
-    if (dto.address !== undefined) updateData.address = dto.address;
-    if (dto.employmentType !== undefined) updateData.employmentType = dto.employmentType;
-    if (dto.bankAccountNumber !== undefined) updateData.bankAccountNumber = dto.bankAccountNumber;
-    if (dto.bankIfsc !== undefined) updateData.bankIfsc = dto.bankIfsc;
-    if (dto.bankName !== undefined) updateData.bankName = dto.bankName;
-    if (dto.panNumber !== undefined) updateData.panNumber = dto.panNumber;
-    if (dto.aadhaarNumber !== undefined) updateData.aadhaarNumber = dto.aadhaarNumber;
-    
-    if (dto.dob !== undefined) {
-      updateData.dob = dto.dob ? new Date(dto.dob) : null;
-    }
-    
-    if (dto.joiningDate !== undefined) {
-      updateData.joiningDate = dto.joiningDate ? new Date(dto.joiningDate) : null;
-    }
-    
-    if (dto.monthlySalary !== undefined) {
-      if (dto.monthlySalary === null || dto.monthlySalary === '') {
-        updateData.monthlySalary = null;
-      } else {
-        const salary = Number(dto.monthlySalary);
-        if (!isFinite(salary)) {
-          throw new BadRequestException('Invalid monthly salary value');
-        }
-        updateData.monthlySalary = salary;
-      }
-    }
-    
-    updateData.departmentId = resolvedDepartmentId;
-    updateData.designationId = resolvedDesignationId;
-
-    // ✅ STEP 7: Detect changes
-    const changes: Record<string, { old: any; new: any }> = {};
-    
-    const formatDate = (date: any) => {
-      if (!date) return null;
-      if (date instanceof Date) return date.toISOString().split('T')[0];
-      if (typeof date === 'string') return date.split('T')[0];
-      return date;
-    };
-
-    const getDepartmentName = async (id: string | null) => {
-      if (!id) return null;
-      const dept = await this.prisma.department.findUnique({ where: { id }, select: { name: true } });
-      return dept?.name || id;
-    };
-
-    const getDesignationName = async (id: string | null) => {
-      if (!id) return null;
-      const desig = await this.prisma.designation.findUnique({ where: { id }, select: { name: true } });
-      return desig?.name || id;
-    };
-
-    for (const [field, newValue] of Object.entries(updateData)) {
-      let oldValue = (employee as any)[field];
-      let compareNewValue = newValue;
-
-      if (field === 'dob' || field === 'joiningDate') {
-        oldValue = formatDate(oldValue);
-        compareNewValue = formatDate(newValue);
-      }
-
-      if (field === 'departmentId') {
-        const oldDeptName = await getDepartmentName(oldValue as string | null);
-        const newDeptName = await getDepartmentName(compareNewValue as string | null);
-        
-        if (oldDeptName !== newDeptName) {
-          changes['department'] = { old: oldDeptName, new: newDeptName };
-        }
-        continue;
-      }
-
-      if (field === 'designationId') {
-        const oldDesigName = await getDesignationName(oldValue as string | null);
-        const newDesigName = await getDesignationName(compareNewValue as string | null);
-        
-        if (oldDesigName !== newDesigName) {
-          changes['designation'] = { old: oldDesigName, new: newDesigName };
-        }
-        continue;
-      }
-
-      if (oldValue !== compareNewValue) {
-        changes[field] = { old: oldValue, new: compareNewValue };
-      }
-    }
-
-    console.log('[SUPER-ADMIN-UPDATE] Detected changes:', changes);
-
-    if (Object.keys(changes).length === 0) {
-      throw new BadRequestException('No changes detected. Please modify at least one field to update.');
-    }
-
-    // ✅ STEP 8: Perform update and create change history in transaction
-    return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.employee.update({
-        where: { id: employeeId },
-        data: updateData,
-        include: {
-          department: { select: { id: true, name: true } },
-          designation: { select: { id: true, name: true } },
-          user: { select: { id: true, email: true, isActive: true } },
-        },
-      });
-
-      console.log('[SUPER-ADMIN-UPDATE] Employee updated successfully');
-
-      // ✅ CRITICAL: Create structured change history audit log (SAME as HR flow)
-      await tx.auditLog.create({
-        data: {
-          userId: requestUserId,
-          action: 'EMPLOYEE_UPDATED',
-          details: JSON.stringify({
-            type: 'EMPLOYEE_CHANGE_HISTORY',
-            organizationId: employee.organizationId,
-            employeeId: employeeId,
-            employeeCode: employee.employeeId,
-            employeeName: `${employee.firstName} ${employee.lastName}`,
-            updatedByUserId: requestUserId,
-            updatedByName: updaterName,
-            updatedByRole: requestingUser.role.name,
-            reason: dto.reason.trim(),
-            changes,
-          }),
-        },
-      });
-
-      console.log('[SUPER-ADMIN-UPDATE] Change history audit log created:', {
-        employeeCode: employee.employeeId,
-        updatedBy: updaterName,
-        role: requestingUser.role.name,
-        reason: dto.reason.trim(),
-        changesCount: Object.keys(changes).length,
-      });
-
-      // Create generic audit log
-      await tx.auditLog.create({
-        data: {
-          action: 'EMPLOYEE_UPDATED',
-          details: `Employee profile updated for ${employee.employeeId} by ${updaterName}. Reason: ${dto.reason}`,
-        },
-      });
-
-      return {
-        message: 'Employee updated successfully',
-        employee: updated,
-      };
-    });
+    return employee;
   }
 
-  // ✅ NEW: Delete Employee (Super Admin)
-  async deleteEmployee(requestUserId: string, employeeId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const employee = await this.prisma.employee.findFirst({
-      where: {
-        id: employeeId,
-        organizationId: user.organizationId,
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    // Delete user (cascades to employee)
-    await this.prisma.user.delete({
-      where: { id: employee.userId },
-    });
-
-    return {
-      message: 'Employee deleted successfully',
-    };
+  async createEmployee(userId: string, dto: any) {
+    throw new BadRequestException('Not implemented yet');
   }
 
-  // ✅ NEW: Set Employee Activation (Super Admin)
-  async setEmployeeActivation(
-    requestUserId: string,
-    employeeId: string,
-    isActive: boolean,
-  ) {
-    await this.verifySuperAdmin(requestUserId);
+  async updateEmployee(userId: string, employeeId: string, dto: any) {
+    throw new BadRequestException('Not implemented yet');
+  }
 
+  async deleteEmployee(userId: string, employeeId: string) {
+    throw new BadRequestException('Not implemented yet');
+  }
+
+  async setEmployeeActivation(userId: string, employeeId: string, isActive: boolean) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
+      where: { id: userId },
+      include: { role: true },
     });
 
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    const employee = await this.prisma.employee.findFirst({
-      where: {
-        id: employeeId,
-        organizationId: user.organizationId,
-      },
-      include: {
-        user: true,
-      },
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: { user: true },
     });
 
     if (!employee) {
@@ -1429,313 +309,178 @@ export class SuperAdminService {
     });
 
     return {
+      success: true,
       message: `Employee ${isActive ? 'activated' : 'deactivated'} successfully`,
     };
   }
 
-  // ✅ NEW: Reset Employee Password (Super Admin)
-  async resetEmployeePassword(requestUserId: string, employeeId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const employee = await this.prisma.employee.findFirst({
-      where: {
-        id: employeeId,
-        organizationId: user.organizationId,
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
-    }
-
-    const defaultPassword = '1234';
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-    await this.prisma.user.update({
-      where: { id: employee.userId },
-      data: {
-        password: hashedPassword,
-        isFirstLogin: true,
-      },
-    });
-
-    return {
-      message: 'Password reset successfully',
-      defaultPassword,
-    };
+  async resetEmployeePassword(userId: string, employeeId: string) {
+    throw new BadRequestException('Not implemented yet');
   }
 
   // ==========================================
   // PROCESS MANAGEMENT
   // ==========================================
-  async getProcessDetails(requestUserId: string, processId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const process = await this.prisma.department.findFirst({
-      where: {
-        id: processId,
-        organizationId: user.organizationId,
-      },
-      include: {
-        employees: {
-          where: {
-            user: {
-              role: { name: UserRole.EMPLOYEE },
-            },
-          },
-          include: {
-            user: {
-              select: {
-                email: true,
-                isActive: true,
-              },
-            },
-            designation: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!process) {
-      throw new NotFoundException('Process not found');
-    }
-
-    return {
-      ...process,
-      employees: process.employees.map((emp) => ({
-        ...emp,
-        fullName: `${emp.firstName} ${emp.lastName}`,
-        incentive: 0,
-        totalSalary: emp.monthlySalary || 0,
-      })),
-    };
-  }
-
-  async createProcess(requestUserId: string, dto: any) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const process = await this.prisma.department.create({
-      data: {
-        name: dto.name,
-        description: dto.description || null,
-        organizationId: user.organizationId,
-      },
-    });
-
-    return process;
-  }
-
-  async updateProcess(requestUserId: string, processId: string, dto: any) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const process = await this.prisma.department.findFirst({
-      where: {
-        id: processId,
-        organizationId: user.organizationId,
-      },
-    });
-
-    if (!process) {
-      throw new NotFoundException('Process not found');
-    }
-
-    const updated = await this.prisma.department.update({
-      where: { id: processId },
-      data: {
-        name: dto.name,
-        description: dto.description,
-      },
-    });
-
-    return updated;
-  }
-
-  async deleteProcess(requestUserId: string, processId: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const process = await this.prisma.department.findFirst({
-      where: {
-        id: processId,
-        organizationId: user.organizationId,
-      },
-      include: {
-        employees: {
-          select: { id: true },
-        },
-      },
-    });
-
-    if (!process) {
-      throw new NotFoundException('Process not found');
-    }
-
-    if (process.employees.length > 0) {
-      throw new BadRequestException(
-        'Cannot delete process with assigned employees',
-      );
-    }
-
-    await this.prisma.department.delete({
-      where: { id: processId },
-    });
-
-    return { message: 'Process deleted successfully' };
-  }
-
-  // ==========================================
-  // COMPANY-WIDE SEARCH
-  // ==========================================
-  async globalSearch(requestUserId: string, searchTerm: string) {
-    await this.verifySuperAdmin(requestUserId);
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: requestUserId },
-      select: { organizationId: true },
-    });
-
-    if (!user?.organizationId) {
-      throw new BadRequestException('User not associated with organization');
-    }
-
-    const [employees, processes, admins] = await Promise.all([
-      this.prisma.employee.findMany({
-        where: {
-          organizationId: user.organizationId,
-          user: { role: { name: UserRole.EMPLOYEE } },
-          OR: [
-            { firstName: { contains: searchTerm } },
-            { lastName: { contains: searchTerm } },
-            { employeeId: { contains: searchTerm } },
-            { phone: { contains: searchTerm } },
-            { user: { email: { contains: searchTerm } } },
-          ],
-        },
-        include: {
-          user: { select: { email: true } },
-          department: { select: { name: true } },
-        },
-        take: 10,
-      }),
-      this.prisma.department.findMany({
-        where: {
-          organizationId: user.organizationId,
-          name: { contains: searchTerm },
-        },
-        take: 5,
-      }),
-      this.prisma.user.findMany({
-        where: {
-          organizationId: user.organizationId,
-          role: {
-            name: { in: [UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.HR] },
-          },
-          email: { contains: searchTerm },
-        },
-        include: {
-          employee: {
-            select: { firstName: true, lastName: true },
-          },
-        },
-        take: 5,
-      }),
-    ]);
-
-    return {
-      employees: employees.map((e) => ({
-        type: 'employee',
-        id: e.id,
-        name: `${e.firstName} ${e.lastName}`,
-        employeeId: e.employeeId,
-        email: e.user?.email,
-        department: e.department?.name,
-      })),
-      processes: processes.map((p) => ({
-        type: 'process',
-        id: p.id,
-        name: p.name,
-      })),
-      admins: admins.map((a) => ({
-        type: 'admin',
-        id: a.id,
-        email: a.email,
-        name: a.employee
-          ? `${a.employee.firstName} ${a.employee.lastName}`
-          : 'N/A',
-      })),
-    };
-  }
-
-  // ==========================================
-  // UTILITY - Verify Super Admin
-  // ==========================================
-  private async verifySuperAdmin(userId: string) {
+  async getAllProcesses(userId: string) {
+    // Verify user is super admin
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { role: true },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    if (user.role.name !== UserRole.SUPER_ADMIN) {
-      throw new UnauthorizedException(
-        'Access denied: Super Admin privileges required',
-      );
+    const processes = await this.prisma.department.findMany({
+      where: { isActive: true },
+      include: {
+        organization: {
+          select: {
+            name: true,
+            code: true,
+          },
+        },
+        _count: {
+          select: {
+            employees: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return processes;
+  }
+
+  async getProcessDetails(userId: string, processId: string) {
+    // Verify user is super admin
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
     }
 
-    return user;
+    const process = await this.prisma.department.findUnique({
+      where: { id: processId },
+      include: {
+        organization: true,
+        employees: {
+          include: {
+            user: {
+              include: {
+                role: true,
+              },
+            },
+            designation: true,
+          },
+        },
+      },
+    });
+
+    if (!process) {
+      throw new NotFoundException('Process not found');
+    }
+
+    return process;
+  }
+
+  async createProcess(userId: string, dto: any) {
+    throw new BadRequestException('Not implemented yet');
+  }
+
+  async updateProcess(userId: string, processId: string, dto: any) {
+    throw new BadRequestException('Not implemented yet');
+  }
+
+  async deleteProcess(userId: string, processId: string) {
+    throw new BadRequestException('Not implemented yet');
+  }
+
+  // ==========================================
+  // GLOBAL SEARCH
+  // ==========================================
+  async globalSearch(userId: string, searchTerm: string) {
+    // Verify user is super admin
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user || user.role.name !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Access denied');
+    }
+
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      return {
+        employees: [],
+        processes: [],
+        admins: [],
+      };
+    }
+
+    const [employees, processes, admins] = await Promise.all([
+      this.prisma.employee.findMany({
+        where: {
+          OR: [
+            { firstName: { contains: searchTerm } },
+            { lastName: { contains: searchTerm } },
+            { employeeId: { contains: searchTerm } },
+          ],
+        },
+        include: {
+          department: true,
+          designation: true,
+          organization: true,
+        },
+        take: 10,
+      }),
+      this.prisma.department.findMany({
+        where: {
+          OR: [
+            { name: { contains: searchTerm } },
+            { code: { contains: searchTerm } },
+          ],
+          isActive: true,
+        },
+        include: {
+          organization: true,
+        },
+        take: 10,
+      }),
+      this.prisma.user.findMany({
+        where: {
+          role: {
+            name: { in: ['HR', 'HR_ADMIN', 'HR_USER'] },
+          },
+          OR: [
+            { email: { contains: searchTerm } },
+            {
+              employee: {
+                OR: [
+                  { firstName: { contains: searchTerm } },
+                  { lastName: { contains: searchTerm } },
+                ],
+              },
+            },
+          ],
+        },
+        include: {
+          role: true,
+          employee: true,
+          organization: true,
+        },
+        take: 10,
+      }),
+    ]);
+
+    return {
+      employees,
+      processes,
+      admins,
+    };
   }
 }

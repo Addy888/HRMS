@@ -41,6 +41,24 @@ export class PoliciesController {
     return this.policiesService.listPolicies(query);
   }
 
+  @Get('dashboard')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.HR)
+  @ApiOperation({ summary: 'Get policies status metrics dashboard (HR Only)' })
+  getHRDashboard() {
+    return this.policiesService.getHRDashboard();
+  }
+
+  @Get('tracking')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.HR)
+  @ApiOperation({
+    summary: 'Get details tracking list of employee acceptances (HR Only)',
+  })
+  getHRTracking(@GetUser('id') userId: string, @Query() query: any) {
+    return this.policiesService.getHRTracking(userId, query);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a single policy by ID (HR & Employee)' })
@@ -101,24 +119,6 @@ export class PoliciesController {
     @Body() dto: AssignPolicyDto,
   ) {
     return this.policiesService.assignPolicy(hrUserId, id, dto);
-  }
-
-  @Get('dashboard')
-  @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({ summary: 'Get policies status metrics dashboard (HR Only)' })
-  getHRDashboard() {
-    return this.policiesService.getHRDashboard();
-  }
-
-  @Get('tracking')
-  @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.HR)
-  @ApiOperation({
-    summary: 'Get details tracking list of employee acceptances (HR Only)',
-  })
-  getHRTracking(@Query() query: any) {
-    return this.policiesService.getHRTracking(query);
   }
 
   // Employee-facing Endpoints
