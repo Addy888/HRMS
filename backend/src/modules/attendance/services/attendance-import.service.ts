@@ -1100,40 +1100,58 @@ export class AttendanceImportService {
     const rawData = row.rawData || JSON.stringify({});
     const parsedData = JSON.parse(rawData);
 
-    // ✅ EXTRACT ATTENDANCE MONTH/YEAR FROM FILENAME
-    // Example: "August_2026_Monthly_Attendance.xlsx" => August 2026
-    // This is the ATTENDANCE PERIOD, not the upload date
+    // ✅ EXTRACT ATTENDANCE MONTH/YEAR FROM EXCEL DATA
+    // Priority 1: Period row (e.g., "Period : 2026/09/01 ~ 09/12 (fcs)")
+    // Priority 2: Filename (e.g., "September_2026.xlsx")
+    // Priority 3: Excel column data
     let attendanceMonth: number | null = null;
     let attendanceYear: number | null = null;
 
-    // Strategy 1: Extract from filename (most reliable)
-    const monthNames = [
-      'january', 'february', 'march', 'april', 'may', 'june',
-      'july', 'august', 'september', 'october', 'november', 'december'
-    ];
-    
-    const lowerFileName = fileName.toLowerCase();
-    
-    // Find month name in filename
-    for (let i = 0; i < monthNames.length; i++) {
-      if (lowerFileName.includes(monthNames[i])) {
-        attendanceMonth = i + 1; // 1-12
-        this.logger.log(`✅ Detected attendance month from filename: ${monthNames[i]} (${attendanceMonth})`);
-        break;
+    // Strategy 1: Extract from Period row/column (HIGHEST PRIORITY)
+    const columns = Object.keys(parsedData);
+    for (const col of columns) {
+      if (/period/i.test(col) && parsedData[col]) {
+        const periodValue = parsedData[col].toString();
+        // Pattern: "Period : 2026/09/01 ~ 09/12 (fcs)" or "2026/09/01 ~ 09/12"
+        const periodMatch = periodValue.match(/(\d{4})\/(\d{2})\/(\d{2})\s*~\s*(\d{2})\/(\d{2})/);
+        if (periodMatch) {
+          attendanceYear = parseInt(periodMatch[1]);
+          attendanceMonth = parseInt(periodMatch[2]);
+          this.logger.log(`✅ Detected Period from Excel: ${periodValue}`);
+          this.logger.log(`✅ Extracted: Year=${attendanceYear}, Month=${attendanceMonth}`);
+          break;
+        }
       }
     }
-    
-    // Find year in filename (pattern: 2024, 2025, 2026, etc.)
-    const yearMatch = fileName.match(/20\d{2}/);
-    if (yearMatch) {
-      attendanceYear = parseInt(yearMatch[0]);
-      this.logger.log(`✅ Detected attendance year from filename: ${attendanceYear}`);
+
+    // Strategy 2: Extract from filename (if Period not found)
+    if (attendanceMonth === null || attendanceYear === null) {
+      const monthNames = [
+        'january', 'february', 'march', 'april', 'may', 'june',
+        'july', 'august', 'september', 'october', 'november', 'december'
+      ];
+      
+      const lowerFileName = fileName.toLowerCase();
+      
+      // Find month name in filename
+      for (let i = 0; i < monthNames.length; i++) {
+        if (lowerFileName.includes(monthNames[i])) {
+          attendanceMonth = i + 1; // 1-12
+          this.logger.log(`✅ Detected attendance month from filename: ${monthNames[i]} (${attendanceMonth})`);
+          break;
+        }
+      }
+      
+      // Find year in filename (pattern: 2024, 2025, 2026, etc.)
+      const yearMatch = fileName.match(/20\d{2}/);
+      if (yearMatch) {
+        attendanceYear = parseInt(yearMatch[0]);
+        this.logger.log(`✅ Detected attendance year from filename: ${attendanceYear}`);
+      }
     }
 
-    // Strategy 2: Look for month/year in Excel column names or data
+    // Strategy 3: Look for month/year in Excel column names or data
     if (attendanceMonth === null || attendanceYear === null) {
-      const columns = Object.keys(parsedData);
-      
       for (const col of columns) {
         if (attendanceMonth === null && /month|mth/i.test(col) && parsedData[col]) {
           const monthMatch = parsedData[col].toString().match(/(\d{1,2})/);
@@ -1152,9 +1170,14 @@ export class AttendanceImportService {
       }
     }
 
-    // Strategy 3: Look for date patterns in column values
+    // Strategy 4: Look for date patterns in column values
     if (attendanceMonth === null || attendanceYear === null) {
-      for (const col of Object.keys(parsedData)) {
+      const monthNames = [
+        'january', 'february', 'march', 'april', 'may', 'june',
+        'july', 'august', 'september', 'october', 'november', 'december'
+      ];
+      
+      for (const col of columns) {
         const value = parsedData[col];
         if (typeof value === 'string') {
           // Try to find date patterns like "01-Aug-2026" or "August 2026"
