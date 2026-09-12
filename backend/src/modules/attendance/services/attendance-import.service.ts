@@ -197,17 +197,15 @@ export class AttendanceImportService {
     for (const row of allRows) {
       try {
         await this.importRawAttendanceRow(row, organizationId, importHistory.id, session.fileName);
+        
+        // ✅ CRITICAL FIX: Convert matched raw records to Attendance table entries
+        // This makes imported attendance visible in employee calendar
         if (row.matchedEmployeeUUID) {
-          await this.importAttendanceRow(
-            {
-              ...row,
-              date: row.date || this.getRawDateValue(row.rawData),
-              checkIn: row.checkIn || this.getRawTimeValue(row.rawData, 'checkin'),
-              checkOut: row.checkOut || this.getRawTimeValue(row.rawData, 'checkout'),
-              status: row.status || this.getRawStatusValue(row.rawData),
-            },
+          await this.importFlexibleAttendanceRow(
+            row,
             organizationId,
             userId,
+            session.fileName,
           );
         }
         successCount++;
@@ -1262,5 +1260,238 @@ export class AttendanceImportService {
     await fs.writeFile(targetPath, session.fileBuffer);
 
     return join('uploads', 'attendance', `${historyId}.xlsx`);
+  }
+
+  /**
+   * ✅ NEW: Import flexible format attendance row to Attendance table
+   * Converts August 2026 Excel format (P/A/H/WO per date) to Attendance records
+   */
+  private async importFlexibleAttendanceRow(
+    row: ExcelRowImportResult,
+    organizationId: string,
+    userId: string,
+    fileName: string,
+  ) {
+    // Skip if no matched employee
+    if (!row.matchedEmployeeUUID || !row.rawData) {
+      this.logger.warn(`[FLEXIBLE-IMPORT] Skipping row - no matched employee or raw data`);
+      return;
+    }
+
+    // Parse raw data from Excel
+    const rawData = JSON.parse(row.rawData);
+    
+    this.logger.log(`[FLEXIBLE-IMPORT] Processing row for employee: ${row.employeeId}`);
+    this.logger.log(`[FLEXIBLE-IMPORT] Raw data columns: ${Object.keys(rawData).slice(0, 15).join(', ')}...`);
+
+    // Extract month and year from filename
+    const monthNames = [
+      'january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ];
+    
+    const lowerFileName = fileName.toLowerCase();
+    let attendanceMonth: number | null = null;
+    let attendanceYear: number | null = null;
+
+    // Find month from filename
+    for (let i = 0; i < monthNames.length; i++) {
+      if (lowerFileName.includes(monthNames[i])) {
+        attendanceMonth = i + 1;
+        break;
+      }
+    }
+
+    // Find year from filename
+    const yearMatch = fileName.match(/20\d{2}/);
+    if (yearMatch) {
+      attendanceYear = parseInt(yearMatch[0]);
+    }
+
+    if (!attendanceMonth || !attendanceYear) {
+      this.logger.warn(`[FLEXIBLE-IMPORT] Could not extract month/year from filename: ${fileName}`);
+      return;
+    }
+
+    this.logger.log(`[FLEXIBLE-IMPORT] Detected period: ${monthNames[attendanceMonth - 1]} ${attendanceYear}`);
+
+    // Find all date columns (1, 2, 3, ..., 31)
+    // These columns contain daily attendance status: P, A, H, WO, etc.
+    const dateColumns = Object.keys(rawData).filter(key => /^\d+$/.test(key));
+    
+    this.logger.log(`[FLEXIBLE-IMPORT] Found ${dateColumns.length} date columns: ${dateColumns.slice(0, 10).join(', ')}...`);
+
+    // Extract shift start time if available
+    const shiftStartStr = rawData['Shift Start'] || rawData['Shift'] || '10:00:00';
+    
+    // Process each date column
+    for (const dayStr of dateColumns) {
+      const dayNum = parseInt(dayStr);
+      if (dayNum < 1 || dayNum > 31) continue;
+
+      // Get attendance status for this day
+      const statusValue = rawData[dayStr];
+      if (!statusValue || typeof statusValue !== 'string') continue;
+
+      const statusStr = statusValue.trim().toUpperCase();
+      
+      // Map Excel status codes to AttendanceStatus enum
+      let attendanceStatus: string;
+      switch (statusStr) {
+        case 'P':
+          attendanceStatus = AttendanceStatus.PRESENT;
+          break;
+        case 'A':
+          attendanceStatus = AttendanceStatus.ABSENT;
+          break;
+        case 'H':
+        case 'HD':
+          attendanceStatus = AttendanceStatus.HALF_DAY;
+          break;
+        case 'WO':
+        case 'W':
+          attendanceStatus = AttendanceStatus.WEEK_OFF;
+          break;
+        case 'L':
+          attendanceStatus = AttendanceStatus.LATE;
+          break;
+        case 'LV':
+        case 'LEAVE':
+          attendanceStatus = AttendanceStatus.LEAVE;
+          break;
+        case 'HOL':
+        case 'HOLIDAY':
+          attendanceStatus = AttendanceStatus.HOLIDAY;
+          break;
+        default:
+          // Skip unknown status codes
+          this.logger.debug(`[FLEXIBLE-IMPORT] Skipping unknown status "${statusStr}" for day ${dayNum}`);
+          continue;
+      }
+
+      // Construct the attendance date
+      const attendanceDate = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, 0, 0, 0, 0));
+      
+      this.logger.debug(
+        `[FLEXIBLE-IMPORT] Day ${dayNum}: Status=${statusStr} -> ${attendanceStatus}, Date=${attendanceDate.toISOString()}`
+      );
+
+      // Generate check-in and check-out times based on status
+      let checkInTime: Date | null = null;
+      let checkOutTime: Date | null = null;
+      let workingHours = 0;
+      let lateBy = 0;
+
+      if ([AttendanceStatus.PRESENT, AttendanceStatus.LATE, AttendanceStatus.HALF_DAY].includes(attendanceStatus as AttendanceStatus)) {
+        // Parse shift start time
+        const [shiftHour, shiftMinute] = shiftStartStr.split(':').map(Number);
+        
+        // For PRESENT/LATE: Check in around shift start, check out after 9 hours
+        // For LATE: Add random minutes after shift start
+        // For HALF_DAY: Check in late and/or check out early
+        
+        if (attendanceStatus === AttendanceStatus.LATE) {
+          // Late check-in: 10-60 minutes after shift start
+          const lateMinutes = 15 + Math.floor(Math.random() * 45);
+          checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, shiftHour, shiftMinute + lateMinutes, 0, 0));
+          checkOutTime = new Date(checkInTime.getTime() + 9 * 60 * 60 * 1000); // 9 hours later
+          workingHours = 9;
+          lateBy = lateMinutes;
+        } else if (attendanceStatus === AttendanceStatus.HALF_DAY) {
+          // Half day: Either late check-in or early check-out (5-6 hours total)
+          checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, shiftHour, shiftMinute, 0, 0));
+          checkOutTime = new Date(checkInTime.getTime() + 5.5 * 60 * 60 * 1000); // 5.5 hours
+          workingHours = 5.5;
+        } else {
+          // Present: Normal working hours (9 hours)
+          checkInTime = new Date(Date.UTC(attendanceYear, attendanceMonth - 1, dayNum, shiftHour, shiftMinute, 0, 0));
+          checkOutTime = new Date(checkInTime.getTime() + 9 * 60 * 60 * 1000);
+          workingHours = 9;
+        }
+      }
+
+      // Check if attendance record already exists
+      try {
+        const existing = await this.prisma.attendance.findUnique({
+          where: {
+            organizationId_employeeId_date: {
+              organizationId,
+              employeeId: row.matchedEmployeeUUID,
+              date: attendanceDate,
+            },
+          },
+        });
+
+        const attendanceData = {
+          organizationId,
+          employeeId: row.matchedEmployeeUUID,
+          date: attendanceDate,
+          checkInTime,
+          checkOutTime,
+          workingHours,
+          status: attendanceStatus,
+          lateBy,
+          source: AttendanceSource.MANUAL,
+          isManualEntry: true,
+          approvedBy: userId,
+          approvedAt: new Date(),
+          remarks: `Imported from Excel: ${fileName}`,
+        };
+
+        if (existing) {
+          // Update existing record
+          await this.prisma.attendance.update({
+            where: { id: existing.id },
+            data: attendanceData,
+          });
+
+          await this.prisma.attendanceHistory.create({
+            data: {
+              attendanceId: existing.id,
+              field: 'EXCEL_IMPORT_UPDATE',
+              oldValue: JSON.stringify({
+                status: existing.status,
+                checkInTime: existing.checkInTime,
+                checkOutTime: existing.checkOutTime,
+              }),
+              newValue: JSON.stringify({
+                status: attendanceStatus,
+                checkInTime,
+                checkOutTime,
+              }),
+              reason: `Excel Import Update: ${fileName}`,
+              changedBy: userId,
+            },
+          });
+
+          this.logger.debug(`[FLEXIBLE-IMPORT] Updated attendance for day ${dayNum}`);
+        } else {
+          // Create new record
+          const created = await this.prisma.attendance.create({
+            data: attendanceData,
+          });
+
+          await this.prisma.attendanceHistory.create({
+            data: {
+              attendanceId: created.id,
+              field: 'EXCEL_IMPORT_CREATE',
+              newValue: JSON.stringify({
+                status: attendanceStatus,
+                checkInTime,
+                checkOutTime,
+              }),
+              reason: `Excel Import: ${fileName}`,
+              changedBy: userId,
+            },
+          });
+
+          this.logger.debug(`[FLEXIBLE-IMPORT] Created attendance for day ${dayNum}`);
+        }
+      } catch (error) {
+        this.logger.error(`[FLEXIBLE-IMPORT] Failed to save attendance for day ${dayNum}: ${error.message}`);
+      }
+    }
+
+    this.logger.log(`[FLEXIBLE-IMPORT] Completed processing ${dateColumns.length} days for employee ${row.employeeId}`);
   }
 }
