@@ -222,15 +222,61 @@ export default function AdminsPage() {
     onError: (e: any) => alert(e.response?.data?.message || 'Failed to delete admin'),
   });
 
+  const formatRoleDisplay = (role: unknown, roleDisplay?: string): string => {
+    if (roleDisplay && typeof roleDisplay === 'string') return roleDisplay;
+    if (!role) return 'HR Admin';
+    if (typeof role === 'string') {
+      if (role === 'SUPER_ADMIN') return 'Super Admin';
+      if (role === 'HR_ADMIN') return 'HR Admin';
+      if (role === 'HR_USER') return 'HR User';
+      return role;
+    }
+    if (typeof role === 'object' && role !== null) {
+      const r = role as { displayName?: string; name?: string };
+      return r.displayName || r.name || 'HR Admin';
+    }
+    return String(role);
+  };
+
+  const isSuperAdminRole = (role: unknown): boolean => {
+    if (!role) return false;
+    if (typeof role === 'string') return role === 'SUPER_ADMIN';
+    if (typeof role === 'object' && role !== null) {
+      return (role as { name?: string }).name === 'SUPER_ADMIN';
+    }
+    return false;
+  };
+
+  const formatOrgDisplay = (org: unknown): string => {
+    if (!org) return '';
+    if (typeof org === 'string') return org;
+    if (typeof org === 'object' && org !== null) {
+      const o = org as { name?: string; code?: string };
+      return o.name || o.code || '';
+    }
+    return String(org);
+  };
+
   const filteredAdmins = React.useMemo(() => {
-    if (!admins) return [];
+    if (!admins || !Array.isArray(admins)) return [];
     if (!search) return admins;
+    const searchLower = search.toLowerCase();
     
-    return admins.filter((admin: any) =>
-      admin.email.toLowerCase().includes(search.toLowerCase()) ||
-      admin.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      admin.lastName.toLowerCase().includes(search.toLowerCase())
-    );
+    return admins.filter((admin: any) => {
+      const email = (admin.email || '').toLowerCase();
+      const firstName = (admin.firstName || admin.employee?.firstName || '').toLowerCase();
+      const lastName = (admin.lastName || admin.employee?.lastName || '').toLowerCase();
+      const roleText = formatRoleDisplay(admin.role, admin.roleDisplay).toLowerCase();
+      const orgText = formatOrgDisplay(admin.organization).toLowerCase();
+
+      return (
+        email.includes(searchLower) ||
+        firstName.includes(searchLower) ||
+        lastName.includes(searchLower) ||
+        roleText.includes(searchLower) ||
+        orgText.includes(searchLower)
+      );
+    });
   }, [admins, search]);
 
   return (
@@ -262,7 +308,7 @@ export default function AdminsPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search by name, email, or role..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-secondary border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500 transition-colors"
@@ -296,82 +342,101 @@ export default function AdminsPage() {
                     </tr>
                   ))
                 ) : filteredAdmins.length > 0 ? (
-                  filteredAdmins.map((admin: any) => (
-                    <tr 
-                      key={admin.id} 
-                      className="hover:bg-secondary/30 transition-colors text-sm cursor-pointer" 
-                      onClick={() => router.push(`/super-admin/admins/${admin.id}`)}
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center font-heading text-xs font-bold text-foreground uppercase">
-                            {admin.firstName?.charAt(0)}{admin.lastName?.charAt(0)}
+                  filteredAdmins.map((admin: any) => {
+                    const firstName = typeof admin.firstName === 'string' ? admin.firstName : (admin.employee?.firstName || '');
+                    const lastName = typeof admin.lastName === 'string' ? admin.lastName : (admin.employee?.lastName || '');
+                    const adminFullName = `${firstName} ${lastName}`.trim() || (typeof admin.email === 'string' ? admin.email.split('@')[0] : 'Admin');
+                    const adminInitials = (firstName && lastName)
+                      ? `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+                      : (firstName ? firstName.slice(0, 2) : (admin.email ? admin.email.slice(0, 2) : 'AD')).toUpperCase();
+                    const adminPhone = typeof admin.phone === 'string' ? admin.phone : (typeof admin.employee?.phone === 'string' ? admin.employee.phone : 'N/A');
+                    const adminIdShort = typeof admin.id === 'string' ? admin.id.substring(0, 8) : '';
+                    const roleDisplayName = formatRoleDisplay(admin.role, admin.roleDisplay);
+                    const isSuper = isSuperAdminRole(admin.role);
+                    const orgName = formatOrgDisplay(admin.organization);
+
+                    return (
+                      <tr 
+                        key={admin.id} 
+                        className="hover:bg-secondary/30 transition-colors text-sm cursor-pointer" 
+                        onClick={() => router.push(`/super-admin/admins/${admin.id}`)}
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center font-heading text-xs font-bold text-foreground uppercase">
+                              {adminInitials}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-foreground hover:text-purple-600 transition-colors">{adminFullName}</div>
+                              <div className="text-[10px] text-muted-foreground mt-0.5">ID: {adminIdShort}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-semibold text-foreground hover:text-purple-600 transition-colors">{admin.firstName} {admin.lastName}</div>
-                            <div className="text-[10px] text-muted-foreground mt-0.5">ID: {admin.id.substring(0, 8)}</div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="text-card-foreground text-xs">{admin.email}</div>
+                          <div className="text-muted-foreground text-[10px] mt-0.5">{adminPhone}</div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col gap-1">
+                            {isSuper ? (
+                              <span className="text-[10px] bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
+                                Super Admin
+                              </span>
+                            ) : (
+                              <span className="text-[10px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
+                                {roleDisplayName}
+                              </span>
+                            )}
+                            {orgName && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {orgName}
+                              </span>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="text-card-foreground text-xs">{admin.email}</div>
-                        <div className="text-muted-foreground text-[10px] mt-0.5">{admin.phone || 'N/A'}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1">
-                          {admin.role === 'SUPER_ADMIN' ? (
-                            <span className="text-[10px] bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
-                              Super Admin
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="text-card-foreground text-sm">{typeof admin.employeesManaged === 'number' ? admin.employeesManaged : 0}</span>
+                        </td>
+                        <td className="px-5 py-4">
+                          {admin.isActive ? (
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded font-bold uppercase">
+                              Active
                             </span>
                           ) : (
-                            <span className="text-[10px] bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider w-fit">
-                              {admin.roleDisplay || admin.role}
+                            <span className="text-[10px] bg-red-500/10 text-red-600 border border-red-500/20 px-2 py-0.5 rounded font-bold uppercase">
+                              Inactive
                             </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-card-foreground text-sm">{admin.employeesManaged || 0}</span>
-                      </td>
-                      <td className="px-5 py-4">
-                        {admin.isActive ? (
-                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded font-bold uppercase">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-[10px] bg-red-500/10 text-red-600 border border-red-500/20 px-2 py-0.5 rounded font-bold uppercase">
-                            Inactive
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => {
-                              if (confirm('Reset password to 123456?')) {
-                                resetPasswordMutation.mutate(admin.id);
-                              }
-                            }}
-                            className="p-1.5 hover:bg-purple-500/10 rounded-lg text-muted-foreground hover:text-purple-600 transition-colors"
-                            title="Reset password"
-                          >
-                            <KeyRound className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Delete admin ${admin.email}?`)) {
-                                deleteMutation.mutate(admin.id);
-                              }
-                            }}
-                            className="p-1.5 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
-                            title="Delete admin"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                if (confirm('Reset password to 123456?')) {
+                                  resetPasswordMutation.mutate(admin.id);
+                                }
+                              }}
+                              className="p-1.5 hover:bg-purple-500/10 rounded-lg text-muted-foreground hover:text-purple-600 transition-colors"
+                              title="Reset password"
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete admin ${admin.email}?`)) {
+                                  deleteMutation.mutate(admin.id);
+                                }
+                              }}
+                              className="p-1.5 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
+                              title="Delete admin"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">

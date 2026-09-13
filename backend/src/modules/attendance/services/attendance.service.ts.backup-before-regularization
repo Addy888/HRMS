@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ATTENDANCE SERVICE
  *
  * CORE BUSINESS LOGIC for attendance management.
@@ -663,7 +663,7 @@ export class AttendanceService {
       
       if (overridableStatuses.includes(status)) {
         this.logger.log(
-          `[ATTENDANCE-CHECKOUT] âš ï¸ EARLY CHECKOUT - ` +
+          `[ATTENDANCE-CHECKOUT] ⚠️ EARLY CHECKOUT - ` +
           `Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST ` +
           `(${checkoutMinutes} minutes < ${officeCheckoutMinutes} minutes) - ` +
           `Changing status from ${status} to HALF_DAY`
@@ -677,7 +677,7 @@ export class AttendanceService {
     } else {
       // On-time or late checkout - keep original status
       this.logger.log(
-        `[ATTENDANCE-CHECKOUT] âœ“ ON-TIME CHECKOUT - ` +
+        `[ATTENDANCE-CHECKOUT] ✓ ON-TIME CHECKOUT - ` +
         `Time: ${checkoutHour}:${String(checkoutMinute).padStart(2, '0')} IST ` +
         `(${checkoutMinutes} minutes >= ${officeCheckoutMinutes} minutes) - ` +
         `Keeping status: ${status}`
@@ -1514,171 +1514,4 @@ export class AttendanceService {
       })),
     };
   }
-
-    async regularizeAttendance(attendanceId: string, dto: any, userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-
-    if (!user || !['HR', 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'].includes(user.role.name)) {
-      throw new ForbiddenException('Only HR can correct attendance');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const attendance = await tx.attendance.findUnique({
-        where: { id: attendanceId },
-        include: { employee: true },
-      });
-
-      if (!attendance || attendance.organizationId !== user.organizationId) {
-        throw new NotFoundException('Attendance record not found in your organization');
-      }
-
-      const updateData: any = {
-        approvedBy: userId,
-        approvedAt: new Date(),
-      };
-
-      if (dto.status !== undefined) updateData.status = dto.status;
-      if (dto.checkInTime !== undefined) updateData.checkInTime = parseISO(dto.checkInTime);
-      if (dto.checkOutTime !== undefined) updateData.checkOutTime = parseISO(dto.checkOutTime);
-      if (dto.remarks !== undefined) updateData.remarks = dto.remarks;
-
-      if (dto.checkInTime !== undefined || dto.checkOutTime !== undefined) {
-        const checkInTime = updateData.checkInTime ?? attendance.checkInTime;
-        const checkOutTime = updateData.checkOutTime ?? attendance.checkOutTime;
-        if (checkInTime && checkOutTime) {
-          updateData.workingHours =
-            (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
-        }
-      }
-
-      const updated = await tx.attendance.update({
-        where: { id: attendanceId },
-        data: updateData,
-        include: {
-          employee: {
-            include: {
-              department: true,
-              designation: true,
-            },
-          },
-          shift: true,
-        },
-      });
-
-      await tx.attendanceHistory.create({
-        data: {
-          attendanceId,
-          field: 'HR_CORRECTION',
-          oldValue: JSON.stringify({
-            employeeId: attendance.employeeId,
-            employeeName: `${attendance.employee.firstName} ${attendance.employee.lastName}`,
-            employeeCode: attendance.employee.employeeId,
-            date: attendance.date,
-            status: attendance.status,
-            checkInTime: attendance.checkInTime,
-            checkOutTime: attendance.checkOutTime,
-          }),
-          newValue: JSON.stringify({
-            employeeId: attendance.employeeId,
-            employeeName: `${attendance.employee.firstName} ${attendance.employee.lastName}`,
-            employeeCode: attendance.employee.employeeId,
-            date: attendance.date,
-            status: updated.status,
-            checkInTime: updated.checkInTime,
-            checkOutTime: updated.checkOutTime,
-            changedByRole: user.role.name,
-          }),
-          reason: dto.reason,
-          changedBy: userId,
-        },
-      });
-
-      return {
-        success: true,
-        message: 'Attendance corrected successfully',
-        attendance: updated,
-      };
-    });
-  }
-
-    async createRegularizedAttendance(dto: any, userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-
-    if (!user || !['HR', 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'].includes(user.role.name)) {
-      throw new ForbiddenException('Only HR can create attendance corrections');
-    }
-    if (!dto.employeeId || !dto.date || !dto.status || !dto.reason) {
-      throw new BadRequestException('employeeId, date, status, and reason are required');
-    }
-
-    const employee = await this.prisma.employee.findFirst({
-      where: { id: dto.employeeId, organizationId: user.organizationId },
-    });
-    if (!employee) throw new NotFoundException('Employee not found in your organization');
-
-    const date = getAttendanceBusinessDate(parseISO(dto.date));
-    const existing = await this.prisma.attendance.findUnique({
-      where: { organizationId_employeeId_date: {
-        organizationId: user.organizationId,
-        employeeId: dto.employeeId,
-        date,
-      } },
-    });
-    if (existing) return this.regularizeAttendance(existing.id, dto, userId);
-
-    const checkInTime = dto.checkInTime ? parseISO(dto.checkInTime) : null;
-    const checkOutTime = dto.checkOutTime ? parseISO(dto.checkOutTime) : null;
-    const workingHours = checkInTime && checkOutTime
-      ? (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60)
-      : null;
-
-    return this.prisma.$transaction(async (tx) => {
-      const attendance = await tx.attendance.create({
-        data: {
-          organizationId: user.organizationId,
-          employeeId: dto.employeeId,
-          date,
-          status: dto.status,
-          checkInTime,
-          checkOutTime,
-          workingHours,
-          source: AttendanceSource.MANUAL,
-          isManualEntry: true,
-          approvedBy: userId,
-          approvedAt: new Date(),
-          remarks: dto.remarks,
-        },
-        include: { employee: true },
-      });
-
-      await tx.attendanceHistory.create({
-        data: {
-          attendanceId: attendance.id,
-          field: 'HR_CORRECTION_CREATE',
-          oldValue: null,
-          newValue: JSON.stringify({
-            employeeId: employee.id,
-            employeeName: `${employee.firstName} ${employee.lastName}`,
-            employeeCode: employee.employeeId,
-            date,
-            status: dto.status,
-            checkInTime,
-            checkOutTime,
-            changedByRole: user.role.name,
-          }),
-          reason: dto.reason,
-          changedBy: userId,
-        },
-      });
-
-      return { success: true, message: 'Attendance created successfully', attendance };
-    });
-  }
 }
-
