@@ -835,12 +835,10 @@ model AttendanceHistory {
   field         String // MANUAL_CREATE, MANUAL_UPDATE, UPDATE, CHECK_IN, CHECK_OUT, STATUS_CHANGE
   oldValue      String?  @db.Text
   newValue      String?  @db.Text
-  reason        String?  @db.Text
+  reason        String?  @map("changeReason") @db.VarChar(191)
   changedBy     String? // User ID
   changedByUser User?    @relation(fields: [changedBy], references: [id], onDelete: SetNull)
-  changedAt     DateTime @default(now())
-
-  createdAt DateTime @default(now())
+  changedAt     DateTime @map("createdAt") @default(now())
 
   @@index([attendanceId])
   @@index([changedBy])
