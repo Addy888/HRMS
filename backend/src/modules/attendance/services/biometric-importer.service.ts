@@ -41,6 +41,36 @@ export class BiometricImporterService {
     this.logger.log(`[BIOMETRIC-IMPORT] Period: ${period.startYear}-${period.startMonth}-${period.startDay} to ${period.endMonth}-${period.endDay}`);
     this.logger.log(`[BIOMETRIC-IMPORT] Employees: ${employees.length}`);
 
+    const periodStart = new Date(Date.UTC(
+      period.startYear,
+      period.startMonth - 1,
+      period.startDay,
+      0, 0, 0, 0,
+    ));
+    const periodEndExclusive = new Date(Date.UTC(
+      period.endYear,
+      period.endMonth - 1,
+      period.endDay + 1,
+      0, 0, 0, 0,
+    ));
+
+    const cleanup = await this.prisma.$transaction(async transaction =>
+      transaction.attendance.deleteMany({
+        where: {
+          organizationId,
+          source: AttendanceSource.BIOMETRIC,
+          date: {
+            gte: periodStart,
+            lt: periodEndExclusive,
+          },
+        },
+      }),
+    );
+
+    this.logger.log(
+      `[BIOMETRIC-CLEANUP] Removed ${cleanup.count} old BIOMETRIC records for ${periodStart.toISOString().split('T')[0]} through ${new Date(periodEndExclusive.getTime() - 1).toISOString().split('T')[0]}`,
+    );
+
     // Get all employees for matching
     const dbEmployees = await this.prisma.employee.findMany({
       where: { organizationId },
@@ -129,22 +159,18 @@ export class BiometricImporterService {
       }
     }
 
-    // Strategy 2: Match by biometric number -> employee code (fallback for blank/ambiguous names)
+    // A present name is authoritative. Never fall back to biometric number when
+    // the name is unmatched or ambiguous.
+    if (bioEmp.name && bioEmp.name.trim()) {
+      return null;
+    }
+
+    // Strategy 2: Match by biometric number only when the Excel name is blank.
     if (bioEmp.biometricNo) {
       const employeeCode = this.biometricNoToEmployeeCode(bioEmp.biometricNo);
       const codeMatch = dbEmployees.find(e => e.employeeId === employeeCode);
       if (codeMatch) {
         return { ...codeMatch, matchMethod: 'biometric-no' };
-      }
-    }
-
-    if (bioEmp.name && bioEmp.name.trim()) {
-      const normalizedBioName = this.normalizeName(bioEmp.name);
-      const nameMatches = dbEmployees.filter(e =>
-        this.normalizeName(e.firstName) === normalizedBioName,
-      );
-      if (nameMatches.length > 1) {
-        this.logger.warn(`[BIOMETRIC-SKIP] reason: ambiguous-name, excelNo: ${bioEmp.biometricNo || ''}, excelName: ${bioEmp.name || ''}`);
       }
     }
 
@@ -181,6 +207,36 @@ export class BiometricImporterService {
     let created = 0;
     let updated = 0;
 
+    for (let dayNum = period.startDay; dayNum <= period.endDay; dayNum++) {
+      if (empData.punches.has(dayNum)) continue;
+
+      const attendanceDate = new Date(Date.UTC(
+        period.startYear,
+        period.startMonth - 1,
+        dayNum,
+        0, 0, 0, 0,
+      ));
+
+      const existingBlankDay = await this.prisma.attendance.findUnique({
+        where: {
+          organizationId_employeeId_date: {
+            organizationId,
+            employeeId: employeeUUID,
+            date: attendanceDate,
+          },
+        },
+      });
+
+      if (existingBlankDay?.source === AttendanceSource.BIOMETRIC) {
+        await this.prisma.attendance.delete({
+          where: { id: existingBlankDay.id },
+        });
+        this.logger.log(
+          `[BIOMETRIC-BLANK-SKIP] employee: ${empData.name}, date: ${attendanceDate.toISOString().split('T')[0]}, removed stale BIOMETRIC record: ${existingBlankDay.id}`,
+        );
+      }
+    }
+
     for (const [dayNum, times] of empData.punches) {
       if (dayNum < period.startDay || dayNum > period.endDay) {
         continue;
@@ -193,9 +249,7 @@ export class BiometricImporterService {
         0, 0, 0, 0
       ));
 
-      if (times.length === 0) {
-        continue;
-      }
+      if (times.length === 0) continue;
 
       // Parse check-in and check-out
       const checkInTime = this.parseTimeToDateTime(period.startYear, period.startMonth, dayNum, times[0]);
