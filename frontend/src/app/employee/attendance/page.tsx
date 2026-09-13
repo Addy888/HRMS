@@ -18,7 +18,6 @@ import {
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, getDay } from 'date-fns';
 import { 
   formatAttendanceTime, 
-  getAttendanceCalendarDate, 
   formatWorkingHours,
   formatISTDate 
 } from '@/lib/timezone-utils';
@@ -308,13 +307,23 @@ export default function EmployeeAttendancePage() {
     
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
     
-    // Create attendance map using timezone-safe date conversion
+    // Use the calendar date portion for API ISO values so timezone conversion
+    // cannot move an attendance record into a neighboring day.
+    const getDateKey = (value: string | Date): string => {
+      if (typeof value === 'string') return value.slice(0, 10);
+      return formatISTDate(value, 'yyyy-MM-dd');
+    };
+
     const attendanceMap = new Map();
-    if (monthlyData?.attendances) {
-      console.log('[ATTENDANCE-UI] Processing attendances for calendar:', monthlyData.attendances.length);
-      monthlyData.attendances.forEach((a: any) => {
-        // Convert canonical DB date to IST calendar date
-        const calendarDate = getAttendanceCalendarDate(a.date);
+    const apiAttendances = Array.isArray(monthlyData?.attendances) ? monthlyData.attendances : [];
+    console.log('[CALENDAR-DEBUG]', {
+      selectedMonth,
+      selectedYear,
+      apiRecordsCount: apiAttendances.length,
+      apiRecordDates: apiAttendances.map((a: any) => getDateKey(a.date)),
+    });
+    apiAttendances.forEach((a: any) => {
+        const calendarDate = getDateKey(a.date);
         console.log('[ATTENDANCE-UI] Calendar mapping:', {
           dbDate: a.date,
           calendarDate,
@@ -324,9 +333,8 @@ export default function EmployeeAttendancePage() {
           workingHours: a.workingHours
         });
         attendanceMap.set(calendarDate, a);
-      });
-      console.log('[ATTENDANCE-UI] Attendance map size:', attendanceMap.size);
-    }
+    });
+    console.log('[ATTENDANCE-UI] Attendance map size:', attendanceMap.size);
 
     return (
       <div className="grid grid-cols-7 gap-2">
@@ -341,6 +349,14 @@ export default function EmployeeAttendancePage() {
         {days.map((day) => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayAttendance = attendanceMap.get(dateKey);
+          console.log('[CALENDAR-DEBUG]', {
+            selectedMonth,
+            selectedYear,
+            apiRecordsCount: apiAttendances.length,
+            apiRecordDates: apiAttendances.map((a: any) => getDateKey(a.date)),
+            calendarDate: dateKey,
+            matchedAttendance: dayAttendance?.status ?? null,
+          });
           const isToday = isSameDay(day, new Date());
           
           // ============================================

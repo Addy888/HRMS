@@ -30,6 +30,8 @@ import {
 import { parseISO, format, isValid } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { AttendanceStatus, AttendanceSource } from '../enums';
+import { BiometricImporterService } from './biometric-importer.service';
+import { BiometricParserService } from './biometric-parser.service';
 
 interface ImportSession {
   sessionId: string;
@@ -53,6 +55,7 @@ export class AttendanceImportService {
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => SocketGateway))
     private readonly socketGateway: SocketGateway,
+    private readonly biometricImporter: BiometricImporterService,
   ) {
     // Clean up old sessions periodically
     setInterval(() => this.cleanupOldSessions(), 10 * 60 * 1000); // Every 10 minutes
@@ -69,6 +72,59 @@ export class AttendanceImportService {
     userId: string,
   ): Promise<AttendanceImportPreviewDto & { sessionId: string }> {
     this.logger.log(`Parsing Excel file: ${file.originalname}`);
+
+    if (this.isBiometricWorkbook(file.buffer)) {
+      const parser = new BiometricParserService();
+      const { period, employees } = parser.parseBiometricExcel(file.buffer);
+      const dbEmployees = await this.prisma.employee.findMany({
+        where: { organizationId },
+        select: { id: true, employeeId: true, firstName: true, lastName: true },
+      });
+
+      let matched = 0;
+      let unmatched = 0;
+      for (const emp of employees) {
+        const normalizedName = emp.name ? emp.name.toLowerCase().trim().replace(/\s+/g, ' ') : '';
+        const match = dbEmployees.filter(e =>
+          (e.firstName || '').toLowerCase().trim().replace(/\s+/g, ' ') === normalizedName,
+        );
+        if (match.length === 1) {
+          matched++;
+        } else if (match.length > 1) {
+          this.logger.warn(`[BIOMETRIC-PREVIEW] ambiguous: ${emp.name} matches ${match.length} employees`);
+          unmatched++;
+        } else {
+          unmatched++;
+        }
+      }
+
+      const sessionId = this.generateSessionId();
+      this.importSessions.set(sessionId, {
+        sessionId,
+        organizationId,
+        uploadedBy: userId,
+        fileName: file.originalname,
+        fileBuffer: file.buffer,
+        validRows: [],
+        invalidRows: [],
+        duplicateRows: [],
+        createdAt: new Date(),
+      });
+
+      return {
+        totalRows: employees.length,
+        validRows: matched,
+        invalidRows: 0,
+        duplicateRows: unmatched,
+        employeesFound: matched,
+        employeesNotFound: unmatched,
+        results: [],
+        warnings: [
+          `Biometric workbook detected. ${matched} employees matched by Excel Name → Employee.firstName and ${unmatched} were skipped or ambiguous.`,
+        ],
+        sessionId,
+      };
+    }
 
     // Parse Excel file
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
@@ -152,6 +208,49 @@ export class AttendanceImportService {
 
     if (session.organizationId !== organizationId) {
       throw new BadRequestException('Invalid session');
+    }
+
+    const isBiometricPayload = this.isBiometricWorkbook(session.fileBuffer || Buffer.alloc(0));
+    if (isBiometricPayload) {
+      const result = await this.biometricImporter.importBiometricFile(
+        session.fileBuffer || Buffer.alloc(0),
+        organizationId,
+        userId,
+      );
+
+      const importHistory = await this.prisma.attendanceImportHistory.create({
+        data: {
+          organizationId,
+          fileName: session.fileName,
+          uploadedBy: userId,
+          totalRows: result.totalEmployees,
+          successfulRows: result.recordsCreated,
+          failedRows: result.unmatched,
+          duplicateRows: 0,
+          status: 'COMPLETED',
+          originalColumns: JSON.stringify(['biometric-name-blocks']),
+          completedAt: new Date(),
+        },
+      });
+
+      await this.prisma.attendanceImportHistory.update({
+        where: { id: importHistory.id },
+        data: {
+          fileStoragePath: await this.persistUploadedFile(session, importHistory.id),
+        },
+      });
+
+      this.importSessions.delete(sessionId);
+
+      return {
+        success: true,
+        importHistoryId: importHistory.id,
+        totalRows: result.totalEmployees,
+        successfulRows: result.recordsCreated,
+        failedRows: result.unmatched,
+        matchedEmployees: result.matched,
+        unmatchedRecords: result.unmatched,
+      };
     }
 
     this.logger.log(
@@ -268,6 +367,32 @@ export class AttendanceImportService {
       matchedEmployees: session.validRows.length,
       unmatchedRecords: session.duplicateRows.length,
     };
+  }
+
+  private isBiometricWorkbook(fileBuffer: Buffer): boolean {
+    if (!fileBuffer || fileBuffer.length === 0) return false;
+
+    try {
+      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      if (!worksheet) return false;
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        raw: false,
+        defval: '',
+      });
+
+      for (const row of rows) {
+        const joined = (Array.isArray(row) ? row : []).map(cell => String(cell ?? '').trim().toLowerCase()).join(' ');
+        if (joined.includes('no :') || joined.includes('no:') || joined.includes('name :') || joined.includes('name:')) {
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      this.logger.warn(`Biometric workbook detection failed: ${error.message}`);
+      return false;
+    }
   }
 
   /**
@@ -1604,6 +1729,7 @@ export class AttendanceImportService {
           },
         });
 
+          const source = isPunchTimeFormat ? AttendanceSource.BIOMETRIC : AttendanceSource.MANUAL;
         const attendanceData = {
           organizationId,
           employeeId: row.matchedEmployeeUUID,
@@ -1613,14 +1739,20 @@ export class AttendanceImportService {
           workingHours,
           status: attendanceStatus,
           lateBy,
-          source: AttendanceSource.MANUAL,
-          isManualEntry: true,
+          source,
+          isManualEntry: source === AttendanceSource.MANUAL,
           approvedBy: userId,
           approvedAt: new Date(),
           remarks: `Imported from Excel: ${fileName}`,
         };
 
         if (existing) {
+          if (existing.source === AttendanceSource.MANUAL && source === AttendanceSource.BIOMETRIC) {
+            console.log(`[BIOMETRIC-SKIP] reason: manual-existing, excelNo: ${row.employeeId || ''}, excelName: ${row.employeeName || ''}, date: ${attendanceDate.toISOString().split('T')[0]}`);
+            recordsSkipped++;
+            continue;
+          }
+
           await this.prisma.attendance.update({
             where: { id: existing.id },
             data: attendanceData,

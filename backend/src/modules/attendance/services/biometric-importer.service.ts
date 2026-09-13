@@ -7,6 +7,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { BiometricParserService, BiometricEmployee, BiometricPeriod } from './biometric-parser.service';
 import { AttendanceStatus, AttendanceSource } from '../enums';
+import { fromZonedTime, formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class BiometricImporterService {
@@ -61,15 +62,17 @@ export class BiometricImporterService {
     // Process each employee
     for (const empData of employees) {
       const match = this.matchEmployee(empData, dbEmployees);
-      
+
       if (!match) {
         unmatched++;
-        this.logger.warn(`[BIOMETRIC-SKIP] No: ${empData.biometricNo}, Name: ${empData.name} - No match`);
+        this.logger.warn(`[BIOMETRIC-SKIP] reason: no-match, excelNo: ${empData.biometricNo || ''}, excelName: ${empData.name || ''}`);
         continue;
       }
 
       matched++;
-      this.logger.log(`[BIOMETRIC-MATCH] No: ${empData.biometricNo}, Name: ${empData.name} -> ${match.employeeId} (${match.firstName})`);
+      this.logger.log(
+        `[BIOMETRIC-MATCH] excelNo: ${empData.biometricNo || ''}, excelName: ${empData.name || ''}, matchedEmployeeUUID: ${match.id}, matchedEmployeeCode: ${match.employeeId}, matchedEmployeeName: ${match.firstName || ''} ${match.lastName || ''}, matchMethod: ${match.matchMethod || 'name'}`,
+      );
 
       // Import punches for this employee
       const result = await this.importEmployeePunches(
@@ -104,32 +107,44 @@ export class BiometricImporterService {
     bioEmp: BiometricEmployee,
     dbEmployees: any[],
   ): any | null {
+    const matchData = { matchMethod: 'none' };
+
     // Strategy 1: Match by name (firstName only, normalized)
-    if (bioEmp.name) {
+    if (bioEmp.name && bioEmp.name.trim()) {
       const normalizedBioName = this.normalizeName(bioEmp.name);
-      
-      const nameMatches = dbEmployees.filter(e => 
-        this.normalizeName(e.firstName) === normalizedBioName
+
+      const nameMatches = dbEmployees.filter(e =>
+        this.normalizeName(e.firstName) === normalizedBioName,
       );
 
       if (nameMatches.length === 1) {
-        this.logger.log(`[BIOMETRIC-MATCH] Name match: "${bioEmp.name}" -> ${nameMatches[0].employeeId}`);
-        return nameMatches[0];
+        const match = { ...nameMatches[0], matchMethod: 'name' };
+        return match;
       }
 
       if (nameMatches.length > 1) {
-        this.logger.warn(`[BIOMETRIC-MATCH] AMBIGUOUS: "${bioEmp.name}" matches ${nameMatches.length} employees, trying biometric number fallback`);
-        // Don't return null yet - try biometric number fallback
+        this.logger.warn(
+          `[BIOMETRIC-MATCH] ambiguousName: ${bioEmp.name}, candidates: ${nameMatches.map(e => e.employeeId).join(', ')}`,
+        );
       }
     }
 
-    // Strategy 2: Match by biometric number -> employee code (fallback for ambiguous/blank names)
+    // Strategy 2: Match by biometric number -> employee code (fallback for blank/ambiguous names)
     if (bioEmp.biometricNo) {
       const employeeCode = this.biometricNoToEmployeeCode(bioEmp.biometricNo);
       const codeMatch = dbEmployees.find(e => e.employeeId === employeeCode);
       if (codeMatch) {
-        this.logger.log(`[BIOMETRIC-MATCH] Biometric No fallback: ${bioEmp.biometricNo} -> ${employeeCode}`);
-        return codeMatch;
+        return { ...codeMatch, matchMethod: 'biometric-no' };
+      }
+    }
+
+    if (bioEmp.name && bioEmp.name.trim()) {
+      const normalizedBioName = this.normalizeName(bioEmp.name);
+      const nameMatches = dbEmployees.filter(e =>
+        this.normalizeName(e.firstName) === normalizedBioName,
+      );
+      if (nameMatches.length > 1) {
+        this.logger.warn(`[BIOMETRIC-SKIP] reason: ambiguous-name, excelNo: ${bioEmp.biometricNo || ''}, excelName: ${bioEmp.name || ''}`);
       }
     }
 
@@ -196,6 +211,13 @@ export class BiometricImporterService {
       const lateBy = this.calculateLateMinutes(checkInTime);
       const status = this.calculateStatus(checkInTime, checkOutTime, workingHours, lateBy);
 
+      this.logger.log(
+        `[BIOMETRIC-PUNCH-RAW]\nemployee: ${empData.name}\ndateFromExcel: ${attendanceDate.toISOString().split('T')[0]}\ndayNumber: ${dayNum}\nrawCell:\n${times.join('\n')}\nparsedTimes:\n${times.join(', ')}`,
+      );
+      this.logger.log(
+        `[BIOMETRIC-EXACT]\nemployee: ${empData.name}\nexcelDay: ${dayNum}\nexcelDate: ${attendanceDate.toISOString().split('T')[0]}\nrawExcelCell:\n${times.join('\n')}\nparsedCheckIn: ${times[0]}\nparsedCheckOut: ${times.length > 1 ? times[times.length - 1] : ''}`,
+      );
+
       // Check existing
       const existing = await this.prisma.attendance.findUnique({
         where: {
@@ -223,26 +245,42 @@ export class BiometricImporterService {
         remarks: `Imported from biometric (No: ${empData.biometricNo})`,
       };
 
+      this.logger.log(
+        `[BIOMETRIC-PUNCH-SAVE]\nemployee: ${empData.name}\nattendanceDate: ${attendanceDate.toISOString().split('T')[0]}\nexcelCheckIn: ${times[0]}\nexcelCheckOut: ${times.length > 1 ? times[times.length - 1] : ''}\ndatabaseCheckIn: ${checkInTime ? `${checkInTime.toISOString()} (${formatInTimeZone(checkInTime, 'Asia/Kolkata', 'HH:mm')})` : 'null'}\ndatabaseCheckOut: ${checkOutTime ? `${checkOutTime.toISOString()} (${formatInTimeZone(checkOutTime, 'Asia/Kolkata', 'HH:mm')})` : 'null'}`,
+      );
+
       if (existing) {
-        // Only update if existing is BIOMETRIC (don't overwrite MANUAL)
-        if (existing.source === AttendanceSource.BIOMETRIC) {
-          await this.prisma.attendance.update({
-            where: { id: existing.id },
-            data: attendanceData,
-          });
-          updated++;
-          
-          this.logger.log(`[BIOMETRIC-SAVE] UPDATED: UUID=${employeeUUID}, Date=${attendanceDate.toISOString().split('T')[0]}, Status=${status}, In=${times[0]}, Out=${times[times.length - 1]}`);
-        } else {
-          this.logger.log(`[BIOMETRIC-SKIP] MANUAL exists: UUID=${employeeUUID}, Date=${attendanceDate.toISOString().split('T')[0]}`);
+        if (existing.source === AttendanceSource.MANUAL) {
+          this.logger.warn(
+            `[BIOMETRIC-SKIP] reason: manual-existing, attendanceId: ${existing.id}, employeeUUID: ${employeeUUID}, employeeCode: ${empData.biometricNo ? this.biometricNoToEmployeeCode(empData.biometricNo) : ''}, date: ${attendanceDate.toISOString().split('T')[0]}`,
+          );
+          continue;
         }
+
+        await this.prisma.attendance.update({
+          where: { id: existing.id },
+          data: attendanceData,
+        });
+        updated++;
+
+        this.logger.log(
+          `[BIOMETRIC-SAVE] attendanceId: ${existing.id}, employeeUUID: ${employeeUUID}, employeeCode: ${this.biometricNoToEmployeeCode(empData.biometricNo)}, date: ${attendanceDate.toISOString().split('T')[0]}, checkIn: ${times[0]}, checkOut: ${times[times.length - 1] || ''}, status: ${status}, source: ${AttendanceSource.BIOMETRIC}`,
+        );
+        this.logger.log(
+          `[BIOMETRIC-SAVED]\nemployee: ${empData.name}\nattendanceDate: ${attendanceDate.toISOString().split('T')[0]}\nsavedCheckIn: ${checkInTime ? formatInTimeZone(checkInTime, 'Asia/Kolkata', 'HH:mm') : ''}\nsavedCheckOut: ${checkOutTime ? formatInTimeZone(checkOutTime, 'Asia/Kolkata', 'HH:mm') : ''}\nstatus: ${status}\nsource: ${AttendanceSource.BIOMETRIC}`,
+        );
       } else {
-        const created_record = await this.prisma.attendance.create({
+        const createdRecord = await this.prisma.attendance.create({
           data: attendanceData,
         });
         created++;
-        
-        this.logger.log(`[BIOMETRIC-SAVE] CREATED: UUID=${employeeUUID}, Date=${attendanceDate.toISOString().split('T')[0]}, Status=${status}, In=${times[0]}, Out=${times[times.length - 1]}, ID=${created_record.id}`);
+
+        this.logger.log(
+          `[BIOMETRIC-SAVE] attendanceId: ${createdRecord.id}, employeeUUID: ${employeeUUID}, employeeCode: ${this.biometricNoToEmployeeCode(empData.biometricNo)}, date: ${attendanceDate.toISOString().split('T')[0]}, checkIn: ${times[0]}, checkOut: ${times[times.length - 1] || ''}, status: ${status}, source: ${AttendanceSource.BIOMETRIC}`,
+        );
+        this.logger.log(
+          `[BIOMETRIC-SAVED]\nemployee: ${empData.name}\nattendanceDate: ${attendanceDate.toISOString().split('T')[0]}\nsavedCheckIn: ${checkInTime ? formatInTimeZone(checkInTime, 'Asia/Kolkata', 'HH:mm') : ''}\nsavedCheckOut: ${checkOutTime ? formatInTimeZone(checkOutTime, 'Asia/Kolkata', 'HH:mm') : ''}\nstatus: ${status}\nsource: ${AttendanceSource.BIOMETRIC}`,
+        );
       }
     }
 
@@ -256,7 +294,8 @@ export class BiometricImporterService {
     const [hourStr, minuteStr] = timeStr.split(':');
     const hour = parseInt(hourStr);
     const minute = parseInt(minuteStr);
-    return new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
+    const localDateTime = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
+    return fromZonedTime(localDateTime, 'Asia/Kolkata');
   }
 
   /**
@@ -266,8 +305,9 @@ export class BiometricImporterService {
   private calculateLateMinutes(checkInTime: Date | null): number {
     if (!checkInTime) return 0;
 
-    const hour = checkInTime.getUTCHours();
-    const minute = checkInTime.getUTCMinutes();
+    const istCheckInTime = toZonedTime(checkInTime, 'Asia/Kolkata');
+    const hour = istCheckInTime.getHours();
+    const minute = istCheckInTime.getMinutes();
     const totalMinutes = hour * 60 + minute;
 
     const lateThreshold = 10 * 60 + 5; // 10:05 AM
@@ -293,7 +333,7 @@ export class BiometricImporterService {
     }
 
     // Check if Monday (Week Off)
-    if (checkInTime.getUTCDay() === 1) {
+    if (toZonedTime(checkInTime, 'Asia/Kolkata').getDay() === 1) {
       return AttendanceStatus.WEEK_OFF;
     }
 

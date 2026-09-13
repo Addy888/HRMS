@@ -91,25 +91,20 @@ export class BiometricParserService {
     const employees: BiometricEmployee[] = [];
 
     for (let i = 0; i < data.length - 1; i++) {
-      const row = data[i];
-      
-      // Check if this is an employee header row
-      if (this.isEmployeeHeaderRow(row)) {
-        const biometricNo = this.extractBiometricNo(row);
-        const name = this.extractName(row);
-        
-        // Next row contains punches
-        const punchRow = data[i + 1];
-        const punches = this.extractPunches(punchRow);
+      const row = data[i] || [];
+      if (!this.isEmployeeHeaderRow(row)) continue;
 
-        employees.push({
-          biometricNo,
-          name,
-          punches,
-        });
+      const biometricNo = this.extractBiometricNo(row);
+      const name = this.extractName(row);
 
-        this.logger.log(`[BIOMETRIC-PARSE] No: ${biometricNo}, Name: ${name}, Days: ${punches.size}`);
-      }
+      const punchRow = data[i + 1] || [];
+      const dayHeaderRow = data[i - 1] || [];
+      const punches = this.extractPunches(punchRow, dayHeaderRow);
+
+      if (!biometricNo && !name && punches.size === 0) continue;
+
+      employees.push({ biometricNo, name, punches });
+      this.logger.log(`[BIOMETRIC-PARSE] No: ${biometricNo}, Name: ${name}, Days: ${punches.size}`);
     }
 
     return employees;
@@ -119,73 +114,85 @@ export class BiometricParserService {
    * Check if row is employee header (contains "No :" and "Name :")
    */
   private isEmployeeHeaderRow(row: any[]): boolean {
-    const rowStr = JSON.stringify(row).toLowerCase();
-    return rowStr.includes('no :') && rowStr.includes('name :');
+    if (!Array.isArray(row)) return false;
+    const rowStr = row
+      .map(cell => (cell ?? '').toString().trim().toLowerCase())
+      .join(' ');
+    return rowStr.includes('no :') || rowStr.includes('no:') || rowStr.includes('name :') || rowStr.includes('name:');
   }
 
   /**
    * Extract biometric number from row
-   * Format: ["No :", "", "5", "", "", "", "", "", "Name :", "", "sumaiyya"]
+   * Supports: "No : 2", "No: 2", "No : 2 Name : aditya" layouts
    */
   private extractBiometricNo(row: any[]): string {
     for (let i = 0; i < row.length; i++) {
-      const cell = (row[i] || '').toString().toLowerCase();
-      if (cell === 'no :' || cell === 'no:') {
-        // Biometric number is typically 2 cells to the right
-        if (i + 2 < row.length) {
-          const no = (row[i + 2] || '').toString().trim();
-          if (no) return no;
+      const cell = (row[i] ?? '').toString().trim();
+      const normalized = cell.toLowerCase().replace(/\s+/g, ' ');
+
+      if (normalized === 'no :' || normalized === 'no:' || normalized === 'no') {
+        for (let j = i + 1; j < row.length; j++) {
+          const candidate = (row[j] ?? '').toString().trim();
+          if (!candidate) continue;
+          const cleaned = candidate.replace(/[^0-9]/g, '');
+          if (cleaned) return cleaned;
         }
       }
     }
+
     return '';
   }
 
   /**
    * Extract name from row
-   * Format: ["No :", "", "5", "", "", "", "", "", "Name :", "", "sumaiyya"]
+   * Supports: "Name : aditya", "Name: aditya", or label/value separated by blanks
    */
   private extractName(row: any[]): string {
     for (let i = 0; i < row.length; i++) {
-      const cell = (row[i] || '').toString().toLowerCase();
-      if (cell === 'name :' || cell === 'name:') {
-        // Name is typically 2 cells to the right
-        if (i + 2 < row.length) {
-          const name = (row[i + 2] || '').toString().trim();
-          if (name) return name;
+      const cell = (row[i] ?? '').toString().trim();
+      const normalized = cell.toLowerCase().replace(/\s+/g, ' ');
+
+      if (normalized === 'name :' || normalized === 'name:' || normalized === 'name') {
+        for (let j = i + 1; j < row.length; j++) {
+          const candidate = (row[j] ?? '').toString().trim();
+          if (!candidate) continue;
+          if (/^\d+$/.test(candidate)) continue;
+          return candidate;
         }
       }
     }
+
     return '';
   }
 
   /**
    * Extract punches from punch row
-   * Cells 0-11 represent days 1-12 (or however many days in period)
-   * Each cell contains multiline punch times like "08:53\r\n18:06\r\n"
+   * Cells may include multiple values per day in newline/space-separated format.
    */
-  private extractPunches(row: any[]): Map<number, string[]> {
+  private extractPunches(row: any[], dayHeaderRow: any[]): Map<number, string[]> {
     const punches = new Map<number, string[]>();
 
-    // Skip first 2 columns (usually empty), then process day columns
-    // Days are in columns 2-13 (representing days 1-12)
-    for (let col = 2; col < Math.min(14, row.length); col++) {
-      const dayNum = col - 1; // Column 2 = day 1
-      const cell = (row[col] || '').toString().trim();
-      
-      if (cell) {
-        // Split by newlines and extract times
-        const times = cell
-          .split(/[\r\n]+/)
-          .map(t => t.trim())
-          .filter(t => /^\d{1,2}:\d{2}$/.test(t));
-        
-        if (times.length > 0) {
-          punches.set(dayNum, times);
-        }
-      }
+    for (let col = 0; col < row.length; col++) {
+      const cellValue = (row[col] ?? '').toString().trim();
+      if (!cellValue) continue;
+
+      const times = this.extractTimesFromCell(cellValue);
+      if (times.length === 0) continue;
+
+      const dayNum = parseInt(String(dayHeaderRow[col] ?? '').trim(), 10);
+      if (!Number.isInteger(dayNum) || dayNum < 1 || dayNum > 31) continue;
+      punches.set(dayNum, times);
     }
 
     return punches;
+  }
+
+  private extractTimesFromCell(cell: string): string[] {
+    return cell
+      .replace(/\r/g, '\n')
+      .split(/\n+/)
+      .flatMap(part => part.split(/\s+/))
+      .map(value => value.trim())
+      .filter(value => /^\d{1,2}:\d{2}$/.test(value));
   }
 }
