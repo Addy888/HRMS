@@ -7,6 +7,7 @@ import {
   IsUUID,
   IsInt,
   Min,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
@@ -115,6 +116,35 @@ export class CreateComplaintDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+}
+
+export enum RequestedAttendanceStatus {
+  PRESENT = 'PRESENT',
+  HALF_DAY = 'HALF_DAY',
+  ABSENT = 'ABSENT',
+}
+
+/**
+ * A date-specific attendance request is kept in the existing Helpdesk
+ * workflow. The date is a calendar date (not a timestamp) so it must remain
+ * in YYYY-MM-DD form end-to-end.
+ */
+export class CreateAttendanceRegularizationRequestDto {
+  @ApiProperty({ example: '2026-09-13' })
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'date must be a calendar date in YYYY-MM-DD format',
+  })
+  date: string;
+
+  @ApiProperty({ enum: RequestedAttendanceStatus, example: RequestedAttendanceStatus.PRESENT })
+  @IsEnum(RequestedAttendanceStatus)
+  requestedStatus: RequestedAttendanceStatus;
+
+  @ApiProperty({ example: 'I missed my check-out because of a biometric device issue.' })
+  @IsString()
+  @IsNotEmpty()
+  reason: string;
 }
 
 export class UpdateComplaintDto {

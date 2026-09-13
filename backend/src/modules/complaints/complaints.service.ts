@@ -15,6 +15,7 @@ import {
   ComplaintStatus,
 } from './dto/complaint.dto.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { getAttendanceBusinessDate } from '../attendance/utils/attendance-date.util.js';
 
 @Injectable()
 export class ComplaintsService {
@@ -183,6 +184,81 @@ export class ComplaintsService {
 
       return complaint;
     });
+  }
+
+  private attendanceRegularizationTitle(date: string) {
+    return `Attendance regularization - ${date}`;
+  }
+
+  private assertCalendarDate(date: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException('date must be a calendar date in YYYY-MM-DD format');
+    }
+  }
+
+  /**
+   * Attendance regularization is intentionally a Helpdesk ticket rather than
+   * an attendance update. HR therefore retains the existing review workflow
+   * and no employee request can modify attendance directly.
+   */
+  async getAttendanceRegularizationRequest(userId: string, date: string) {
+    this.assertCalendarDate(date);
+    const employee = await this.prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw new NotFoundException('Employee profile not found');
+
+    return this.prisma.complaint.findFirst({
+      where: {
+        organizationId: employee.organizationId,
+        raisedById: employee.id,
+        category: 'ATTENDANCE',
+        title: this.attendanceRegularizationTitle(date),
+        status: { in: [ComplaintStatus.OPEN, ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS, ComplaintStatus.WAITING_FOR_EMPLOYEE] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createAttendanceRegularizationRequest(
+    userId: string,
+    dto: { date: string; requestedStatus: 'PRESENT' | 'HALF_DAY' | 'ABSENT'; reason: string },
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    this.assertCalendarDate(dto.date);
+    const existing = await this.getAttendanceRegularizationRequest(userId, dto.date);
+    if (existing) return { created: false, request: existing };
+
+    // Resolve the current status on the server. The employee cannot supply or
+    // alter it as part of the request.
+    const employee = await this.prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw new NotFoundException('Employee profile not found');
+    const attendance = await this.prisma.attendance.findUnique({
+      where: {
+        organizationId_employeeId_date: {
+          organizationId: employee.organizationId,
+          employeeId: employee.id,
+          date: getAttendanceBusinessDate(dto.date),
+        },
+      },
+      select: { status: true },
+    });
+    const currentStatus = attendance?.status ?? (new Date(`${dto.date}T00:00:00.000Z`).getUTCDay() === 1 ? 'WEEK_OFF' : 'NOT_MARKED');
+    const requestedStatusLabel = dto.requestedStatus === 'HALF_DAY' ? 'Half Day' : dto.requestedStatus.charAt(0) + dto.requestedStatus.slice(1).toLowerCase();
+
+    const request = await this.createComplaint(
+      userId,
+      {
+        title: this.attendanceRegularizationTitle(dto.date),
+        category: 'ATTENDANCE' as any,
+        priority: 'MEDIUM' as any,
+        description: `Attendance regularization request\n\nAttendance date: ${dto.date}\nCurrent attendance status: ${currentStatus.replace(/_/g, ' ')}\nRequested attendance status: ${requestedStatusLabel}\n\nReason: ${dto.reason.trim()}`,
+      },
+      undefined,
+      ipAddress,
+      userAgent,
+    );
+
+    return { created: true, request };
   }
 
   // Get My Complaints (Employee)

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { toast } from '@/lib/toast';
 import EmployeeLayout from '@/layouts/EmployeeLayout';
 import {
   Clock,
@@ -42,6 +43,10 @@ export default function EmployeeAttendancePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [regularizationDate, setRegularizationDate] = useState<string | null>(null);
+  const [regularizationAttendance, setRegularizationAttendance] = useState<any | null>(null);
+  const [requestedAttendanceStatus, setRequestedAttendanceStatus] = useState('');
+  const [regularizationReason, setRegularizationReason] = useState('');
 
   // Fetch today's attendance status
   const { data: todayData, isLoading: loadingToday, refetch: refetchToday } = useQuery({
@@ -117,6 +122,55 @@ export default function EmployeeAttendancePage() {
       return payload;
     },
   });
+
+  const { data: existingRegularization, isLoading: loadingRegularization } = useQuery({
+    queryKey: ['attendance-regularization-request', regularizationDate],
+    enabled: Boolean(regularizationDate),
+    queryFn: async () => {
+      const res = await api.get('/complaints/attendance-regularization', {
+        params: { date: regularizationDate },
+      });
+      return res.data?.success && res.data.data !== undefined ? res.data.data : res.data;
+    },
+  });
+
+  const closeRegularization = () => {
+    setRegularizationDate(null);
+    setRegularizationAttendance(null);
+    setRequestedAttendanceStatus('');
+    setRegularizationReason('');
+  };
+
+  const regularizationMutation = useMutation({
+    mutationFn: async () => {
+      if (!regularizationDate) throw new Error('Select an attendance date first');
+      const res = await api.post('/complaints/attendance-regularization', {
+        date: regularizationDate,
+        requestedStatus: requestedAttendanceStatus,
+        reason: regularizationReason.trim(),
+      });
+      return res.data?.success && res.data.data !== undefined ? res.data.data : res.data;
+    },
+    onSuccess: (result) => {
+      toast[result?.created === false ? 'info' : 'success'](
+        result?.created === false
+          ? 'A regularization request for this date is already in progress.'
+          : 'Regularization request submitted to HR.',
+      );
+      queryClient.invalidateQueries({ queryKey: ['attendance-regularization-request'] });
+      closeRegularization();
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to submit regularization request');
+    },
+  });
+
+  const openRegularization = (date: string, dayAttendance: any, status: string) => {
+    setRegularizationDate(date);
+    setRegularizationAttendance(dayAttendance ? { ...dayAttendance, status } : { status });
+    setRequestedAttendanceStatus('');
+    setRegularizationReason('');
+  };
 
   // Check-in mutation
   const checkInMutation = useMutation({
@@ -372,7 +426,16 @@ export default function EmployeeAttendancePage() {
           return (
             <div
               key={dateKey}
-              className={`relative border rounded-lg p-2 min-h-[100px] ${
+              onClick={() => openRegularization(dateKey, dayAttendance, status)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  openRegularization(dateKey, dayAttendance, status);
+                }
+              }}
+              className={`relative border rounded-lg p-2 min-h-[100px] cursor-pointer transition-shadow hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 isToday ? 'border-blue-500 bg-blue-500/5' : 'border-border'
               } ${dayAttendance || isMonday ? STATUS_COLORS[status] : 'bg-secondary'}`}
             >
@@ -650,6 +713,68 @@ export default function EmployeeAttendancePage() {
           </div>
           {renderCalendar()}
         </div>
+
+        {regularizationDate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="regularization-title">
+            <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
+              <div className="mb-5">
+                <h2 id="regularization-title" className="text-lg font-bold text-foreground">Regularization Request</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Request an HR review of this attendance date.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border bg-secondary p-4 text-sm">
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Selected Date</p>
+                  <p className="mt-1 font-semibold text-foreground">{format(parseISO(regularizationDate), 'dd MMMM yyyy, EEEE')}</p>
+                </div>
+
+                <div className="rounded-xl border border-border bg-secondary p-4 text-sm">
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Current Attendance</p>
+                  <p className="mt-1 font-semibold text-foreground">{regularizationAttendance?.status?.replace(/_/g, ' ') || 'NOT MARKED'}</p>
+                  {regularizationAttendance?.checkInTime && <p className="mt-1 text-xs text-muted-foreground">Check in: {formatAttendanceTime(regularizationAttendance.checkInTime, 'hh:mm a')}</p>}
+                  {regularizationAttendance?.checkOutTime && <p className="text-xs text-muted-foreground">Check out: {formatAttendanceTime(regularizationAttendance.checkOutTime, 'hh:mm a')}</p>}
+                  {regularizationAttendance?.workingHours != null && <p className="text-xs text-muted-foreground">Working hours: {formatWorkingHours(regularizationAttendance.workingHours)}</p>}
+                  {regularizationAttendance?.lateBy > 0 && <p className="text-xs text-muted-foreground">Late by: {regularizationAttendance.lateBy} minutes</p>}
+                </div>
+
+                {loadingRegularization ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Checking existing requests...</div>
+                ) : existingRegularization ? (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-700">
+                    <p className="font-semibold">A request is already in progress for this date.</p>
+                    <p className="mt-1 text-xs">Ticket {existingRegularization.complaintNumber} · {String(existingRegularization.status).replace(/_/g, ' ')}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label htmlFor="requested-attendance-status" className="mb-2 block text-sm font-semibold text-foreground">What do you want to regularize?</label>
+                      <select id="requested-attendance-status" value={requestedAttendanceStatus} onChange={(event) => setRequestedAttendanceStatus(event.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <option value="">Select attendance type</option>
+                        <option value="PRESENT">Present</option>
+                        <option value="HALF_DAY">Half Day</option>
+                        <option value="ABSENT">Absent</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="regularization-reason" className="mb-2 block text-sm font-semibold text-foreground">Reason / explanation</label>
+                      <textarea id="regularization-reason" value={regularizationReason} onChange={(event) => setRegularizationReason(event.target.value)} rows={4} placeholder="Explain why this attendance needs regularization..." className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button type="button" onClick={closeRegularization} disabled={regularizationMutation.isPending} className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-50">Cancel</button>
+                {!existingRegularization && (
+                  <button type="button" onClick={() => regularizationMutation.mutate()} disabled={loadingRegularization || !requestedAttendanceStatus || !regularizationReason.trim() || regularizationMutation.isPending} className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                    {regularizationMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Submit Regularization Request
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* âœ… NEW: Uploaded Attendance Section */}
         <UploadedAttendanceSection selectedMonth={selectedMonth} selectedYear={selectedYear} />

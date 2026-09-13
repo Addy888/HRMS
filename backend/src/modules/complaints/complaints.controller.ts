@@ -33,6 +33,7 @@ import {
   ResolveComplaintDto,
   RejectComplaintDto,
   QueryComplaintsDto,
+  CreateAttendanceRegularizationRequestDto,
 } from './dto/complaint.dto.js';
 
 @ApiTags('Complaints')
@@ -75,6 +76,34 @@ export class ComplaintsController {
       userId,
       dto,
       file,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
+  @Get('complaints/attendance-regularization')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Get my pending attendance regularization request for a calendar date' })
+  getAttendanceRegularizationRequest(
+    @GetUser('id') userId: string,
+    @Query('date') date: string,
+  ) {
+    return this.complaintsService.getAttendanceRegularizationRequest(userId, date);
+  }
+
+  @Post('complaints/attendance-regularization')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Create an attendance regularization request in the Helpdesk workflow' })
+  createAttendanceRegularizationRequest(
+    @GetUser('id') userId: string,
+    @Body() dto: CreateAttendanceRegularizationRequestDto,
+    @Req() req: any,
+  ) {
+    return this.complaintsService.createAttendanceRegularizationRequest(
+      userId,
+      dto,
       req.ip,
       req.headers['user-agent'],
     );
