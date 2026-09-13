@@ -26,6 +26,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { Prisma } from '@prisma/client';
+import { UserRole } from '../../../common/constants';
 import { AttendanceProviderRegistry } from '../providers/provider.registry';
 import {
   AttendanceEventType,
@@ -72,7 +73,7 @@ export class AttendanceService {
    * Supports: HR, HR_ADMIN, HR_USER
    */
   private isHRRole(roleName: string): boolean {
-    return ['HR', 'HR_ADMIN', 'HR_USER'].includes(roleName);
+    return ['HR', 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'].includes(roleName);
   }
 
   /**
@@ -862,6 +863,11 @@ export class AttendanceService {
       },
       include: {
         shift: true,
+        history: {
+          where: { field: { in: ['HR_CORRECTION', 'HR_CORRECTION_CREATE'] } },
+          select: { reason: true, changedAt: true, changedBy: true },
+          orderBy: { changedAt: 'desc' },
+        },
       },
       orderBy: { date: 'asc' },
     });
@@ -1131,78 +1137,105 @@ export class AttendanceService {
       date,
     } = query;
 
-    const where: any = { organizationId: user.organizationId };
+    const employeeWhere: any = {
+      organizationId: user.organizationId,
+      user: {
+        isActive: true,
+        role: { name: { notIn: [UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER] } },
+      },
+    };
+
+    let targetDate: Date | undefined;
+    let dateFilter: { gte?: Date; lte?: Date } | undefined;
 
     // Date filtering using canonical date
     if (date) {
-      const targetDate = getAttendanceBusinessDate(parseISO(date));
-      where.date = targetDate;
+      targetDate = getAttendanceBusinessDate(parseISO(date));
     } else if (startDate && endDate) {
       const startBoundary = getAttendanceBusinessDate(parseISO(startDate));
       const endBoundary = getAttendanceBusinessDate(parseISO(endDate));
-      where.date = {
-        gte: startBoundary,
-        lte: endBoundary,
-      };
+      dateFilter = { gte: startBoundary, lte: endBoundary };
     } else if (startDate) {
-      const startBoundary = getAttendanceBusinessDate(parseISO(startDate));
-      where.date = { gte: startBoundary };
+      dateFilter = { gte: getAttendanceBusinessDate(parseISO(startDate)) };
     } else if (endDate) {
-      const endBoundary = getAttendanceBusinessDate(parseISO(endDate));
-      where.date = { lte: endBoundary };
+      dateFilter = { lte: getAttendanceBusinessDate(parseISO(endDate)) };
     }
+
+    if (search) {
+      employeeWhere.OR = [
+        { employeeId: { contains: search } },
+        { firstName: { contains: search } },
+        { lastName: { contains: search } },
+      ];
+    }
+
+    if (departmentId) {
+      employeeWhere.departmentId = departmentId;
+    }
+
+    const employees = await this.prisma.employee.findMany({
+      where: employeeWhere,
+      include: {
+        department: true,
+        designation: true,
+      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    });
+
+    const attendances = (targetDate || dateFilter)
+      ? await this.prisma.attendance.findMany({
+          where: {
+            organizationId: user.organizationId,
+            date: targetDate ?? dateFilter,
+            employeeId: { in: employees.map((employee) => employee.id) },
+          },
+          include: {
+            employee: {
+              include: { department: true, designation: true },
+            },
+            shift: true,
+          },
+        })
+      : [];
+
+    const attendanceByEmployee = new Map(
+      attendances.map((attendance) => [attendance.employeeId, attendance]),
+    );
+
+    let rows = targetDate
+      ? employees.map((employee) => {
+      const attendance = attendanceByEmployee.get(employee.id);
+      return attendance ?? {
+        id: null,
+        organizationId: user.organizationId,
+        employeeId: employee.id,
+        date: targetDate ?? null,
+        checkInTime: null,
+        checkOutTime: null,
+        workingHours: null,
+        lateBy: null,
+        source: null,
+        status: 'NO_RECORD',
+        employee,
+        shift: null,
+      };
+    })
+      : attendances;
 
     if (status) {
-      where.status = status;
-    }
-
-    // Search filter
-    if (search) {
-      where.employee = {
-        OR: [
-          { employeeId: { contains: search, mode: 'insensitive' } },
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-        ],
-      };
-    }
-
-    // Department filter
-    if (departmentId) {
-      where.employee = {
-        ...(where.employee || {}),
-        departmentId,
-      };
+      rows = rows.filter((row) => row.status === status);
     }
 
     const skip = (page - 1) * limit;
-
-    const [attendances, total] = await Promise.all([
-      this.prisma.attendance.findMany({
-        where,
-        include: {
-          employee: {
-            include: {
-              department: true,
-              designation: true,
-            },
-          },
-          shift: true,
-        },
-        orderBy: { date: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.attendance.count({ where }),
-    ]);
+    const pagedRows = rows.slice(skip, skip + limit);
 
     return {
-      data: attendances,
+      data: pagedRows,
       meta: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: rows.length,
+        totalPages: Math.ceil(rows.length / limit),
       },
     };
   }
@@ -1231,7 +1264,10 @@ export class AttendanceService {
     const totalEmployees = await this.prisma.employee.count({
       where: {
         organizationId: user.organizationId,
-        user: { isActive: true },
+        user: {
+          isActive: true,
+          role: { name: { notIn: [UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER] } },
+        },
       },
     });
 
@@ -1473,6 +1509,176 @@ export class AttendanceService {
     });
 
     return auditLogs;
+  }
+
+  /**
+   * HR ATTENDANCE CORRECTION
+   * Updates only submitted fields, or creates a record for an explicit HR request.
+   */
+  async regularizeAttendance(attendanceId: string, dto: any, userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user || !['HR', 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'].includes(user.role.name)) {
+      throw new ForbiddenException('Only HR can correct attendance');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const attendance = await tx.attendance.findUnique({
+        where: { id: attendanceId },
+        include: { employee: true },
+      });
+
+      if (!attendance || attendance.organizationId !== user.organizationId) {
+        throw new NotFoundException('Attendance record not found in your organization');
+      }
+
+      const updateData: any = {
+        approvedBy: userId,
+        approvedAt: new Date(),
+      };
+
+      if (dto.status !== undefined) updateData.status = dto.status;
+      if (dto.checkInTime !== undefined) updateData.checkInTime = parseISO(dto.checkInTime);
+      if (dto.checkOutTime !== undefined) updateData.checkOutTime = parseISO(dto.checkOutTime);
+      if (dto.remarks !== undefined) updateData.remarks = dto.remarks;
+
+      if (dto.checkInTime !== undefined || dto.checkOutTime !== undefined) {
+        const checkInTime = updateData.checkInTime ?? attendance.checkInTime;
+        const checkOutTime = updateData.checkOutTime ?? attendance.checkOutTime;
+        if (checkInTime && checkOutTime) {
+          updateData.workingHours =
+            (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+        }
+      }
+
+      const updated = await tx.attendance.update({
+        where: { id: attendanceId },
+        data: updateData,
+        include: {
+          employee: {
+            include: {
+              department: true,
+              designation: true,
+            },
+          },
+          shift: true,
+        },
+      });
+
+      await tx.attendanceHistory.create({
+        data: {
+          attendanceId,
+          field: 'HR_CORRECTION',
+          oldValue: JSON.stringify({
+            employeeId: attendance.employeeId,
+            employeeName: `${attendance.employee.firstName} ${attendance.employee.lastName}`,
+            employeeCode: attendance.employee.employeeId,
+            date: attendance.date,
+            status: attendance.status,
+            checkInTime: attendance.checkInTime,
+            checkOutTime: attendance.checkOutTime,
+          }),
+          newValue: JSON.stringify({
+            employeeId: attendance.employeeId,
+            employeeName: `${attendance.employee.firstName} ${attendance.employee.lastName}`,
+            employeeCode: attendance.employee.employeeId,
+            date: attendance.date,
+            status: updated.status,
+            checkInTime: updated.checkInTime,
+            checkOutTime: updated.checkOutTime,
+            changedByRole: user.role.name,
+          }),
+          reason: dto.reason,
+          changedBy: userId,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Attendance corrected successfully',
+        attendance: updated,
+      };
+    });
+  }
+
+  async createRegularizedAttendance(dto: any, userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+
+    if (!user || !['HR', 'HR_ADMIN', 'HR_USER', 'SUPER_ADMIN'].includes(user.role.name)) {
+      throw new ForbiddenException('Only HR can create attendance corrections');
+    }
+    if (!dto.employeeId || !dto.date || !dto.status || !dto.reason) {
+      throw new BadRequestException('employeeId, date, status, and reason are required');
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: { id: dto.employeeId, organizationId: user.organizationId },
+    });
+    if (!employee) throw new NotFoundException('Employee not found in your organization');
+
+    const date = getAttendanceBusinessDate(parseISO(dto.date));
+    const existing = await this.prisma.attendance.findUnique({
+      where: { organizationId_employeeId_date: {
+        organizationId: user.organizationId,
+        employeeId: dto.employeeId,
+        date,
+      } },
+    });
+    if (existing) return this.regularizeAttendance(existing.id, dto, userId);
+
+    const checkInTime = dto.checkInTime ? parseISO(dto.checkInTime) : null;
+    const checkOutTime = dto.checkOutTime ? parseISO(dto.checkOutTime) : null;
+    const workingHours = checkInTime && checkOutTime
+      ? (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60)
+      : null;
+
+    return this.prisma.$transaction(async (tx) => {
+      const attendance = await tx.attendance.create({
+        data: {
+          organizationId: user.organizationId,
+          employeeId: dto.employeeId,
+          date,
+          status: dto.status,
+          checkInTime,
+          checkOutTime,
+          workingHours,
+          source: AttendanceSource.MANUAL,
+          isManualEntry: true,
+          approvedBy: userId,
+          approvedAt: new Date(),
+          remarks: dto.remarks,
+        },
+        include: { employee: true },
+      });
+
+      await tx.attendanceHistory.create({
+        data: {
+          attendanceId: attendance.id,
+          field: 'HR_CORRECTION_CREATE',
+          oldValue: null,
+          newValue: JSON.stringify({
+            employeeId: employee.id,
+            employeeName: `${employee.firstName} ${employee.lastName}`,
+            employeeCode: employee.employeeId,
+            date,
+            status: dto.status,
+            checkInTime,
+            checkOutTime,
+            changedByRole: user.role.name,
+          }),
+          reason: dto.reason,
+          changedBy: userId,
+        },
+      });
+
+      return { success: true, message: 'Attendance created successfully', attendance };
+    });
   }
 
   /**

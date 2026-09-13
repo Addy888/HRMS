@@ -18,6 +18,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const STATUS_COLORS: Record<string, string> = {
   PRESENT: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
@@ -29,6 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
   HOLIDAY: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   PENDING: 'bg-secondary text-muted-foreground border-border',
   NOT_MARKED: 'bg-secondary text-muted-foreground border-border',
+  NO_RECORD: 'bg-secondary text-muted-foreground border-border',
 };
 
 function StatCard({ title, value, icon: Icon, color }: any) {
@@ -58,20 +60,32 @@ export default function HRAttendancePage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [regularizingId, setRegularizingId] = useState<string | null>(null);
+  const [regularizeError, setRegularizeError] = useState<string | null>(null);
+  const [regularizeSuccess, setRegularizeSuccess] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [correctionEmployeeId, setCorrectionEmployeeId] = useState('');
+  const [correctionDate, setCorrectionDate] = useState(dateFilter);
+  const [correctionForm, setCorrectionForm] = useState({
+    status: 'PRESENT',
+    checkInTime: '',
+    checkOutTime: '',
+    reason: '',
+  });
 
   // Fetch today's summary
-  const { data: summary } = useQuery({
+  const { data: summary, refetch: refetchSummary } = useQuery({
     queryKey: ['attendance-summary', dateFilter],
     queryFn: async () => {
       const res = await api.get('/attendance/summary', {
         params: { date: dateFilter },
       });
-      return res.data;
+      return res.data?.data ?? res.data;
     },
   });
 
   // Fetch attendance records
-  const { data: attendanceData, isLoading } = useQuery({
+  const { data: attendanceData, isLoading, refetch: refetchAttendance } = useQuery({
     queryKey: ['attendance-records', search, statusFilter, dateFilter, page],
     queryFn: async () => {
       const params: any = {
@@ -86,6 +100,94 @@ export default function HRAttendancePage() {
       return res.data;
     },
   });
+
+  const { data: employeeData } = useQuery({
+    queryKey: ['attendance-correction-employees'],
+    queryFn: async () => {
+      const res = await api.get('/employees', { params: { page: 1, limit: 1000, isActive: 'true' } });
+      return res.data?.data ?? res.data;
+    },
+  });
+
+  const openCorrection = (record: any) => {
+    if (!record.id) {
+      setSelectedRecord({ isNew: true });
+      setCorrectionEmployeeId(record.employeeId);
+      setCorrectionDate(dateFilter);
+      setCorrectionForm({ status: 'PRESENT', checkInTime: '', checkOutTime: '', reason: '' });
+      setRegularizeError(null);
+      setRegularizeSuccess(null);
+      return;
+    }
+    setSelectedRecord(record);
+    setRegularizeError(null);
+    setRegularizeSuccess(null);
+    setCorrectionForm({
+      status: record.status,
+      checkInTime: record.checkInTime
+        ? formatInTimeZone(new Date(record.checkInTime), 'Asia/Kolkata', "yyyy-MM-dd'T'HH:mm")
+        : '',
+      checkOutTime: record.checkOutTime
+        ? formatInTimeZone(new Date(record.checkOutTime), 'Asia/Kolkata', "yyyy-MM-dd'T'HH:mm")
+        : '',
+      reason: '',
+    });
+  };
+
+  const openCreateCorrection = () => {
+    setSelectedRecord({ isNew: true });
+    setCorrectionEmployeeId('');
+    setCorrectionDate(dateFilter);
+    setCorrectionForm({ status: 'PRESENT', checkInTime: '', checkOutTime: '', reason: '' });
+    setRegularizeError(null);
+    setRegularizeSuccess(null);
+  };
+
+  const closeCorrection = () => {
+    if (!regularizingId) setSelectedRecord(null);
+  };
+
+  const handleRegularize = async () => {
+    if (!selectedRecord || !correctionForm.reason.trim()) {
+      setRegularizeError('Please provide a reason for this correction');
+      return;
+    }
+
+    setRegularizingId(selectedRecord.id);
+    setRegularizeError(null);
+    setRegularizeSuccess(null);
+
+    try {
+      const toApiTime = (value: string) => value ? `${value}:00+05:30` : undefined;
+      const payload = {
+        status: correctionForm.status,
+        checkInTime: toApiTime(correctionForm.checkInTime),
+        checkOutTime: toApiTime(correctionForm.checkOutTime),
+        reason: correctionForm.reason.trim(),
+      };
+      if (selectedRecord.isNew) {
+        if (!correctionEmployeeId || !correctionDate) {
+          throw new Error('Select an employee and date for the new attendance record');
+        }
+        await api.post('/attendance/regularize', {
+          ...payload,
+          employeeId: correctionEmployeeId,
+          date: correctionDate,
+        });
+      } else {
+        await api.patch(`/attendance/${selectedRecord.id}/regularize`, payload);
+      }
+      await Promise.all([refetchAttendance(), refetchSummary()]);
+      setRegularizeSuccess('Attendance corrected successfully');
+      setSelectedRecord(null);
+    } catch (error: any) {
+      setRegularizeError(
+        error?.response?.data?.message || error?.message || 'Failed to regularize attendance',
+      );
+    } finally {
+      setRegularizingId(null);
+    }
+  };
 
   // ✅ NEW: Fetch recent upload history
   const { data: uploadHistory, isLoading: loadingHistory, refetch: refetchHistory } = useQuery({
@@ -227,6 +329,12 @@ export default function HRAttendancePage() {
             >
               <Upload className="w-4 h-4" />
               Upload Excel
+            </button>
+            <button
+              onClick={openCreateCorrection}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-semibold text-foreground transition-colors"
+            >
+              Add Attendance
             </button>
           </div>
         </div>
@@ -453,25 +561,31 @@ export default function HRAttendancePage() {
                   <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
                     Late By
                   </th>
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                    Source
+                  </th>
+                  <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800/40">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-20">
+                    <td colSpan={10} className="text-center py-20">
                       <Loader2 className="w-6 h-6 animate-spin text-blue-500 mx-auto" />
                     </td>
                   </tr>
                 ) : records.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-20 text-muted-foreground text-sm">
+                    <td colSpan={10} className="text-center py-20 text-muted-foreground text-sm">
                       No attendance records found
                     </td>
                   </tr>
                 ) : (
                   records.map((record: any) => (
                     <tr 
-                      key={record.id} 
+                      key={record.id ?? `no-record-${record.employeeId}-${record.date ?? dateFilter}`} 
                       onClick={() => router.push(`/hr/attendance/employee/${record.employee?.id}`)}
                       className="hover:bg-secondary/50 transition-colors cursor-pointer"
                     >
@@ -505,12 +619,42 @@ export default function HRAttendancePage() {
                       <td className="px-6 py-4 text-xs text-muted-foreground font-mono">
                         {record.lateBy ? `${record.lateBy}m` : '—'}
                       </td>
+                      <td className="px-6 py-4 text-xs text-muted-foreground font-mono">
+                        {record.source || '—'}
+                      </td>
+                      <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => openCorrection(record)}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-300"
+                        >
+                          {record.id ? 'Edit Attendance' : 'Add Attendance'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/hr/attendance/employee/${record.employee?.id}`)}
+                          className="ml-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                        >
+                          View Attendance
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
+
+          {regularizeError && (
+            <div className="border-t border-red-500/20 bg-red-500/10 px-6 py-3 text-sm text-red-600">
+              {regularizeError}
+            </div>
+          )}
+          {regularizeSuccess && (
+            <div className="border-t border-emerald-500/20 bg-emerald-500/10 px-6 py-3 text-sm text-emerald-600">
+              {regularizeSuccess}
+            </div>
+          )}
 
           {/* Pagination */}
           {!isLoading && meta.totalPages > 1 && (
@@ -538,6 +682,75 @@ export default function HRAttendancePage() {
           )}
         </div>
       </div>
+
+      {selectedRecord && (
+        <div className="fixed inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-secondary border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-bold text-foreground">{selectedRecord.isNew ? 'Add Attendance' : 'Edit Attendance'}</h3>
+                {!selectedRecord.isNew && <p className="text-xs text-muted-foreground mt-1">
+                  {selectedRecord.employee?.firstName} {selectedRecord.employee?.lastName} · {format(new Date(selectedRecord.date), 'dd MMM yyyy')}
+                </p>}
+              </div>
+              <button type="button" onClick={closeCorrection} disabled={!!regularizingId} className="text-muted-foreground hover:text-foreground">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {selectedRecord.isNew && (
+                <>
+                  <label className="block text-sm font-semibold text-card-foreground">
+                    Employee
+                    <select value={correctionEmployeeId} onChange={(event) => setCorrectionEmployeeId(event.target.value)} className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-normal text-foreground">
+                      <option value="">Select employee</option>
+                      {(employeeData?.data ?? employeeData ?? []).map((employee: any) => (
+                        <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName} ({employee.employeeId})</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block text-sm font-semibold text-card-foreground">
+                    Date
+                    <input type="date" value={correctionDate} onChange={(event) => setCorrectionDate(event.target.value)} className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-normal text-foreground" />
+                  </label>
+                </>
+              )}
+              <label className="block text-sm font-semibold text-card-foreground">
+                Status
+                <select
+                  value={correctionForm.status}
+                  onChange={(event) => setCorrectionForm({ ...correctionForm, status: event.target.value })}
+                  className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-normal text-foreground"
+                >
+                  {['PRESENT', 'HALF_DAY', 'LATE', 'ABSENT', 'WEEK_OFF'].map((status) => (
+                    <option key={status} value={status}>{status.replace(/_/g, ' ')}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-semibold text-card-foreground">
+                Check-in time
+                <input type="datetime-local" value={correctionForm.checkInTime} onChange={(event) => setCorrectionForm({ ...correctionForm, checkInTime: event.target.value })} className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-normal text-foreground" />
+              </label>
+              <label className="block text-sm font-semibold text-card-foreground">
+                Check-out time
+                <input type="datetime-local" value={correctionForm.checkOutTime} onChange={(event) => setCorrectionForm({ ...correctionForm, checkOutTime: event.target.value })} className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-normal text-foreground" />
+              </label>
+              <label className="block text-sm font-semibold text-card-foreground">
+                Reason
+                <textarea value={correctionForm.reason} onChange={(event) => setCorrectionForm({ ...correctionForm, reason: event.target.value })} rows={3} placeholder="Explain this attendance correction" className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm font-normal text-foreground" />
+              </label>
+              {regularizeError && <p className="text-sm text-red-600">{regularizeError}</p>}
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={closeCorrection} disabled={!!regularizingId} className="px-4 py-2.5 border border-border rounded-xl text-sm font-semibold text-foreground">Cancel</button>
+                <button type="button" onClick={handleRegularize} disabled={!!regularizingId} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-foreground disabled:opacity-50">
+                  {regularizingId ? 'Saving...' : 'Save Correction'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ✅ NEW: Upload Modal */}
       {showUploadModal && (

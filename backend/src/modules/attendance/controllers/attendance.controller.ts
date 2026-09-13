@@ -321,6 +321,11 @@ export class AttendanceController {
       },
       include: {
         shift: true,
+        history: {
+          where: { field: { in: ['HR_CORRECTION', 'HR_CORRECTION_CREATE'] } },
+          select: { reason: true, changedAt: true, changedBy: true },
+          orderBy: { changedAt: 'desc' },
+        },
       },
     });
 
@@ -395,9 +400,11 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Get employee attendance (HR/Super Admin)' })
   @ApiResponse({ status: 200, description: 'Employee attendance retrieved' })
   async getEmployeeAttendance(
+    @Request() req,
     @Param('employeeId') employeeId: string,
     @Query() query: GetAttendanceQueryDto,
   ) {
+    await this.verifyEmployeeOrganization(employeeId, req.user.id);
     return this.attendanceService.getMyAttendance(employeeId, query);
   }
 
@@ -414,10 +421,26 @@ export class AttendanceController {
     description: 'Employee monthly attendance retrieved',
   })
   async getEmployeeMonthlyAttendance(
+    @Request() req,
     @Param('employeeId') employeeId: string,
     @Query() dto: GetMonthlyAttendanceDto,
   ) {
+    await this.verifyEmployeeOrganization(employeeId, req.user.id);
     return this.attendanceService.getMonthlyAttendance(employeeId, dto);
+  }
+
+  private async verifyEmployeeOrganization(employeeId: string, userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+    const employee = await this.prisma.employee.findFirst({
+      where: { id: employeeId, organizationId: user?.organizationId },
+      select: { id: true },
+    });
+    if (!user || !employee) {
+      throw new NotFoundException('Employee not found in your organization');
+    }
   }
 
   /**
@@ -528,6 +551,33 @@ export class AttendanceController {
       message: 'Attendance updated successfully',
       attendance: updated,
     };
+  }
+
+  /**
+   * HR ATTENDANCE CORRECTION
+   * Updates only fields submitted by HR.
+   */
+  @Patch(':id/regularize')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Correct attendance record (HR/Super Admin)' })
+  @ApiResponse({ status: 200, description: 'Attendance corrected successfully' })
+  async regularizeAttendance(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: UpdateAttendanceDto,
+  ) {
+    return this.attendanceService.regularizeAttendance(id, dto, req.user.id);
+  }
+
+  @Post('regularize')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.HR, UserRole.HR_ADMIN, UserRole.HR_USER, UserRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Create explicit HR attendance correction' })
+  async createRegularizedAttendance(@Request() req, @Body() dto: UpdateAttendanceDto) {
+    return this.attendanceService.createRegularizedAttendance(dto, req.user.id);
   }
 
   /**

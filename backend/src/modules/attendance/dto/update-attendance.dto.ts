@@ -8,6 +8,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AttendanceStatus } from '../enums';
 
 export class UpdateAttendanceDto {
+  @ApiPropertyOptional({ example: 'employee-uuid' })
+  @IsOptional()
+  @IsString()
+  employeeId?: string;
+
+  @ApiPropertyOptional({ example: '2026-09-13' })
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
   @ApiPropertyOptional({ example: '2026-08-13T10:00:00+05:30' })
   @IsOptional()
   @IsDateString()

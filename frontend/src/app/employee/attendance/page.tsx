@@ -402,6 +402,11 @@ export default function EmployeeAttendancePage() {
                       {formatWorkingHours(dayAttendance.workingHours)}
                     </div>
                   )}
+                  {dayAttendance.history?.length > 0 && (
+                    <div className="text-[8px] font-semibold text-blue-600 mt-1" title={dayAttendance.history[0].reason || undefined}>
+                      Updated by HR{dayAttendance.history[0].reason ? ` · ${dayAttendance.history[0].reason}` : ''}
+                    </div>
+                  )}
                 </>
               ) : null}
             </div>
@@ -458,6 +463,11 @@ export default function EmployeeAttendancePage() {
                   <span className="ml-3 text-xs text-amber-600">
                     Late by {attendance.lateBy} minutes
                   </span>
+                )}
+                {attendance?.history?.length > 0 && (
+                  <p className="mt-2 text-xs font-semibold text-blue-600">
+                    Regularized by HR{attendance.history[0].reason ? ` · ${attendance.history[0].reason}` : ''}
+                  </p>
                 )}
               </div>
 

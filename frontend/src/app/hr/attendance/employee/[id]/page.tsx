@@ -38,6 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
   ON_DUTY: 'bg-green-500/10 text-green-400 border-green-500/20',
   PENDING: 'bg-secondary text-muted-foreground border-border',
   NOT_MARKED: 'bg-secondary text-muted-foreground border-border',
+  NO_RECORD: 'bg-secondary text-muted-foreground border-border',
 };
 
 // Helper to unwrap API response envelope
@@ -441,6 +442,12 @@ export default function EmployeeMonthlyAttendancePage() {
                       <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
                         Late By
                       </th>
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
+                        Source
+                      </th>
+                      <th className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-6 py-4 print:text-card-foreground">
+                        HR History
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800/40 print:divide-neutral-300">
@@ -451,7 +458,7 @@ export default function EmployeeMonthlyAttendancePage() {
                       // ============================================
                       // If Monday and no attendance, show WEEK_OFF
                       // If Monday with attendance, respect backend status
-                      const status = att?.status || (day.isMonday ? 'WEEK_OFF' : 'NOT_MARKED');
+                      const status = att?.status || (day.isMonday ? 'WEEK_OFF' : 'NO_RECORD');
                       
                       return (
                         <tr
@@ -484,6 +491,34 @@ export default function EmployeeMonthlyAttendancePage() {
                           </td>
                           <td className="px-6 py-4 text-xs text-muted-foreground font-mono print:text-card-foreground">
                             {att?.lateBy ? `${att.lateBy}m` : '—'}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground font-mono print:text-card-foreground">
+                            {att?.source || '—'}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground print:text-card-foreground">
+                            {att?.history?.length ? (
+                              <div>
+                                <div className="font-semibold text-blue-600">Regularized by HR</div>
+                                {(() => {
+                                  const history = att.history[0];
+                                  try {
+                                    const oldValue = JSON.parse(history.oldValue || '{}');
+                                    const newValue = JSON.parse(history.newValue || '{}');
+                                    return (
+                                      <div className="mt-1 space-y-0.5 text-[10px]">
+                                        <div>Status: {oldValue.status || '—'} → {newValue.status || '—'}</div>
+                                        {(oldValue.checkInTime || newValue.checkInTime) && <div>In: {oldValue.checkInTime || '—'} → {newValue.checkInTime || '—'}</div>}
+                                        {(oldValue.checkOutTime || newValue.checkOutTime) && <div>Out: {oldValue.checkOutTime || '—'} → {newValue.checkOutTime || '—'}</div>}
+                                        <div>Changed: {format(new Date(history.changedAt), 'dd MMM yyyy hh:mm a')}</div>
+                                        {history.reason && <div>Reason: {history.reason}</div>}
+                                      </div>
+                                    );
+                                  } catch {
+                                    return <div className="text-[10px]">Updated by HR</div>;
+                                  }
+                                })()}
+                              </div>
+                            ) : '—'}
                           </td>
                         </tr>
                       );
