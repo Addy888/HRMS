@@ -681,75 +681,8 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
       }
       
       console.log('[UPLOADED-ATTENDANCE-UI] UNWRAPPED payload:', payload);
-      console.log('[UPLOADED-ATTENDANCE-UI] payload.records:', payload?.records?.length || 0);
-      console.log('[UPLOADED-ATTENDANCE-UI] payload.columns:', payload?.columns?.length || 0);
+      console.log('[UPLOADED-ATTENDANCE-UI] payload.attendances:', payload?.attendances?.length || 0);
       console.log('[UPLOADED-ATTENDANCE-UI] payload.total:', payload?.total);
-      
-      if (payload?.records && payload.records.length > 0) {
-        console.log('[UPLOADED-ATTENDANCE-UI] Sample record:', payload.records[0]);
-        console.log('[UPLOADED-ATTENDANCE-UI] Sample record data:', payload.records[0].data);
-        
-        // Extract years from data
-        const years = new Set<number>();
-        payload.records.forEach((r: any) => {
-          // Try to detect year from data
-          const data = r.data || {};
-          Object.keys(data).forEach(key => {
-            const value = data[key];
-            // Look for year patterns in values
-            if (typeof value === 'string') {
-              const yearMatch = value.match(/20\d{2}/);
-              if (yearMatch) {
-                years.add(parseInt(yearMatch[0]));
-              }
-            }
-          });
-        });
-        
-        if (years.size > 0) {
-          setAvailableYears(Array.from(years).sort((a, b) => b - a));
-        }
-        
-        // Auto-select month/year from first record if not set
-        if (uploadMonth === null && uploadYear === null && payload.records.length > 0) {
-          const fileName = payload.records[0].fileName || '';
-          console.log('[UPLOADED-ATTENDANCE-UI] Auto-detecting month/year from fileName:', fileName);
-          
-          // Try to extract month and year from filename
-          // Example: "August_2026_Monthly_Attendance_FINAL(1) (1).xlsx"
-          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                             'July', 'August', 'September', 'October', 'November', 'December'];
-          
-          let detectedMonth = null;
-          let detectedYear = null;
-          
-          // Find month name in filename
-          for (let i = 0; i < monthNames.length; i++) {
-            if (fileName.toLowerCase().includes(monthNames[i].toLowerCase())) {
-              detectedMonth = i + 1;
-              break;
-            }
-          }
-          
-          // Find year in filename
-          const yearMatch = fileName.match(/20\d{2}/);
-          if (yearMatch) {
-            detectedYear = parseInt(yearMatch[0]);
-          }
-          
-          console.log('[UPLOADED-ATTENDANCE-UI] Detected from filename:', { detectedMonth, detectedYear });
-          
-          if (detectedMonth && detectedYear) {
-            setUploadMonth(detectedMonth);
-            setUploadYear(detectedYear);
-          } else {
-            // Fallback: use current month/year
-            const now = new Date();
-            setUploadMonth(now.getMonth() + 1);
-            setUploadYear(now.getFullYear());
-          }
-        }
-      }
       
       console.log('[UPLOADED-ATTENDANCE-UI] ========== END ==========');
       
@@ -767,14 +700,11 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
           payload = res.data.data;
         }
         
-        if (payload?.records && payload.records.length > 0) {
+        if (payload?.attendances && payload.attendances.length > 0) {
           const years = new Set<number>();
-          payload.records.forEach((r: any) => {
-            const fileName = r.fileName || '';
-            const yearMatch = fileName.match(/20\d{2}/);
-            if (yearMatch) {
-              years.add(parseInt(yearMatch[0]));
-            }
+          payload.attendances.forEach((r: any) => {
+            const year = new Date(r.date).getUTCFullYear();
+            if (year) years.add(year);
           });
           
           if (years.size > 0) {
@@ -782,35 +712,6 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
             setAvailableYears(yearsArray);
           }
           
-          // Auto-select the latest month/year from first record
-          if (uploadMonth === null && uploadYear === null) {
-            const fileName = payload.records[0].fileName || '';
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                               'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            let detectedMonth = null;
-            let detectedYear = null;
-            
-            for (let i = 0; i < monthNames.length; i++) {
-              if (fileName.toLowerCase().includes(monthNames[i].toLowerCase())) {
-                detectedMonth = i + 1;
-                break;
-              }
-            }
-            
-            const yearMatch = fileName.match(/20\d{2}/);
-            if (yearMatch) {
-              detectedYear = parseInt(yearMatch[0]);
-            }
-            
-            if (detectedMonth && detectedYear) {
-              setUploadMonth(detectedMonth);
-              setUploadYear(detectedYear);
-            } else {
-              setUploadMonth(new Date().getMonth() + 1);
-              setUploadYear(new Date().getFullYear());
-            }
-          }
         }
       } catch (error) {
         console.error('[UPLOADED-ATTENDANCE-UI] Error fetching initial data:', error);
@@ -840,7 +741,9 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
     );
   }
 
-  if (!uploadedData || !uploadedData.records || uploadedData.records.length === 0) {
+  const records = uploadedData?.attendances || [];
+
+  if (!uploadedData || records.length === 0) {
     return (
       <div className="bg-secondary border border-border rounded-2xl p-6">
         <h2 className="text-lg font-bold text-foreground mb-4">Uploaded Attendance</h2>
@@ -882,12 +785,7 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
     );
   }
 
-  // Get all unique columns from records
-  const allColumns = uploadedData.columns || [];
-  const records = uploadedData.records || [];
-  const fileName = records.length > 0 ? records[0].fileName : '';
-
-  console.log('[UPLOADED-ATTENDANCE-UI] Rendering table with', records.length, 'rows and', allColumns.length, 'columns');
+  console.log('[UPLOADED-ATTENDANCE-UI] Rendering', records.length, 'Attendance rows');
 
   return (
     <div className="bg-secondary border border-border rounded-2xl p-6">
@@ -922,14 +820,8 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
           </select>
         </div>
         
-        {fileName && (
-          <div className="text-xs text-muted-foreground font-mono">
-            ðŸ“„ {fileName}
-          </div>
-        )}
-        
         <div className="text-xs text-muted-foreground">
-          Showing complete attendance sheet: {records.length} employees, {allColumns.length} columns
+          Showing BIOMETRIC attendance records for {monthNames[uploadMonth - 1]} {uploadYear}
         </div>
       </div>
 
@@ -938,35 +830,22 @@ function UploadedAttendanceSection({ selectedMonth: parentMonth, selectedYear: p
         <table className="w-full border-collapse min-w-max">
           <thead className="sticky top-0 bg-secondary z-10">
             <tr className="border-b border-border">
-              {allColumns.map((col: string, idx: number) => (
-                <th
-                  key={idx}
-                  className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-4 py-3 border-r border-border whitespace-nowrap bg-secondary"
-                >
-                  {col}
-                </th>
+              {['Date', 'Status', 'Check In', 'Check Out', 'Working Hours', 'Late By', 'Source'].map((column) => (
+                <th key={column} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-4 py-3 border-r border-border whitespace-nowrap bg-secondary">{column}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {records.map((record: any, rowIdx: number) => {
-              const data = record.data || {};
-              
               return (
                 <tr key={record.id || rowIdx} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                  {allColumns.map((col: string, colIdx: number) => {
-                    const value = data[col];
-                    const displayValue = value !== undefined && value !== null && value !== '' ? String(value) : '--';
-                    
-                    return (
-                      <td
-                        key={colIdx}
-                        className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap"
-                      >
-                        {displayValue}
-                      </td>
-                    );
-                  })}
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{formatISTDate(record.date, 'yyyy-MM-dd')}</td>
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{record.status || '--'}</td>
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{formatAttendanceTime(record.checkInTime, 'hh:mm a')}</td>
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{formatAttendanceTime(record.checkOutTime, 'hh:mm a')}</td>
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{formatWorkingHours(record.workingHours)}</td>
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{record.lateBy ?? '--'}</td>
+                  <td className="px-4 py-3 text-xs text-card-foreground border-r border-border whitespace-nowrap">{record.source || '--'}</td>
                 </tr>
               );
             })}

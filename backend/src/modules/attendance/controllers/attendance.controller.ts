@@ -39,6 +39,7 @@ import { RolesGuard, Roles } from '../../../common/guards/roles.guard.js';
 import { UserRole } from '../../../common/constants/index.js';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { getAttendanceBusinessDate } from '../utils/attendance-date.util.js';
+import { AttendanceSource } from '../enums/attendance-source.enum.js';
 import { toZonedTime } from 'date-fns-tz';
 
 @ApiTags('Attendance')
@@ -180,32 +181,35 @@ export class AttendanceController {
     const organizationId = user.organizationId;
     const employeeCode = user.employee.employeeId;
 
-    console.log('[EMPLOYEE-ATTENDANCE] employeeUUID:', employeeUUID);
-    console.log('[EMPLOYEE-ATTENDANCE] employeeCode:', employeeCode);
-    console.log('[EMPLOYEE-ATTENDANCE] organizationId:', organizationId);
+    console.log('[IMPORTED-ATTENDANCE]', { employeeUUID, employeeCode, organizationId });
 
     const now = new Date();
-    const queryMonth = month || now.getMonth() + 1;
-    const queryYear = year || now.getFullYear();
+    const queryMonth = Number(month) || now.getMonth() + 1;
+    const queryYear = Number(year) || now.getFullYear();
 
     // Build date range for the month
     const startDate = new Date(Date.UTC(queryYear, queryMonth - 1, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(queryYear, queryMonth, 1, 0, 0, 0, 0));
 
-    console.log('[EMPLOYEE-ATTENDANCE] startDate:', startDate.toISOString());
-    console.log('[EMPLOYEE-ATTENDANCE] endDate:', endDate.toISOString());
+    console.log('[IMPORTED-ATTENDANCE]', {
+      queryMonth,
+      queryYear,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
 
     // Query ACTUAL Attendance table (NOT RawAttendanceRecord)
     const whereClause = {
       organizationId: organizationId,
       employeeId: employeeUUID, // Use employee UUID (Employee.id)
+      source: AttendanceSource.BIOMETRIC,
       date: {
         gte: startDate,
         lt: endDate,
       },
     };
 
-    console.log('[EMPLOYEE-ATTENDANCE] WHERE clause:', JSON.stringify(whereClause, null, 2));
+    console.log('[IMPORTED-ATTENDANCE] WHERE clause:', JSON.stringify(whereClause, null, 2));
 
     const records = await this.prisma.attendance.findMany({
       where: whereClause,
@@ -220,11 +224,11 @@ export class AttendanceController {
       orderBy: { date: 'asc' },
     });
 
-    console.log('[EMPLOYEE-ATTENDANCE] recordsFound:', records.length);
+    console.log('[IMPORTED-ATTENDANCE] recordsFound:', records.length);
 
     if (records.length > 0) {
       records.forEach(r => {
-        console.log('[EMPLOYEE-ATTENDANCE] record:', {
+        console.log('[IMPORTED-ATTENDANCE] record:', {
           attendanceId: r.id,
           date: r.date.toISOString().split('T')[0],
           status: r.status,
@@ -275,8 +279,8 @@ export class AttendanceController {
       availableMonths: Array.from(availableMonths).sort().reverse(),
     };
 
-    console.log('[EMPLOYEE-ATTENDANCE] Returning:', result.attendances.length, 'records');
-    console.log('[EMPLOYEE-ATTENDANCE] ========== END ==========');
+    console.log('[IMPORTED-ATTENDANCE] Returning:', result.attendances.length, 'records');
+    console.log('[IMPORTED-ATTENDANCE] ========== END ==========');
 
     return result;
   }
