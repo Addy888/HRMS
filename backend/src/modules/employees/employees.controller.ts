@@ -141,6 +141,17 @@ export class EmployeesController {
     return this.employeesService.findAll(query, userId);
   }
 
+  @Get('birthdays')
+  @ApiOperation({ summary: 'Get upcoming employee birthdays with filters' })
+  getBirthdays(
+    @GetUser('id') userId: string,
+    @Query('filter') filter?: 'today' | 'this-week' | 'this-month' | 'upcoming',
+    @Query('departmentId') departmentId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.employeesService.getBirthdays(userId, filter, departmentId, search);
+  }
+
   @Get(':id')
   @Roles(UserRole.HR, UserRole.SUPER_ADMIN)
   @ApiOperation({

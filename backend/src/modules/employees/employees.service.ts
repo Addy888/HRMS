@@ -1734,4 +1734,128 @@ async getChangeHistory(employeeId: string, requestUserId: string) {
       total: filteredHistory.length,
     };
   }
+
+  async getBirthdays(
+    userId: string,
+    filter: 'today' | 'this-week' | 'this-month' | 'upcoming' = 'upcoming',
+    departmentId?: string,
+    search?: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, employee: true },
+    });
+
+    if (!user || !user.organizationId) {
+      throw new UnauthorizedException('User not authenticated or missing organization');
+    }
+
+    const whereClause: any = {
+      organizationId: user.organizationId,
+      dob: { not: null },
+    };
+
+    // Department filtering
+    if (departmentId && departmentId !== 'ALL') {
+      whereClause.departmentId = departmentId;
+    }
+
+    if (search && search.trim().length > 0) {
+      const q = search.trim();
+      whereClause.OR = [
+        { firstName: { contains: q } },
+        { lastName: { contains: q } },
+        { employeeId: { contains: q } },
+      ];
+    }
+
+    const employees = await this.prisma.employee.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        employeeId: true,
+        firstName: true,
+        lastName: true,
+        dob: true,
+        photoUrl: true,
+        department: {
+          select: { id: true, name: true },
+        },
+        designation: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+
+    const processed = employees.map((emp) => {
+      const dob = new Date(emp.dob!);
+      const birthMonth = dob.getMonth();
+      const birthDate = dob.getDate();
+
+      // Next birthday occurrence
+      let nextBday = new Date(currentYear, birthMonth, birthDate);
+      if (nextBday < todayStart) {
+        nextBday = new Date(currentYear + 1, birthMonth, birthDate);
+      }
+
+      const diffMs = nextBday.getTime() - todayStart.getTime();
+      const daysRemaining = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      const isToday = daysRemaining === 0;
+      const formattedDob = `${birthDate} ${monthNames[birthMonth]}`;
+
+      return {
+        id: emp.id,
+        employeeId: emp.employeeId,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        fullName: `${emp.firstName} ${emp.lastName}`.trim(),
+        department: emp.department?.name || 'General',
+        departmentId: emp.department?.id,
+        designation: emp.designation?.name || '',
+        photoUrl: emp.photoUrl,
+        birthdayFormatted: formattedDob,
+        nextBirthdayDate: nextBday.toISOString().split('T')[0],
+        daysRemaining,
+        isToday,
+        birthMonth,
+      };
+    });
+
+    // Chronological order by daysRemaining
+    processed.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+    let filtered = processed;
+    if (filter === 'today') {
+      filtered = processed.filter((p) => p.isToday);
+    } else if (filter === 'this-week') {
+      filtered = processed.filter((p) => p.daysRemaining <= 7);
+    } else if (filter === 'this-month') {
+      filtered = processed.filter(
+        (p) => p.birthMonth === now.getMonth() || p.daysRemaining <= 30,
+      );
+    }
+
+    return {
+      success: true,
+      data: filtered,
+      total: filtered.length,
+      counts: {
+        today: processed.filter((p) => p.isToday).length,
+        thisWeek: processed.filter((p) => p.daysRemaining <= 7).length,
+        thisMonth: processed.filter(
+          (p) => p.birthMonth === now.getMonth() || p.daysRemaining <= 30,
+        ).length,
+        totalUpcoming: processed.length,
+      },
+    };
+  }
 }

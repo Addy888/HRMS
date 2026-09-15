@@ -113,17 +113,19 @@ export class EmployeeSalaryController {
     @Request() req: any,
     @Param('payrollRunId') payrollRunId: string,
   ) {
-    const employeeId = req.user.employeeId;
+    // req.user.employeeId is the Employee DB UUID (from jwt.strategy.ts)
+    const employeeDbId = req.user.employeeId;
 
-    if (!employeeId) {
-      throw new ForbiddenException('Employee ID not found');
+    if (!employeeDbId) {
+      throw new ForbiddenException('Employee profile not found for your account');
     }
 
     const payslipData =
       await this.salarySlipService.generateSalarySlipData(payrollRunId);
 
-    // Verify the payslip belongs to the requesting employee
-    if (payslipData.employee.employeeId !== req.user.employee?.employeeId) {
+    // Security: compare the DB-UUID of the employee who owns this payroll
+    // against the authenticated employee's DB-UUID — prevents ID-swap attacks
+    if (payslipData.employeeDbId !== employeeDbId) {
       throw new ForbiddenException('You can only view your own salary slip');
     }
 

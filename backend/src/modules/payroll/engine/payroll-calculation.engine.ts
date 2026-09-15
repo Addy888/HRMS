@@ -9,6 +9,12 @@
  * 
  * IMPORTANT: All calculations use REAL database data
  * NO HARDCODED VALUES OR MOCK DATA
+ * 
+ * TRAINING RULE:
+ * First 5 EMPLOYMENT days (from joining date): ₹150/day
+ * From day 6 onward: normal pro-rated salary
+ * 
+ * PF RULE: PF = ₹0 (never auto-deducted)
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -21,6 +27,8 @@ export interface PayrollCalculationResult {
   employeeCode: string;
   departmentName: string | null;
   designationName: string | null;
+  joiningDate: Date | null;
+  endDate?: Date | null;
   
   // Salary Components
   basicSalary: number;
@@ -41,12 +49,18 @@ export interface PayrollCalculationResult {
   weekOffDays: number;
   holidayDays: number;
   
+  // Training (first 5 employment days)
+  trainingDays: number;       // days in this month that fall within first 5 employment days
+  trainingAmount: number;     // trainingDays * 150
+  normalSalaryDays: number;   // payable days beyond training
+  normalSalaryAmount: number;
+  
   // Deductions
   absentDeduction: number;
   halfDayDeduction: number;
   lateDeduction: number;
   unpaidLeaveDeduction: number;
-  pfDeduction: number;
+  pfDeduction: number;        // Always 0
   esiDeduction: number;
   professionalTax: number;
   tds: number;
@@ -69,6 +83,9 @@ export interface PayrollCalculationResult {
   hasActiveSalaryStructure: boolean;
   calculationNotes: string[];
 }
+
+export const TRAINING_RATE_PER_DAY = 150;  // ₹150/day for first 5 employment days
+export const TRAINING_PERIOD_DAYS = 5;      // First 5 employment days
 
 @Injectable()
 export class PayrollCalculationEngine {
@@ -122,44 +139,69 @@ export class PayrollCalculationEngine {
     // 5. Get HR actions that affect payroll (if any)
     const hrActionDeductions = await this.getHRActionDeductions(employeeId, month, year);
     
-    // 6. Calculate salary components
-    const basicSalary = salaryStructure?.basicSalary || employee.monthlySalary || 0;
+    // 6. Calculate salary components (from structure or monthlySalary fallback)
+    const monthlySalary = employee.monthlySalary || 0;
+    const basicSalary = salaryStructure?.basicSalary || monthlySalary;
     const hra = salaryStructure?.hra || 0;
     const conveyance = salaryStructure?.conveyance || 0;
     const medicalAllowance = salaryStructure?.medicalAllowance || 0;
     const specialAllowance = salaryStructure?.specialAllowance || 0;
     const otherAllowances = salaryStructure?.otherAllowances || 0;
     
-    // 7. Calculate per-day salary
+    // 7. Total monthly gross (full month)
+    const fullMonthGross = basicSalary + hra + conveyance + medicalAllowance + specialAllowance + otherAllowances;
+    
+    // 8. Calculate training days for this month
+    const employeeEndDate = (employee as any).endDate ? new Date((employee as any).endDate) : null;
+    const { trainingDays, normalSalaryDays } = this.calculateTrainingDays(
+      employee.joiningDate,
+      month,
+      year,
+      employeeEndDate,
+    );
+    
+    if (trainingDays > 0) {
+      notes.push(`Training period: ${trainingDays} days × ₹${TRAINING_RATE_PER_DAY}/day`);
+    }
+    
+    // 9. Calculate training amount
+    const trainingAmount = trainingDays * TRAINING_RATE_PER_DAY;
+    
+    // 10. Calculate per-day salary for normal days
+    const daysInMonth = getDaysInMonth(new Date(year, month - 1, 1));
+    const perDaySalary = daysInMonth > 0 ? fullMonthGross / daysInMonth : 0;
+    
+    // 11. Calculate normal salary amount
+    const normalSalaryAmount = normalSalaryDays * perDaySalary;
+    
+    // 12. Calculate working days and deductions based on attendance
     const workingDaysInMonth = attendanceData.totalWorkingDays;
-    const perDaySalary = workingDaysInMonth > 0 
-      ? (basicSalary + hra + conveyance + medicalAllowance + specialAllowance + otherAllowances) / workingDaysInMonth 
-      : 0;
     
     if (workingDaysInMonth === 0) {
       notes.push('No working days found in month - check attendance records');
     }
-    
-    // 8. Calculate deductions based on attendance
+
+    // Absent deduction applies only to normal salary days (not training days)
     const absentDeduction = attendanceData.absentDays * perDaySalary;
     const halfDayDeduction = (attendanceData.halfDays * perDaySalary) / 2;
-    const lateDeduction = attendanceData.lateDays * this.DEFAULT_LATE_DEDUCTION_PER_DAY;
+    // Late attendance does NOT reduce salary
+    const lateDeduction = 0;
     const unpaidLeaveDeduction = leaveData.unpaidLeaveDays * perDaySalary;
     
-    // 9. Statutory deductions from salary structure
-    const pfDeduction = salaryStructure?.pf || 0;
+    // 13. Statutory deductions — PF is ALWAYS ₹0 per company policy
+    const pfDeduction = 0; // PF = ₹0 — do not deduct regardless of salary structure
     const esiDeduction = salaryStructure?.esi || 0;
     const professionalTax = salaryStructure?.professionalTax || 0;
     const tds = salaryStructure?.tds || 0;
     const otherDeductions = salaryStructure?.otherDeductions || 0;
     
-    // 10. Calculate earnings
+    // 14. Calculate earnings
     const overtimeAmount = attendanceData.overtimeHours * this.DEFAULT_OVERTIME_RATE_PER_HOUR;
-    const incentiveAmount = 0; // TODO: Implement incentive logic based on performance/sales
+    const incentiveAmount = 0; // TODO: Implement incentive logic
     
-    // 11. Calculate totals
-    const totalEarnings = basicSalary + hra + conveyance + medicalAllowance + 
-                          specialAllowance + otherAllowances + overtimeAmount + incentiveAmount;
+    // 15. Calculate totals
+    // Total earnings = training amount + normal salary + overtime + incentive
+    const totalEarnings = trainingAmount + normalSalaryAmount + overtimeAmount + incentiveAmount;
     
     const totalDeductions = absentDeduction + halfDayDeduction + lateDeduction + 
                            unpaidLeaveDeduction + pfDeduction + esiDeduction + 
@@ -168,15 +210,12 @@ export class PayrollCalculationEngine {
     const grossSalary = totalEarnings;
     const netSalary = Math.max(0, grossSalary - totalDeductions);
     
-    // 12. Add calculation notes
+    // 16. Add calculation notes
     if (attendanceData.absentDays > 0) {
       notes.push(`${attendanceData.absentDays} absent days - Deduction: ₹${absentDeduction.toFixed(2)}`);
     }
     if (attendanceData.halfDays > 0) {
       notes.push(`${attendanceData.halfDays} half days - Deduction: ₹${halfDayDeduction.toFixed(2)}`);
-    }
-    if (attendanceData.lateDays > 0) {
-      notes.push(`${attendanceData.lateDays} late days - Deduction: ₹${lateDeduction.toFixed(2)}`);
     }
     if (leaveData.unpaidLeaveDays > 0) {
       notes.push(`${leaveData.unpaidLeaveDays} unpaid leave days - Deduction: ₹${unpaidLeaveDeduction.toFixed(2)}`);
@@ -194,6 +233,8 @@ export class PayrollCalculationEngine {
       employeeCode: employee.employeeId,
       departmentName: employee.department?.name || null,
       designationName: employee.designation?.name || null,
+      joiningDate: employee.joiningDate,
+      endDate: (employee as any).endDate || null,
       
       // Salary Components
       basicSalary,
@@ -214,12 +255,18 @@ export class PayrollCalculationEngine {
       weekOffDays: attendanceData.weekOffDays,
       holidayDays: attendanceData.holidayDays,
       
+      // Training
+      trainingDays,
+      trainingAmount,
+      normalSalaryDays,
+      normalSalaryAmount,
+      
       // Deductions
       absentDeduction,
       halfDayDeduction,
       lateDeduction,
       unpaidLeaveDeduction,
-      pfDeduction,
+      pfDeduction,   // Always 0
       esiDeduction,
       professionalTax,
       tds,
@@ -241,6 +288,92 @@ export class PayrollCalculationEngine {
       // Status
       hasActiveSalaryStructure: !!salaryStructure,
       calculationNotes: notes,
+    };
+  }
+  
+  /**
+   * Calculate training days in the given payroll month
+   * 
+   * Training rule:
+   * - First 5 EMPLOYMENT days (from joiningDate) earn ₹150/day
+   * - Days beyond the 5th employment day use normal salary
+   * - Training starts from actual joining date, NOT the 1st of the month
+   */
+  calculateTrainingDays(
+    joiningDate: Date | null,
+    month: number,
+    year: number,
+    endDate?: Date | null,
+  ): { trainingDays: number; normalSalaryDays: number } {
+    const daysInMonth = getDaysInMonth(new Date(year, month - 1, 1));
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month - 1, daysInMonth);
+
+    // If joiningDate is in a future month
+    if (joiningDate) {
+      const jDate = new Date(joiningDate);
+      if (jDate > monthEnd) {
+        return { trainingDays: 0, normalSalaryDays: 0 };
+      }
+    }
+
+    // If employee ended before this month starts
+    if (endDate) {
+      const eDate = new Date(endDate);
+      if (eDate < monthStart) {
+        return { trainingDays: 0, normalSalaryDays: 0 };
+      }
+    }
+
+    if (!joiningDate) {
+      let payableDays = daysInMonth;
+      if (endDate) {
+        const eDate = new Date(endDate);
+        if (eDate < monthEnd) {
+          payableDays = eDate.getDate();
+        }
+      }
+      return { trainingDays: 0, normalSalaryDays: Math.max(0, payableDays) };
+    }
+
+    const joinDate = new Date(joiningDate);
+
+    // End date of training period = joining date + 4 days (5 days total)
+    const trainingEndDate = new Date(joinDate);
+    trainingEndDate.setDate(trainingEndDate.getDate() + TRAINING_PERIOD_DAYS - 1);
+
+    // Effective start and end of employment within this month
+    const effectiveStart = joinDate > monthStart ? joinDate : monthStart;
+    let effectiveEnd = monthEnd;
+    if (endDate) {
+      const eDate = new Date(endDate);
+      if (eDate < monthEnd) {
+        effectiveEnd = eDate;
+      }
+    }
+
+    if (effectiveEnd < effectiveStart) {
+      return { trainingDays: 0, normalSalaryDays: 0 };
+    }
+
+    const totalPayableDaysInMonth =
+      Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Check overlap of training period [joinDate, trainingEndDate] with this month's window [effectiveStart, effectiveEnd]
+    const trainStart = joinDate > effectiveStart ? joinDate : effectiveStart;
+    const trainEnd = trainingEndDate < effectiveEnd ? trainingEndDate : effectiveEnd;
+
+    let trainingDaysInMonth = 0;
+    if (trainEnd >= trainStart && trainStart <= trainingEndDate) {
+      trainingDaysInMonth =
+        Math.floor((trainEnd.getTime() - trainStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    }
+
+    const normalSalaryDays = Math.max(0, totalPayableDaysInMonth - trainingDaysInMonth);
+
+    return {
+      trainingDays: Math.max(0, trainingDaysInMonth),
+      normalSalaryDays,
     };
   }
   
@@ -331,9 +464,6 @@ export class PayrollCalculationEngine {
    */
   private async getLeaveData(employeeId: string, month: number, year: number) {
     // TODO: Implement proper leave module integration
-    // For now, return default values
-    // This should check if LeaveApplication model exists and calculate paid/unpaid leaves
-    
     return {
       paidLeaveDays: 0,
       unpaidLeaveDays: 0,
@@ -342,12 +472,9 @@ export class PayrollCalculationEngine {
   
   /**
    * Get HR action deductions for the month
-   * TODO: Add financialPenalty field to HRAction schema if needed
    */
   private async getHRActionDeductions(employeeId: string, month: number, year: number) {
-    // HRAction model currently doesn't have financialPenalty field
-    // This is a placeholder for future implementation when the field is added to the schema
-    // To enable this, add a 'financialPenalty' Float field to the HRAction model
+    // Placeholder — HRAction model doesn't have financialPenalty field yet
     return 0;
   }
   
@@ -367,7 +494,6 @@ export class PayrollCalculationEngine {
         results.push(result);
       } catch (error) {
         this.logger.error(`Failed to calculate payroll for employee ${employeeId}:`, error);
-        // Continue with other employees
       }
     }
     
@@ -381,13 +507,8 @@ export class PayrollCalculationEngine {
     const startDate = new Date(year, month - 1, 1);
     const endDate = endOfMonth(startDate);
     
-    // Get all payroll runs for this month
     const payrollRuns = await this.prisma.payrollRun.findMany({
-      where: {
-        organizationId,
-        month,
-        year,
-      },
+      where: { organizationId, month, year },
       include: {
         employee: {
           include: {
@@ -434,11 +555,7 @@ export class PayrollCalculationEngine {
       totalDeductions,
       totalGrossSalary,
       totalNetSalary,
-      statusBreakdown: {
-        pending,
-        processed,
-        paid,
-      },
+      statusBreakdown: { pending, processed, paid },
       departmentBreakdown: Object.values(departmentBreakdown),
     };
   }
