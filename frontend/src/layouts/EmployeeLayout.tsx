@@ -16,7 +16,6 @@ import {
   LifeBuoy,
   DollarSign,
   AlertTriangle,
-  CheckSquare,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import NotificationBell from '@/components/NotificationBell';
@@ -91,7 +90,6 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
     { href: '/employee', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: '/employee/profile', label: 'My Profile', icon: <User className="w-5 h-5" /> },
     { href: '/employee/attendance', label: 'Attendance', icon: <Clock className="w-5 h-5" /> },
-    { href: '/employee/tasks', label: 'My Tasks & Activity', icon: <CheckSquare className="w-5 h-5 text-blue-500" /> },
     { href: '/employee/hr-actions', label: 'Warnings', icon: <AlertTriangle className="w-5 h-5" /> },
     { href: '/employee/documents', label: 'Documents', icon: <FileText className="w-5 h-5" /> },
     { href: '/employee/payslips', label: 'Payslips', icon: <DollarSign className="w-5 h-5" /> },

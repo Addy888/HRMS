@@ -16,7 +16,6 @@ import {
   ArrowRight,
   Briefcase,
   Cake,
-  CheckSquare,
   MapPin,
   Calendar,
   Sparkles
@@ -47,16 +46,6 @@ export default function HRDashboard() {
       const response = await api.get('/employees/birthdays?filter=upcoming');
       const resData = response.data?.data ?? response.data;
       return Array.isArray(resData) ? resData : (resData?.data || []);
-    },
-    enabled: Boolean(isHydrated && isAuthenticated && isHRRole),
-    retry: 1,
-  });
-
-  const { data: taskSummary, isLoading: isTasksLoading } = useQuery({
-    queryKey: ['hr-task-summary-widget'],
-    queryFn: async () => {
-      const response = await api.get('/tasks/summary');
-      return response.data?.data ?? response.data;
     },
     enabled: Boolean(isHydrated && isAuthenticated && isHRRole),
     retry: 1,
@@ -124,174 +113,94 @@ export default function HRDashboard() {
           ))}
         </div>
 
-        {/* Feature Widgets Row: Upcoming Birthdays & Team Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Upcoming Birthdays Widget */}
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                <Cake className="w-5 h-5 text-amber-500" />
-                Upcoming Birthdays
-              </h2>
-              <Link href="/hr/birthdays" className="text-xs text-blue-600 hover:text-blue-500 flex items-center gap-1 font-semibold">
-                View All <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+        {/* Feature Widget: Upcoming Birthdays */}
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+              <Cake className="w-5 h-5 text-amber-500" />
+              Upcoming Birthdays
+            </h2>
+            <Link href="/hr/birthdays" className="text-xs text-blue-600 hover:text-blue-500 flex items-center gap-1 font-semibold">
+              View All <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-            {/* Today's Birthday Highlight Banner */}
-            {todayBirthdays.length > 0 && (
-              <div className="space-y-2">
-                {todayBirthdays.map((bday: any) => (
-                  <div
-                    key={bday.id}
-                    className="p-3.5 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent border border-amber-500/30 rounded-xl flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-lg">
-                        🎂
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-amber-500 uppercase tracking-wide flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" /> Birthday Today
-                          </span>
-                        </div>
-                        <h4 className="text-sm font-bold text-foreground">
-                          <Link href={`/hr/employees/${bday.id}`} className="hover:underline">
-                            {bday.fullName}
-                          </Link>
-                        </h4>
-                        <span className="text-xs text-muted-foreground">
-                          {bday.employeeId} • {bday.department}
+          {/* Today's Birthday Highlight Banner */}
+          {todayBirthdays.length > 0 && (
+            <div className="space-y-2">
+              {todayBirthdays.map((bday: any) => (
+                <div
+                  key={bday.id}
+                  className="p-3.5 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent border border-amber-500/30 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-lg">
+                      🎂
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-amber-500 uppercase tracking-wide flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Birthday Today
                         </span>
                       </div>
-                    </div>
-                    <span className="px-2.5 py-1 bg-amber-500 text-foreground font-bold text-xs rounded-lg shadow-sm">
-                      Today!
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Upcoming List */}
-            <div className="space-y-2.5">
-              {isBirthdaysLoading ? (
-                Array.from({ length: 3 }).map((_, idx) => (
-                  <div key={idx} className="h-12 bg-secondary animate-pulse rounded-xl" />
-                ))
-              ) : upcomingBirthdays.length > 0 ? (
-                upcomingBirthdays.map((emp: any) => (
-                  <div
-                    key={emp.id}
-                    className="flex justify-between items-center p-2.5 bg-card hover:bg-secondary/50 border border-border rounded-xl transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center text-xs font-bold text-foreground">
-                        {emp.firstName.charAt(0)}{emp.lastName ? emp.lastName.charAt(0) : ''}
-                      </div>
-                      <div>
-                        <Link href={`/hr/employees/${emp.id}`} className="text-sm font-semibold text-foreground hover:text-blue-500 transition-colors">
-                          {emp.fullName}
+                      <h4 className="text-sm font-bold text-foreground">
+                        <Link href={`/hr/employees/${bday.id}`} className="hover:underline">
+                          {bday.fullName}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground">
-                          {emp.employeeId} • {emp.department}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-semibold text-foreground">
-                        {emp.birthdayFormatted}
+                      </h4>
+                      <span className="text-xs text-muted-foreground">
+                        {bday.employeeId} • {bday.department}
                       </span>
-                      <p className="text-[11px] text-amber-500 font-medium">
-                        {emp.daysRemaining === 1 ? 'Tomorrow' : `${emp.daysRemaining} days remaining`}
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 bg-amber-500 text-foreground font-bold text-xs rounded-lg shadow-sm">
+                    Today!
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upcoming List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {isBirthdaysLoading ? (
+              Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="h-14 bg-secondary animate-pulse rounded-xl" />
+              ))
+            ) : upcomingBirthdays.length > 0 ? (
+              upcomingBirthdays.map((emp: any) => (
+                <div
+                  key={emp.id}
+                  className="flex justify-between items-center p-3 bg-secondary/30 hover:bg-secondary/60 border border-border rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-xs font-bold text-foreground">
+                      {emp.firstName.charAt(0)}{emp.lastName ? emp.lastName.charAt(0) : ''}
+                    </div>
+                    <div>
+                      <Link href={`/hr/employees/${emp.id}`} className="text-sm font-semibold text-foreground hover:text-blue-500 transition-colors">
+                        {emp.fullName}
+                      </Link>
+                      <p className="text-[11px] text-muted-foreground">
+                        {emp.employeeId} • {emp.department}
                       </p>
                     </div>
                   </div>
-                ))
-              ) : todayBirthdays.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground text-sm">
-                  No upcoming birthdays recorded.
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Team Activity & Visit Tracking Widget */}
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-indigo-500" />
-                Team Activity & Visits
-              </h2>
-              <Link href="/hr/tasks" className="text-xs text-blue-600 hover:text-blue-500 flex items-center gap-1 font-semibold">
-                View All <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Today's Snapshot */}
-            <div className="p-3 bg-secondary/40 border border-border rounded-xl">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Today's Overview
-              </div>
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="p-2 bg-card rounded-lg border border-border">
-                  <div className="text-lg font-bold text-foreground">
-                    {isTasksLoading ? '-' : (taskSummary?.today?.activities ?? 0)}
+                  <div className="text-right">
+                    <span className="text-xs font-semibold text-foreground">
+                      {emp.birthdayFormatted}
+                    </span>
+                    <p className="text-[11px] text-amber-500 font-medium">
+                      {emp.daysRemaining === 1 ? 'Tomorrow' : `${emp.daysRemaining} days remaining`}
+                    </p>
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Activities</div>
                 </div>
-                <div className="p-2 bg-card rounded-lg border border-border">
-                  <div className="text-lg font-bold text-emerald-500">
-                    {isTasksLoading ? '-' : (taskSummary?.today?.completed ?? 0)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">Completed</div>
-                </div>
-                <div className="p-2 bg-card rounded-lg border border-border">
-                  <div className="text-lg font-bold text-amber-500">
-                    {isTasksLoading ? '-' : (taskSummary?.today?.pending ?? 0)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">Pending</div>
-                </div>
-                <div className="p-2 bg-card rounded-lg border border-border">
-                  <div className="text-lg font-bold text-indigo-500">
-                    {isTasksLoading ? '-' : (taskSummary?.today?.visits ?? 0)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">Total Visits</div>
-                </div>
+              ))
+            ) : todayBirthdays.length === 0 ? (
+              <div className="col-span-full text-center py-6 text-muted-foreground text-sm">
+                No upcoming birthdays recorded.
               </div>
-            </div>
-
-            {/* Overall Summary Stats */}
-            <div className="grid grid-cols-3 gap-3 pt-1">
-              <div className="p-3 bg-card border border-border rounded-xl">
-                <div className="text-[11px] text-muted-foreground">All Activities</div>
-                <div className="text-xl font-extrabold text-foreground mt-0.5">
-                  {isTasksLoading ? '-' : (taskSummary?.totalActivities ?? 0)}
-                </div>
-              </div>
-              <div className="p-3 bg-card border border-border rounded-xl">
-                <div className="text-[11px] text-muted-foreground">This Week</div>
-                <div className="text-xl font-extrabold text-indigo-500 mt-0.5">
-                  {isTasksLoading ? '-' : (taskSummary?.activitiesThisWeek ?? 0)}
-                </div>
-              </div>
-              <div className="p-3 bg-card border border-border rounded-xl">
-                <div className="text-[11px] text-muted-foreground">Total Visits</div>
-                <div className="text-xl font-extrabold text-emerald-500 mt-0.5">
-                  {isTasksLoading ? '-' : (taskSummary?.totalVisits ?? 0)}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-1 flex justify-end">
-              <Link
-                href="/hr/tasks"
-                className="text-xs font-semibold text-indigo-500 hover:text-indigo-400 flex items-center gap-1"
-              >
-                Inspect work activity logs & visit reports <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            ) : null}
           </div>
         </div>
 

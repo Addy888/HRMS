@@ -20,7 +20,6 @@ import { HRActionsModule } from './modules/hr-actions/hr-actions.module.js';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module.js';
 import { PlatformModule } from './modules/platform/platform.module.js';
 import { UploadsModule } from './modules/uploads/uploads.module.js';
-import { TasksModule } from './modules/tasks/tasks.module.js';
 
 @Module({
   imports: [
@@ -46,7 +45,6 @@ import { TasksModule } from './modules/tasks/tasks.module.js';
     SuperAdminModule,
     PlatformModule, // ✅ Platform Super Admin module
     UploadsModule, // ✅ File serving module
-    TasksModule, // ✅ Tasks & Activity Tracking module
   ],
   controllers: [HealthController],
 })
