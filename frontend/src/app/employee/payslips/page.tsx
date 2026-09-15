@@ -28,27 +28,45 @@ interface PayslipDetail {
   payslipId?: string;
   payslipNumber?: string;
   generatedAt?: string;
+  title?: string;
+  isFullAndFinal?: boolean;
+  company?: {
+    name: string;
+    logoUrl?: string;
+    address?: string;
+  };
   employee: {
     employeeId: string;
     name: string;
     email?: string;
     department?: string;
     designation?: string;
+    joiningDate?: string | null;
+    joiningDateFormatted?: string;
+    endDate?: string | null;
+    endDateFormatted?: string;
   };
   period: {
     month: number;
     year: number;
     monthName: string;
+    payPeriod?: string;
   };
-  earnings: {
-    basicSalary: number;
-    allowances: number;
-    grossSalary: number;
+  salary?: {
+    monthlySalary: number;
+    annualCtcLpa: string;
+    previousSalary: number | null;
+    currentMonthSalary: number;
+    netSalary: number;
+    deductions: number;
   };
-  deductions: {
-    total: number;
+  payment?: {
+    status: string;
+    rawStatus: string;
+    paymentDate: string | null;
   };
   netSalary: number;
+  grossSalary?: number;
   status: string;
 }
 
@@ -96,15 +114,29 @@ export default function EmployeePayslipsPage() {
   const isLoading = salaryLoading || statusLoading || historyLoading;
   const isError = salaryError || statusError || historyError;
 
-  const handleDownload = async (payslipId?: string) => {
-    if (payslipId) {
-      try {
-        await api.get(`/salary-slip/${payslipId}/download`);
-      } catch (err) {
-        console.warn('Could not record download event:', err);
-      }
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (payrollRunId: string, filenameLabel?: string) => {
+    try {
+      setDownloadingId(payrollRunId);
+      const response = await api.get(`/salary-slip/payroll/${payrollRunId}/pdf`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `salary-slip-${filenameLabel || payrollRunId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn('Could not download PDF directly, opening print view:', err);
+      window.print();
+    } finally {
+      setDownloadingId(null);
     }
-    window.print();
   };
 
   const getStatusIcon = (status: string) => {
@@ -299,6 +331,20 @@ export default function EmployeePayslipsPage() {
                     >
                       <Eye className="w-3.5 h-3.5" />
                       View Slip
+                    </button>
+
+                    <button
+                      onClick={() => handleDownloadPdf(record.payrollRunId, record.period?.replace(/\s+/g, '-'))}
+                      disabled={downloadingId === record.payrollRunId}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors disabled:opacity-50"
+                      title="Download PDF"
+                    >
+                      {downloadingId === record.payrollRunId ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Download className="w-3.5 h-3.5" />
+                      )}
+                      Download
                     </button>
                   </div>
                 </div>
@@ -497,13 +543,27 @@ export default function EmployeePayslipsPage() {
 
               <div className="flex items-center gap-2">
                 {payslipDetail && (
-                  <button
-                    onClick={() => handleDownload(payslipDetail.payslipId)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors"
-                  >
-                    <Printer className="w-4 h-4" />
-                    Print / Save
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleDownloadPdf(selectedPayrollRunId!, `${payslipDetail.period.monthName}-${payslipDetail.period.year}`)}
+                      disabled={downloadingId === selectedPayrollRunId}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50"
+                    >
+                      {downloadingId === selectedPayrollRunId ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Print
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => setSelectedPayrollRunId(null)}
@@ -521,111 +581,178 @@ export default function EmployeePayslipsPage() {
                 <p className="text-sm text-muted-foreground">Loading salary slip details...</p>
               </div>
             ) : payslipDetail ? (
-              <div className="p-6 space-y-6" id="printable-payslip">
-                {/* Organization & Slip Info */}
-                <div className="bg-secondary/40 border border-border rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4">
+              <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto bg-card text-foreground" id="printable-payslip">
+                {/* Company Header */}
+                <div className="border-b border-border pb-4">
+                  <h3 className="text-2xl font-black tracking-tight text-foreground">FCS Firstclose Solution</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Human Resources & Payroll Department</p>
+                </div>
+
+                {/* Document Title Banner */}
+                <div className="bg-secondary/40 border border-border rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
-                    <span className="font-heading text-base font-bold text-foreground">FCS HRMS</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">Salary Slip for Period</p>
-                    <p className="text-sm font-semibold text-foreground mt-1">
+                    <h4 className="text-base font-bold text-foreground">
+                      {payslipDetail.title || (payslipDetail.isFullAndFinal ? 'FULL & FINAL SETTLEMENT' : 'SALARY SLIP')}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
                       {payslipDetail.period.monthName} {payslipDetail.period.year}
                     </p>
                   </div>
-                  <div className="sm:text-right">
+                  <div className="text-xs text-muted-foreground sm:text-right">
                     {payslipDetail.payslipNumber && (
-                      <p className="text-xs font-mono text-muted-foreground">
-                        Slip #: <span className="text-foreground font-semibold">{payslipDetail.payslipNumber}</span>
-                      </p>
+                      <p><span className="font-semibold text-foreground">Slip No:</span> {payslipDetail.payslipNumber}</p>
                     )}
-                    <div className="mt-2">
-                      {getStatusBadge(payslipDetail.status)}
-                    </div>
+                    <p><span className="font-semibold text-foreground">Generated:</span> {payslipDetail.generatedAt ? new Date(payslipDetail.generatedAt).toLocaleDateString('en-GB') : 'N/A'}</p>
                   </div>
                 </div>
 
-                {/* Employee Details Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-secondary/20 rounded-xl border border-border">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Employee</span>
-                    <span className="text-sm font-bold text-foreground">{payslipDetail.employee.name}</span>
+                {/* Employee Information Section */}
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <div className="bg-slate-900 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                    Employee Information
                   </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Employee ID</span>
-                    <span className="text-sm font-mono font-semibold text-foreground">{payslipDetail.employee.employeeId}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Department</span>
-                    <span className="text-sm text-foreground">{payslipDetail.employee.department || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Designation</span>
-                    <span className="text-sm text-foreground">{payslipDetail.employee.designation || 'N/A'}</span>
-                  </div>
-                </div>
-
-                {/* Earnings & Deductions Tables */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Earnings */}
-                  <div className="border border-border rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <TrendingUp className="w-4 h-4" /> Earnings
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Basic Salary</span>
+                  <div className="divide-y divide-border text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Employee Name:</span>
+                        <span className="font-semibold text-foreground">{payslipDetail.employee.name}</span>
+                      </div>
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Joining Date:</span>
                         <span className="font-semibold text-foreground">
-                          ₹{payslipDetail.earnings.basicSalary.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Allowances</span>
-                        <span className="font-semibold text-foreground">
-                          ₹{payslipDetail.earnings.allowances.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="border-t border-border pt-2 flex justify-between font-bold text-foreground">
-                        <span>Gross Salary</span>
-                        <span className="text-emerald-600">
-                          ₹{payslipDetail.earnings.grossSalary.toLocaleString('en-IN')}
+                          {payslipDetail.employee.joiningDateFormatted || (payslipDetail.employee.joiningDate ? new Date(payslipDetail.employee.joiningDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A')}
                         </span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Deductions */}
-                  <div className="border border-border rounded-xl p-4">
-                    <h4 className="text-xs font-bold text-rose-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <TrendingDown className="w-4 h-4" /> Deductions
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Total Deductions</span>
-                        <span className="font-semibold text-rose-400">
-                          ₹{payslipDetail.deductions.total.toLocaleString('en-IN')}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border bg-secondary/10">
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Employee ID:</span>
+                        <span className="font-mono font-semibold text-foreground">{payslipDetail.employee.employeeId}</span>
+                      </div>
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">End Date:</span>
+                        <span className="font-semibold text-foreground">
+                          {payslipDetail.employee.endDateFormatted || (payslipDetail.employee.endDate ? new Date(payslipDetail.employee.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A')}
                         </span>
                       </div>
-                      <div className="border-t border-border pt-2 flex justify-between font-bold text-foreground">
-                        <span>Total Deductions</span>
-                        <span className="text-rose-400">
-                          ₹{payslipDetail.deductions.total.toLocaleString('en-IN')}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Designation:</span>
+                        <span className="font-semibold text-foreground">{payslipDetail.employee.designation || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Pay Period:</span>
+                        <span className="font-semibold text-foreground">{payslipDetail.period.payPeriod || `${payslipDetail.period.monthName} ${payslipDetail.period.year}`}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border bg-secondary/10">
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Department:</span>
+                        <span className="font-semibold text-foreground">{payslipDetail.employee.department || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Email:</span>
+                        <span className="text-foreground">{payslipDetail.employee.email || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Salary Details Section */}
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <div className="bg-slate-900 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                    Salary Details
+                  </div>
+                  <div className="divide-y divide-border text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Monthly Salary:</span>
+                        <span className="font-semibold text-foreground">
+                          ₹{(payslipDetail.salary?.monthlySalary ?? payslipDetail.grossSalary ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Annual CTC / LPA:</span>
+                        <span className="font-semibold text-foreground">
+                          {payslipDetail.salary?.annualCtcLpa || `₹${(((payslipDetail.salary?.monthlySalary ?? payslipDetail.grossSalary ?? 0) * 12) / 100000).toFixed(2)} LPA`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border bg-secondary/10">
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">Previous / Last Salary:</span>
+                        <span className="font-semibold text-foreground">
+                          {payslipDetail.salary?.previousSalary !== undefined && payslipDetail.salary.previousSalary !== null
+                            ? `₹${payslipDetail.salary.previousSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="p-3 flex justify-between">
+                        <span className="text-muted-foreground font-medium">
+                          {payslipDetail.isFullAndFinal ? 'Final Applicable Salary:' : 'Current Month Salary:'}
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          ₹{(payslipDetail.salary?.currentMonthSalary ?? payslipDetail.netSalary ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Net Take Home */}
-                <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-center justify-between">
+                {/* Payment Details Section */}
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <div className="bg-slate-900 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                    Payment Details
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border text-xs">
+                    <div className="p-3 flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">Payment Status:</span>
+                      <span className="font-semibold px-2.5 py-0.5 rounded-full text-[11px] bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                        {payslipDetail.payment?.status || (payslipDetail.status === 'PAID' ? 'Paid' : payslipDetail.status === 'PROCESSED' ? 'Processed' : 'Pending')}
+                      </span>
+                    </div>
+                    <div className="p-3 flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">Payment Date:</span>
+                      <span className="font-semibold text-foreground">
+                        {payslipDetail.payment?.paymentDate || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Net Payable Salary Highlight Box */}
+                <div className="border-2 border-slate-900 rounded-xl p-4 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wider">Net Salary Payable</p>
-                    <p className="text-[11px] text-muted-foreground">Gross Salary - Total Deductions</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                      {payslipDetail.isFullAndFinal ? 'Final Net Payable Salary' : 'Net Payable Salary / In-Hand'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">Authorized payable amount</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-extrabold text-emerald-600 font-mono">
-                      ₹{payslipDetail.netSalary.toLocaleString('en-IN')}
+                    <p className="text-2xl font-black text-slate-900 dark:text-white font-mono">
+                      ₹{payslipDetail.netSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
+
+                {/* Sign-off Block */}
+                <div className="border border-border rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 bg-secondary/10">
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Authorized By:</p>
+                    <p className="text-sm font-bold text-foreground mt-0.5">FCS Firstclose Solution</p>
+                    <p className="text-xs text-muted-foreground">HR Department</p>
+                  </div>
+                  <div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 w-full sm:w-auto">
+                    <div className="w-36 border-b border-muted-foreground/50 mb-1 ml-auto hidden sm:block"></div>
+                    <p className="text-xs font-semibold text-muted-foreground">Authorized Signatory</p>
+                  </div>
+                </div>
+
+                {/* Footer text */}
+                <p className="text-[10px] text-center text-muted-foreground pt-2">
+                  This is a computer-generated salary slip and does not require a physical signature.
+                </p>
               </div>
             ) : (
               <div className="py-12 text-center text-muted-foreground">

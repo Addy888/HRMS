@@ -46,6 +46,7 @@ model Organization {
   attendanceImports    AttendanceImportHistory[]
   rawAttendanceRecords RawAttendanceRecord[] // ✅ NEW: Flexible attendance imports
   companyPolicies      CompanyPolicy[]
+  employeeTasks        EmployeeTask[] // ✅ NEW: Tasks & Activity module
 }
 
 model Role {
@@ -227,6 +228,9 @@ model Employee {
 
   // Performance Management Relations
   performanceReviews PerformanceReview[] @relation("EmployeePerformanceReviews")
+
+  // Tasks & Activity Relations
+  tasks EmployeeTask[] @relation("EmployeeTasks") // ✅ NEW: Tasks & Activity module
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -835,10 +839,11 @@ model AttendanceHistory {
   field         String // MANUAL_CREATE, MANUAL_UPDATE, UPDATE, CHECK_IN, CHECK_OUT, STATUS_CHANGE
   oldValue      String?  @db.Text
   newValue      String?  @db.Text
-  reason        String?  @map("changeReason") @db.VarChar(191)
+  reason        String?  @db.Text
   changedBy     String? // User ID
   changedByUser User?    @relation(fields: [changedBy], references: [id], onDelete: SetNull)
-  changedAt     DateTime @map("createdAt") @default(now())
+  createdAt     DateTime @default(now())
+  changedAt     DateTime @default(now())
 
   @@index([attendanceId])
   @@index([changedBy])
@@ -2587,4 +2592,54 @@ model HRActionAuditLog {
 
   @@index([hrActionId])
   @@index([userId])
+}
+
+// ==========================================
+// TASKS & ACTIVITY TRACKING MODULE
+// ==========================================
+
+model EmployeeTask {
+  id              String       @id @default(uuid())
+  organizationId  String // ✅ Multi-tenant: Tasks belong to organizations
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee     @relation("EmployeeTasks", fields: [employeeId], references: [id], onDelete: Cascade)
+  createdByUserId String? // HR User ID or null (self-created by employee)
+
+  taskType    String // TASK | VISIT | DAILY_ACTIVITY
+  title       String
+  description String?  @db.Text
+  priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  status      String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | CANCELLED
+
+  // Scheduling
+  scheduledDate DateTime? @db.Date
+  dueDate       DateTime? @db.Date
+  completedAt   DateTime?
+
+  // Visit-specific fields
+  visitCount         Int?      @default(1)
+  visitClientName    String?
+  visitLocation      String?
+  visitPurpose       String?   @db.Text
+  visitOutcome       String?   @db.Text
+  followUpRequired   Boolean?  @default(false)
+  visitFollowUpDate  DateTime? @db.Date
+  visitFollowUpNotes String?   @db.Text
+
+  // Daily Activity specific
+  activityDate DateTime? @db.Date
+  workHours    Float?
+  remarks      String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([createdByUserId])
+  @@index([status])
+  @@index([taskType])
+  @@index([dueDate])
+  @@index([scheduledDate])
 }

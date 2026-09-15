@@ -385,9 +385,9 @@ export class SalaryStructureService {
 
     if (filters.search) {
       where.OR = [
-        { firstName: { contains: filters.search, mode: 'insensitive' } },
-        { lastName: { contains: filters.search, mode: 'insensitive' } },
-        { employeeId: { contains: filters.search, mode: 'insensitive' } },
+        { firstName: { contains: filters.search } },
+        { lastName: { contains: filters.search } },
+        { employeeId: { contains: filters.search } },
       ];
     }
 
